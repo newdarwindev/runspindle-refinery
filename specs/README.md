@@ -24,3 +24,8 @@ Preserve explicit authority and unknown outcomes. Distinguish request admission,
 Synthetic lineage component tests now run separately. Isolated integration, durable recovery, provider/serving and live acceptance remain blocked/not-run. See [implementation evidence](../docs/IMPLEMENTATION_EVIDENCE.md).
 
 Detailed adaptation: [experiments.md](experiments.md).
+
+The [bounded offline evaluation seam](offline-evaluation.md) now exercises actual
+process-local runner code with scripted providers, locked lineage and global
+budgets. This is component evidence; real DSPy/provider, durable registry and
+serving acceptance remain blocked.

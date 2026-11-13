@@ -75,12 +75,44 @@ GitHub Actions result, live acceptance or deployment.
 
 | Issue | Concrete remaining prerequisite or gap |
 |---|---|
-| #1 mock suite | Trusted runtime fixture mapping beyond pinned test-asset conformance; reviewed metric/budget/approval/store interfaces; scripted provider, registry and loader seams; pinned local DSPy conformance. Lineage tests alone cannot close this issue. |
+| #1 mock suite | Lineage and offline scripted evaluation now have bounded component tests. Durable registry, independent approval/loader/rollback seams, JSON runtime wire conformance and pinned local DSPy compatibility remain absent. |
 | #2 SRC-012 | Private exact source/dependency/rights mapping is not available in this checkout. Inert historical helper stays inert. Budget/evaluation/promotion/loader interfaces and source-function accounting remain unresolved. |
 | #3 SRC-013 | Selected full white paper and eight figure dependencies plus third-party figure rights are retained privately, not available here. No pinned TeX build and page/figure validation of the selected artifact has occurred. |
 | #4 F11 | Trusted Tether collection/actor/source relationship adapter, agreed shared envelopes, actual durable bounded store, concurrent writer/restart evidence and composition integration are absent. |
-| #5 F14 | Global budget/evaluation/provider interfaces, pinned DSPy/config/metric/optimizer, actual cost/safety evidence and locked registry are absent; no optimization/evaluation runs here. |
+| #5 F14 | Offline runner, locked effective synthetic config and cumulative budgets now have component tests. Pinned DSPy/actual optimizer/provider adapter, independently trusted cost/safety measurements, durable locked registry and restart/composition evidence remain absent. |
 | #6 F15 | Independently authenticated approval, exact evaluated candidate evidence, durable atomic registry/audit, actual serving load/readback and rollback adapter are absent. |
 
 Provider transmission, paid evaluation, production activation, credentials and
 migration retirement remain separate authorizations and evidence gates.
+
+
+## Offline evaluation tranche
+
+`refinery.evaluation` adds a synthetic evaluation runner over the existing locked
+lineage, with baseline/candidate byte/config/script hashing, identical heldout
+cases, exact-string scoring and one shared reserve/settle budget. This partially
+addresses #1 and #5; both remain open. [Native runtime.v1 mapping and limits](../specs/offline-evaluation.md)
+name every effective gate argument and distinguish this library from JSON wire
+conformance, durable storage and actual DSPy/provider integration.
+
+One local behavior-suite command is `python3.13 -m unittest discover -s tests -v`.
+Run `python3.13 tools/check_evaluation_mutations.py` for deliberate invariant
+mutations and `python3 tools/check_scaffold.py` for repository structural checks.
+All 51 tests pass locally, including 18 evaluation cases; all three implementation
+mutations are detected. Tests deny socket creation and independently assert exact
+call count/order and zero downstream calls after exhaustion, cancellation,
+unknown safety/usage/cost, malformed results and timeout exhaustion. Concurrent
+reservation tests reject oversubscription. Both artifacts use the same locked
+heldout cases; fixed seed/reset produces identical reports. Exact bytes/config,
+changed split assignments and gold mutations reject before provider dispatch.
+The fixture manifest and exact source hashes/toolchain are in
+[local-evaluation-tests.json](local-evaluation-tests.json).
+
+The runner is sequential and all state is process-local. Only reservation
+accounting is thread-safe. There is no durable experiment registry, fresh-process
+recovery, actual optimizer, trusted safety/cost receipt, real provider adapter,
+promotion, serving or production authority. A passing synthetic metric remains
+narrow byte-equality evidence. A caller can construct another manifest; authority
+to select and retain the originally approved lock remains a future registry gate.
+No source migration, deployment, external transmission, paid call or CI runner
+execution is implied.

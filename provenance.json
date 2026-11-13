@@ -1,7 +1,14 @@
 {
   "license_status": "No blanket license is granted to imported material. See LEGAL.md.",
-  "new_files": "Original lineage implementation and synthetic tests, plus the pinned composition synthetic fixture subset identified in fixtures/shared-v1.pin.json; no legacy executable source or Git history imported.",
+  "new_files": "Original process-local lineage and offline synthetic evaluation implementations and tests, plus pinned composition fixtures; no historical executable source, third-party code, dependencies or Git history imported.",
   "provenance_policy": "Public IDs resolve to a privately retained source record containing repository, exact commit, path, source hash and review notes. Private repository names, URLs and operational details are omitted.",
+  "runtime_contract_reference": {
+    "commit": "4b700269be9a4feab7b955faf0229fbdd77d8aa9",
+    "mapping": "specs/offline-evaluation.md",
+    "path": "specs/runtime-v1.md",
+    "repository": "newdarwindev/runspindle",
+    "rights_basis": "Owner-directed original interface mapping; no third-party code imported."
+  },
   "schema_version": 1,
   "sources": [
     {

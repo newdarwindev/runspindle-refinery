@@ -1,0 +1,15 @@
+{
+  "component": "refinery",
+  "license_status": "No blanket license granted; source LEGAL.md retains original rights.",
+  "origin_manifest_sha256": "1dd35d045064056dd66e6da3619ff100549e1c3e81c928f076cfd4109a524d81",
+  "provenance": "Original synthetic composition fixtures; copied without modification using reviewed component export. No legacy code or private content.",
+  "schema": "runspindle.fixture.v1",
+  "source_commit": "e8cd5779968fede213443db13a591c992cd0e183",
+  "source_path": "fixtures/v1",
+  "source_repository": "newdarwindev/runspindle",
+  "subset_kinds": [
+    "feedback.observed",
+    "candidate.observed"
+  ],
+  "subset_manifest_sha256": "ec34378277795369d1c7b7a9d990e45bdb6f8ab5317505a30c259bf8d54faacc"
+}

@@ -1,6 +1,6 @@
 {
   "license_status": "No blanket license is granted to imported material. See LEGAL.md.",
-  "new_files": "New scaffold, specifications and original process-local lineage implementation with synthetic tests; no executable legacy source or Git history imported.",
+  "new_files": "Original lineage implementation and synthetic tests, plus the pinned composition synthetic fixture subset identified in fixtures/shared-v1.pin.json; no legacy executable source or Git history imported.",
   "provenance_policy": "Public IDs resolve to a privately retained source record containing repository, exact commit, path, source hash and review notes. Private repository names, URLs and operational details are omitted.",
   "schema_version": 1,
   "sources": [
@@ -101,5 +101,15 @@
       "source_id": "SRC-009",
       "status": "reference_only"
     }
-  ]
+  ],
+  "synthetic_fixture_bundle": {
+    "classification": "synthetic_test_fixture",
+    "destination": "fixtures/shared-v1",
+    "license_review": "Original rights retained; no blanket license inferred. Source provenance retained in source manifest and pin.",
+    "modifications": "Unmodified component export; no runtime wire adapter or historical source port.",
+    "pin": "fixtures/shared-v1.pin.json",
+    "source_commit": "e8cd5779968fede213443db13a591c992cd0e183",
+    "source_path": "fixtures/v1",
+    "source_repository": "newdarwindev/runspindle"
+  }
 }

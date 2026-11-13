@@ -1,0 +1,48 @@
+[
+  {
+    "expected_error": "schema-version",
+    "id": "feedback.observed-unknown-version",
+    "kind": "feedback.observed",
+    "mutation": {
+      "path": [
+        "schema"
+      ],
+      "value": "runspindle.fixture.v99"
+    }
+  },
+  {
+    "expected_error": "identity-mismatch",
+    "id": "feedback.observed-wrong-host",
+    "kind": "feedback.observed",
+    "mutation": {
+      "path": [
+        "identity",
+        "host_id"
+      ],
+      "value": "synthetic-other-host"
+    }
+  },
+  {
+    "expected_error": "schema-version",
+    "id": "candidate.observed-unknown-version",
+    "kind": "candidate.observed",
+    "mutation": {
+      "path": [
+        "schema"
+      ],
+      "value": "runspindle.fixture.v99"
+    }
+  },
+  {
+    "expected_error": "identity-mismatch",
+    "id": "candidate.observed-wrong-host",
+    "kind": "candidate.observed",
+    "mutation": {
+      "path": [
+        "identity",
+        "host_id"
+      ],
+      "value": "synthetic-other-host"
+    }
+  }
+]

@@ -1,0 +1,82 @@
+{
+  "boundaries": {
+    "clock": "injected_virtual",
+    "dspy_compatibility": "blocked_not_run",
+    "durable_recovery": "not_implemented",
+    "external_network": "forbidden_socket_spy_zero_calls",
+    "github_ci": "unverified",
+    "lineage": "real_component_library",
+    "live_acceptance": "not_run",
+    "metric": "synthetic_exact_byte_match",
+    "provider": "scripted",
+    "provider_transmission": "not_run",
+    "runner": "real_component_library",
+    "serving": "not_implemented",
+    "storage": "process_local"
+  },
+  "checks": [
+    {
+      "command": "python3.13 -m unittest discover -s tests -q",
+      "new_evaluation_tests": 20,
+      "result": "passed",
+      "tests": 53
+    },
+    {
+      "command": "python3.13 tools/check_evaluation_mutations.py",
+      "mutations_detected": [
+        "ignore_call_ceiling",
+        "unknown_safety_passes",
+        "ignore_locked_split"
+      ],
+      "result": "passed"
+    },
+    {
+      "command": "python3 tools/check_scaffold.py",
+      "result": "passed"
+    }
+  ],
+  "contract_commit": "4b700269be9a4feab7b955faf0229fbdd77d8aa9",
+  "evidence_class": "synthetic_component",
+  "fixture": {
+    "data": "invented_synthetic_only",
+    "dataset_sha256": "e23441039160f5e61958a99e29d0a46f4c5d34c3833f093e44f60f58e9fcbe81",
+    "examples": 12,
+    "excluded_counts": {},
+    "families": 12,
+    "generator": "tests/test_evaluation.py:dataset_fixture",
+    "heldout_cases": [
+      [
+        "output-11",
+        "11"
+      ],
+      [
+        "output-4",
+        "4"
+      ]
+    ],
+    "scenario": "offline-evaluation-v1",
+    "seed": "seed-2",
+    "split_sha256": "a4552984231f0ea225fe6fd0481f1dd421c1af7e82493db3ad712c0025d99ba9"
+  },
+  "observed_at": "2026-11-13T19:14:39.541025+00:00",
+  "repository_base": "94282d8246ffb3e34e03d9633dc0f40772d35c52",
+  "schema_version": 1,
+  "source_sha256": {
+    "STATUS.json": "3691b0a6ee7b84e11f0c59feb46f0f072ff974b9205350b61d89f5bea7521a6d",
+    "component.json": "e8125d7dd69ea09191f2a20e96332cf2ec2ea2eee3e95b4f083876181870b0b8",
+    "provenance.json": "1b09f542b49db170ecdef53a0b850ee0cc1e063c28e2341b47dc52d91d4e6d8b",
+    "pyproject.toml": "e13b8f27fb8d300143fed571df0054e4590dbe21781ae43ad4c54846b92966bc",
+    "refinery/evaluation.py": "1113289f438d3e2ebb383d16d2b9d110bd14dd69bf3fb22bbaa0ade4d5cf33cc",
+    "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+    "specs/offline-evaluation.md": "97a882f4dced066b11ce1780daf20e94481f410667a0231b9189e847f33374d5",
+    "tests/test_evaluation.py": "167aee0b3cd7a44850c825bb4d7e6c5ebebf04c5a0e9b8c0268ffe3ca00ecf5c",
+    "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+    "tools/check_evaluation_mutations.py": "584ffab8db3a27a3900aaae06d9a4be4df05647750839fa3f8457fbc4293ac37"
+  },
+  "toolchain": {
+    "behavior_python": "3.13.18",
+    "python_3_11": "unavailable_not_run",
+    "python_3_12": "unavailable_not_run",
+    "structural_python": "3.9.6"
+  }
+}

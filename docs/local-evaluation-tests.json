@@ -58,7 +58,7 @@
     "seed": "seed-2",
     "split_sha256": "a4552984231f0ea225fe6fd0481f1dd421c1af7e82493db3ad712c0025d99ba9"
   },
-  "observed_at": "2026-11-13T19:12:01.973132+00:00",
+  "observed_at": "2026-11-13T19:13:13.325630+00:00",
   "repository_base": "94282d8246ffb3e34e03d9633dc0f40772d35c52",
   "schema_version": 1,
   "source_sha256": {
@@ -66,10 +66,10 @@
     "component.json": "e8125d7dd69ea09191f2a20e96332cf2ec2ea2eee3e95b4f083876181870b0b8",
     "provenance.json": "1b09f542b49db170ecdef53a0b850ee0cc1e063c28e2341b47dc52d91d4e6d8b",
     "pyproject.toml": "e13b8f27fb8d300143fed571df0054e4590dbe21781ae43ad4c54846b92966bc",
-    "refinery/evaluation.py": "6783655543cd043544d58cc5493cb8bb0f3d0b90dc783b97bfb736b1469a6241",
+    "refinery/evaluation.py": "cf3e654b5de864b2f10a892107cbca40cebc7e7fcf4521e5f4040bc6db4554e3",
     "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
     "specs/offline-evaluation.md": "2494e4cd497d24d85e687b33fe54edb1c46c35cf4f6daf5647f49c37f1263c32",
-    "tests/test_evaluation.py": "6cdd4a894ac91171f7b7946877aec6d5093ea7fa93e5a6646a654d07d05c7380",
+    "tests/test_evaluation.py": "eb5019a19ca30c662060c4d4c74965cd104eb904754caf84a1d3f735379ff231",
     "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
     "tools/check_evaluation_mutations.py": "584ffab8db3a27a3900aaae06d9a4be4df05647750839fa3f8457fbc4293ac37"
   },

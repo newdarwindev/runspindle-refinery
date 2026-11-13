@@ -191,6 +191,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report.reason, "cancelled")
         self.assertEqual(len(self.provider.calls), 1)
         self.assertEqual((dict(report.usage)["tokens"], dict(report.usage)["cost_microunits"]), (1, 2))
+        self.assertEqual(dict(report.usage)["elapsed_ms"], 1)
 
     def test_elapsed_time_all_stages_and_deadline_boundary(self):
         self.setup_run(preparation=("optimization",), limits=Limits(100, 1000, 2, 1000))

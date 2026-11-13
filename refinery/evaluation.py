@@ -78,6 +78,7 @@ class Budget:
         self._next = 0
         self.calls = self.tokens = self.cost_microunits = 0
         self.reason = None
+        self._time_unknown = False
 
     def _read_clock(self):
         value = self.clock_ms()
@@ -85,17 +86,17 @@ class Budget:
         return value
 
     def _check(self):
-        if self.reason:
-            raise Halt(self.reason)
         try:
             now = self._read_clock()
         except Exception:
-            self.reason = "invalid_clock"
+            self._time_unknown = True
+            self.reason = self.reason or "invalid_clock"
             raise Halt(self.reason) from None
         if now < self._last:
-            self.reason = "invalid_clock"
+            self._time_unknown = True
+            self.reason = self.reason or "invalid_clock"
         elif now - self._start >= self.limits.time_ms:
-            self.reason = "time_exhausted"
+            self.reason = self.reason or "time_exhausted"
         self._last = max(self._last, now)
         if self.reason:
             raise Halt(self.reason)
@@ -154,7 +155,7 @@ class Budget:
     def snapshot(self):
         with self._lock:
             return {"calls": self.calls, "tokens": self.tokens if not self._pending else None,
-                    "elapsed_ms": None if self.reason == "invalid_clock" else self._last - self._start,
+                    "elapsed_ms": None if self._time_unknown else self._last - self._start,
                     "cost_microunits": self.cost_microunits if not self._pending else None,
                     "unresolved_calls": len(self._pending), "reason": self.reason}
 

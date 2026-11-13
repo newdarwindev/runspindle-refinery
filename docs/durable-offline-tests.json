@@ -4,7 +4,7 @@
   "composition_contract": "445cc8c",
   "component_base": "355ad581e79f4cfce37e3d82192adb55da9b7669",
   "timestamp": "2026-11-13T22:55:27.247799+00:00",
-  "unit_tests": 68,
+  "unit_tests": 70,
   "unit_command": "python3.13 -m unittest discover -s tests -q",
   "mutations": {
     "evidence_class": "component_mutation_detection",
@@ -62,7 +62,7 @@
     "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
     "refinery/serving.py": "336f0ff575d5403305f8b5528cef9c6d12eb8055198f230eea893762a0518a47",
     "refinery/storage.py": "ee273aaf02edf054365922e7f3f626b49b874eb863c2d17493e1a74f6c6a4718",
-    "tests/test_durable.py": "387c24f7c3d1b0741903d68a7be2ff47ae65af17efdee0daef10a05ed7ea0e1c",
+    "tests/test_durable.py": "89cd6e3d71e07a960e48af4b9b644e49ea406730295c6c816643ed84e1211383",
     "tests/test_evaluation.py": "167aee0b3cd7a44850c825bb4d7e6c5ebebf04c5a0e9b8c0268ffe3ca00ecf5c",
     "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
     "tests/test_shared_fixtures.py": "78f9f482ca589d5a1b6a064e76b51aba6e8827f9eeeee5365cd973ba27605c05",

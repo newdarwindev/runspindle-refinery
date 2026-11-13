@@ -487,6 +487,77 @@ class ServingTests(DurableBase):
         )
         self.assertIsNone(adapter.readback("local"))
 
+    def test_unknown_metrics_and_incompatible_bytes_never_qualify(self):
+        for name, content, script in (
+            ("unknown-metrics", None, (Completion(b"x", None, None, True),)),
+            ("incompatible", b"not a supported candidate program", None),
+        ):
+            snapshot, exp, provider = setup(self.store, content=content, script=script)
+            run(
+                self.store,
+                VERSION,
+                name,
+                snapshot,
+                exp,
+                provider=provider,
+                budget_id=name,
+            )
+            with self.assertRaises(ValueError):
+                Registry(self.store).qualify(
+                    VERSION, name, Policy("local", 1000000, 0, 2000, 2000)
+                )
+        self.assertEqual(
+            self.store.db.execute("SELECT count(*) FROM activations").fetchone()[0], 0
+        )
+        self.assertEqual(
+            self.store.db.execute(
+                "SELECT count(*) FROM objects WHERE kind='candidate'"
+            ).fetchone()[0],
+            0,
+        )
+
+    def test_concurrent_rollback_and_failed_rollback_preserve_served_version(self):
+        reg, first, approval = self.candidate()
+        adapter = self.adapter()
+        reg.begin(VERSION, "first", first, approval, expected_generation=0)
+        reg.load(VERSION, "first", adapter)
+        _, second, grant = self.candidate("two")
+        reg.begin(VERSION, "second", second, grant, expected_generation=1)
+        reg.load(VERSION, "second", adapter)
+
+        def rollback(number):
+            with Store(self.path) as store:
+                owner = Registry(store, verify_approval=lambda _: "reviewer")
+                try:
+                    return owner.rollback(
+                        VERSION,
+                        "rollback-" + str(number),
+                        "local",
+                        expected_generation=2,
+                    )
+                except ValueError:
+                    return None
+
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(rollback, range(4)))
+        winners = [r for r in results if r is not None]
+        self.assertEqual(len(winners), 1)
+        before = adapter.predict("local", "hello")
+
+        class Reject:
+            def load(self, *_):
+                return False
+
+            def readback(self, environment):
+                return adapter.readback(environment)
+
+        self.assertEqual(reg.load(VERSION, winners[0], Reject()), "failed")
+        self.assertEqual(adapter.predict("local", "hello"), before)
+        self.assertEqual(reg.state("local")["active"], second)
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 2
+        )
+
     def test_load_readback_actual_output_and_failed_load_preserves_prior(self):
         reg, key, approval = self.candidate()
         adapter = self.adapter()

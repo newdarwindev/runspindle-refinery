@@ -11,8 +11,9 @@ is unchanged. No new credentials or scope changes were requested.
 
 `refinery.lineage` is a dependency-free, process-local library. Its Python dataclasses
 are provisional internal interfaces (`refinery-lineage-local.v1` in split hashes),
-not agreed cross-component wire envelopes. It does not consume the composition
-fixture kit yet. No operational acceptance gate has changed.
+not agreed cross-component wire envelopes. The lineage runtime does not consume composition envelopes yet; a separate
+[pinned fixture consumer](SHARED_FIXTURES.md) now checks the shared synthetic assets
+in isolation. No operational acceptance gate has changed.
 
 The library verifies actual immutable source/output bytes against SHA256, binds
 feedback to an exact output revision and digest, applies an explicit task/rule
@@ -74,7 +75,7 @@ GitHub Actions result, live acceptance or deployment.
 
 | Issue | Concrete remaining prerequisite or gap |
 |---|---|
-| #1 mock suite | Shared fixture integration; reviewed metric/budget/approval/store interfaces; scripted provider, registry and loader seams; pinned local DSPy conformance. Lineage tests alone cannot close this issue. |
+| #1 mock suite | Trusted runtime fixture mapping beyond pinned test-asset conformance; reviewed metric/budget/approval/store interfaces; scripted provider, registry and loader seams; pinned local DSPy conformance. Lineage tests alone cannot close this issue. |
 | #2 SRC-012 | Private exact source/dependency/rights mapping is not available in this checkout. Inert historical helper stays inert. Budget/evaluation/promotion/loader interfaces and source-function accounting remain unresolved. |
 | #3 SRC-013 | Selected full white paper and eight figure dependencies plus third-party figure rights are retained privately, not available here. No pinned TeX build and page/figure validation of the selected artifact has occurred. |
 | #4 F11 | Trusted Tether collection/actor/source relationship adapter, agreed shared envelopes, actual durable bounded store, concurrent writer/restart evidence and composition integration are absent. |

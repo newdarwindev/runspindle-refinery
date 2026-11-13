@@ -18,3 +18,5 @@ No old repository is retired by this scaffold. Migration and archival are separa
 Selected historical code is preserved as [inert migration references](docs/reference/README.md). It is not installed or executed.
 
 New conceptual documentation is in [docs/design](docs/design/README.md). Its published PDFs are ReportLab adaptations; TeX compilation and runtime acceptance are not established.
+
+The [pinned shared fixture consumer](docs/SHARED_FIXTURES.md) tests refinery feedback/candidate observations without sibling checkouts; runtime protocol integration remains provisional.

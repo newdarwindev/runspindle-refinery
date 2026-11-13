@@ -1,0 +1,81 @@
+{
+  "base_commit": "1c35a7bf77ffe6135e4293396efb3e1184569f3e",
+  "deployment": "not_run",
+  "durable_recovery": "not_implemented",
+  "evidence_class": "synthetic_fixture_consumer_conformance",
+  "github_ci": "not_run",
+  "input_sha256": {
+    "fixtures/shared-v1.origin-manifest.json": "1dd35d045064056dd66e6da3619ff100549e1c3e81c928f076cfd4109a524d81",
+    "fixtures/shared-v1.pin.json": "6b71f1071fb0f8ac67ea6a7756a2fd2b82e0b5cf2a7ef4599818e849396edd13",
+    "provenance.json": "bca575b18ade67c607c6f1ce33cef75592254b0499cd554c2acc94df680a262f",
+    "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+    "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+    "tests/test_shared_fixtures.py": "1f58d0f46cd50fc779a43fe4c15f74dde6fac9e275b1e6fde38a3f104c1a68a0",
+    "tools/check_scaffold.py": "a23823c7b99040987fab35853d1887f155366b6cb3a6f39e7e83d59a89a9ce62"
+  },
+  "isolated_integration": "not_run",
+  "live_acceptance": "not_run",
+  "provider_adapter": "not_implemented",
+  "recorded_utc": "2026-11-13T18:44:25.834505+00:00",
+  "results": [
+    {
+      "command": [
+        "python3.13",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-v"
+      ],
+      "exit_code": 0,
+      "output": "test_bounds_and_invalid_bytes_fail_before_verifier (test_lineage.LineageTests.test_bounds_and_invalid_bytes_fail_before_verifier) ... ok\ntest_conflicting_corrections_excluded (test_lineage.LineageTests.test_conflicting_corrections_excluded) ... ok\ntest_conflicting_feedback_id_blocks_other_gold_on_same_target (test_lineage.LineageTests.test_conflicting_feedback_id_blocks_other_gold_on_same_target) ... ok\ntest_conflicting_id_with_unverified_actor_is_conservatively_excluded (test_lineage.LineageTests.test_conflicting_id_with_unverified_actor_is_conservatively_excluded) ... ok\ntest_conflicting_immutable_revision_rejected (test_lineage.LineageTests.test_conflicting_immutable_revision_rejected) ... ok\ntest_correction_retains_exact_original_and_corrected_bytes (test_lineage.LineageTests.test_correction_retains_exact_original_and_corrected_bytes) ... ok\ntest_default_authority_is_deny (test_lineage.LineageTests.test_default_authority_is_deny) ... ok\ntest_deliberate_split_assignment_mutation_fails_independent_verification (test_lineage.LineageTests.test_deliberate_split_assignment_mutation_fails_independent_verification) ... ok\ntest_duplicate_delivery_counted_once (test_lineage.LineageTests.test_duplicate_delivery_counted_once) ... ok\ntest_edited_or_deleted_unavailable_target_quarantined (test_lineage.LineageTests.test_edited_or_deleted_unavailable_target_quarantined) ... ok\ntest_empty_dataset_is_explicit_and_deterministic (test_lineage.LineageTests.test_empty_dataset_is_explicit_and_deterministic) ... ok\ntest_exact_bytes_and_immutable_lineage (test_lineage.LineageTests.test_exact_bytes_and_immutable_lineage) ... ok\ntest_feedback_on_old_revision_never_labels_latest (test_lineage.LineageTests.test_feedback_on_old_revision_never_labels_latest) ... ok\ntest_forged_actor_and_unavailable_verifier_are_denied (test_lineage.LineageTests.test_forged_actor_and_unavailable_verifier_are_denied) ... ok\ntest_gold_data_has_no_execution_or_provider_capabilities (test_lineage.LineageTests.test_gold_data_has_no_execution_or_provider_capabilities) ... ok\ntest_grouped_split_deterministic_and_input_order_independent (test_lineage.LineageTests.test_grouped_split_deterministic_and_input_order_independent) ... ok\ntest_incomplete_and_missing_context_quarantined (test_lineage.LineageTests.test_incomplete_and_missing_context_quarantined) ... ok\ntest_lock_detects_dataset_mutation_and_exclusion_change (test_lineage.LineageTests.test_lock_detects_dataset_mutation_and_exclusion_change) ... ok\ntest_positive_negative_conflict_excludes_entire_target (test_lineage.LineageTests.test_positive_negative_conflict_excludes_entire_target) ... ok\ntest_related_revisions_cannot_change_family (test_lineage.LineageTests.test_related_revisions_cannot_change_family) ... ok\ntest_task_rule_is_explicit (test_lineage.LineageTests.test_task_rule_is_explicit) ... ok\ntest_wrong_output_hash_or_source_hash_quarantined (test_lineage.LineageTests.test_wrong_output_hash_or_source_hash_quarantined) ... ok\ntest_all_published_negative_vectors_use_unmutated_oracles (test_shared_fixtures.SharedFixtureTests.test_all_published_negative_vectors_use_unmutated_oracles) ... ok\ntest_all_relevant_positive_vectors (test_shared_fixtures.SharedFixtureTests.test_all_relevant_positive_vectors) ... ok\ntest_every_refinery_identity_field_is_bound_to_independent_request (test_shared_fixtures.SharedFixtureTests.test_every_refinery_identity_field_is_bound_to_independent_request) ... ok\ntest_missing_extra_and_malformed_fields_reject (test_shared_fixtures.SharedFixtureTests.test_missing_extra_and_malformed_fields_reject) ... ok\ntest_pinned_loader_rejects_tampering_and_consistent_manifest_rewrite (test_shared_fixtures.SharedFixtureTests.test_pinned_loader_rejects_tampering_and_consistent_manifest_rewrite) ... ok\ntest_pinned_subset_inventory_and_source_integrity (test_shared_fixtures.SharedFixtureTests.test_pinned_subset_inventory_and_source_integrity) ... ok\ntest_refinery_unknown_outcomes_never_become_success (test_shared_fixtures.SharedFixtureTests.test_refinery_unknown_outcomes_never_become_success) ... ok\ntest_serving_needs_observed_receipt_and_exact_approved_bytes (test_shared_fixtures.SharedFixtureTests.test_serving_needs_observed_receipt_and_exact_approved_bytes) ... ok\ntest_standalone_subset_runs_without_siblings_and_without_network (test_shared_fixtures.SharedFixtureTests.test_standalone_subset_runs_without_siblings_and_without_network) ... ok\n\n----------------------------------------------------------------------\nRan 31 tests in 0.083s\n\nOK\n"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/check_scaffold.py"
+      ],
+      "exit_code": 0,
+      "output": "{\"evidence_class\": \"reference_bytes_and_syntax\", \"files\": 1, \"status\": \"passed\", \"execution\": \"not_run\"}\n{\"evidence_class\": \"artifact_integrity\", \"files\": 5, \"status\": \"passed\", \"runtime_acceptance\": \"not_run\"}\n{\"evidence_class\": \"scaffold_structure\", \"product_acceptance\": \"not_run\", \"repository\": \"newdarwindev/runspindle-refinery\", \"status\": \"passed\"}\n"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/acceptance_gate.py",
+        "live"
+      ],
+      "exit_code": 78,
+      "output": "{\"gate\": \"live\", \"reason\": \"Implementation, qualified local capacity and acceptance evidence are not yet available.\", \"status\": \"blocked\"}\n"
+    }
+  ],
+  "runtime_wire_mapping": "not_implemented",
+  "schema_version": 1,
+  "serving": "not_implemented",
+  "source_pin": {
+    "component": "refinery",
+    "license_status": "No blanket license granted; source LEGAL.md retains original rights.",
+    "origin_manifest_sha256": "1dd35d045064056dd66e6da3619ff100549e1c3e81c928f076cfd4109a524d81",
+    "provenance": "Original synthetic composition fixtures; copied without modification using reviewed component export. No legacy code or private content.",
+    "schema": "runspindle.fixture.v1",
+    "source_commit": "e8cd5779968fede213443db13a591c992cd0e183",
+    "source_path": "fixtures/v1",
+    "source_repository": "newdarwindev/runspindle",
+    "subset_kinds": [
+      "feedback.observed",
+      "candidate.observed"
+    ],
+    "subset_manifest_sha256": "ec34378277795369d1c7b7a9d990e45bdb6f8ab5317505a30c259bf8d54faacc"
+  },
+  "tests": {
+    "failed": 0,
+    "lineage_passed": 22,
+    "shared_consumer_passed": 9,
+    "total_passed": 31
+  },
+  "toolchain": {
+    "platform": "Darwin arm64",
+    "python": "3.13.18",
+    "structural_python": "Python 3.9.6"
+  }
+}

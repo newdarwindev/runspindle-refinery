@@ -1,0 +1,35 @@
+{
+  "license_status": "No blanket license is granted to imported material. See LEGAL.md.",
+  "new_files": "New scaffolding and adapted specifications; no old Git history imported.",
+  "provenance_policy": "Public IDs resolve to a privately retained source record containing repository, exact commit, path, source hash and review notes. Private repository names, URLs and operational details are omitted.",
+  "schema_version": 1,
+  "sources": [
+    {
+      "destination": "specs/experiments.md",
+      "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
+      "modifications": "Adapted requirements and documented prototype gaps; no executable source port or original Git history imported.",
+      "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
+      "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
+      "source_id": "SRC-012",
+      "status": "adapted_spec"
+    },
+    {
+      "destination": "docs/design",
+      "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
+      "modifications": "Not imported; full dependencies, content and rights review remains.",
+      "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
+      "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
+      "source_id": "SRC-013",
+      "status": "pending_review"
+    },
+    {
+      "destination": "specs/experiments.md",
+      "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
+      "modifications": "Adapted requirements and documented prototype gaps; no executable source port or original Git history imported.",
+      "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
+      "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
+      "source_id": "SRC-001",
+      "status": "adapted_spec"
+    }
+  ]
+}

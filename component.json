@@ -1,0 +1,9 @@
+{
+  "api_version": "runspindle.v1alpha0",
+  "component": "refinery",
+  "description": "Python DSPy experiments, feedback lineage and approved candidate serving",
+  "implementation_language": "python",
+  "repository": "newdarwindev/runspindle-refinery",
+  "schema_version": 1,
+  "stage": "scaffold"
+}

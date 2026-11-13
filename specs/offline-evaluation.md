@@ -26,6 +26,11 @@ retry, at most three attempts, each charged to the same ledger. Unexpected provi
 exceptions remain unknown and never retry. There is no authority to retry real
 external operations.
 
+Evaluation completion uses one locked budget check/snapshot: no outstanding
+reservation, cancellation, exhaustion or unknown usage can be copied into a
+passing report. That immutable snapshot defines completion; a later cancellation
+cannot rewrite the completed report.
+
 Cancellation is checked before dispatch and after return. In-flight settled usage
 remains charged. Cancellation and exhaustion stop all downstream calls. Time is
 one injected virtual monotonic clock shared with the scripted provider, including

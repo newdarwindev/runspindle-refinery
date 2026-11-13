@@ -175,6 +175,29 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(budget.calls, 2)
         self.assertEqual(budget.snapshot()["unresolved_calls"], 2)
 
+    def test_unresolved_shared_reservation_cannot_pass_gate(self):
+        self.setup_run()
+        self.budget.reserve(Reservation(1, 1))
+        report = self.run_eval()
+        self.assertEqual((report.status, report.reason), ("blocked", "unresolved_usage"))
+        self.assertIsNone(dict(report.usage)["tokens"])
+        self.assertIsNone(dict(report.usage)["cost_microunits"])
+        self.assertEqual(dict(report.usage)["unresolved_calls"], 1)
+
+    def test_completion_snapshot_is_atomic_with_later_cancellation(self):
+        self.setup_run()
+        original = self.budget.checked_snapshot
+        def complete_then_cancel():
+            snapshot = original()
+            self.budget.cancel()  # after completion, must not rewrite this report
+            return snapshot
+        with patch.object(self.budget, "checked_snapshot", side_effect=complete_then_cancel):
+            report = self.run_eval()
+        self.assertEqual(report.status, "passed")
+        self.assertIsNone(dict(report.usage)["reason"])
+        self.assertEqual(dict(report.usage)["unresolved_calls"], 0)
+        self.assertEqual(self.budget.reason, "cancelled")
+
     def test_cancel_before_dispatch_and_inflight_charges_usage(self):
         self.setup_run()
         self.budget.cancel()
@@ -260,7 +283,7 @@ class EvaluationTests(unittest.TestCase):
                 Limits(bad, 1, 1, 1)
         self.setup_run()
         for change in [dict(max_attempts=0), dict(min_score_ppm=-1), dict(min_score_ppm=True),
-                       dict(preparation=("candidate",)), dict(currency="USD"), dict(metric="real-quality")]:
+                       dict(preparation=("candidate",)), dict(currency="USD"), dict(cost_scale=1_000_000.0), dict(cost_scale=True), dict(metric="real-quality")]:
             with self.subTest(change=change), self.assertRaises(ValueError):
                 replace(self.config, **change)
 

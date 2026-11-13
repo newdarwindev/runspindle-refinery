@@ -98,7 +98,7 @@ conformance, durable storage and actual DSPy/provider integration.
 One local behavior-suite command is `python3.13 -m unittest discover -s tests -v`.
 Run `python3.13 tools/check_evaluation_mutations.py` for deliberate invariant
 mutations and `python3 tools/check_scaffold.py` for repository structural checks.
-All 51 tests pass locally, including 18 evaluation cases; all three implementation
+All 53 tests pass locally, including 20 evaluation cases; all three implementation
 mutations are detected. Tests deny socket creation and independently assert exact
 call count/order and zero downstream calls after exhaustion, cancellation,
 unknown safety/usage/cost, malformed results and timeout exhaustion. Concurrent

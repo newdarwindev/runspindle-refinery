@@ -152,12 +152,24 @@ class Budget:
         with self._lock:
             self._check()
 
-    def snapshot(self):
-        with self._lock:
-            return {"calls": self.calls, "tokens": self.tokens if not self._pending else None,
+    def _snapshot_locked(self):
+        return {"calls": self.calls, "tokens": self.tokens if not self._pending else None,
                     "elapsed_ms": None if self._time_unknown else self._last - self._start,
                     "cost_microunits": self.cost_microunits if not self._pending else None,
                     "unresolved_calls": len(self._pending), "reason": self.reason}
+
+    def snapshot(self):
+        with self._lock:
+            return self._snapshot_locked()
+
+    def checked_snapshot(self):
+        """Linearize completion with cancellation and concurrent reservations."""
+        with self._lock:
+            self._check()
+            if self._pending:
+                self.reason = "unresolved_usage"
+                raise Halt(self.reason)
+            return self._snapshot_locked()
 
 
 class VirtualClock:
@@ -238,6 +250,7 @@ class Configuration:
         if type(self.limits) is not Limits or type(self.per_call) is not Reservation:
             raise ValueError("invalid budget configuration")
         _hash(self.provider_script_sha256)
+        _integer(self.cost_scale, positive=True)
         if (self.metric, self.provider, self.optimizer, self.currency, self.cost_scale) != (
                 "synthetic_exact_match.v1", "scripted.v1", "scripted_stage.v1", "SYNTHETIC", 1_000_000):
             raise ValueError("unsupported offline configuration")
@@ -380,7 +393,7 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
         raise ValueError("manifest binding changed")
     # The request object contains hashes/identity only, not gold or feedback text.
     attempts, scores, safeties = [], {"baseline": [], "candidate": []}, []
-    reason, status = None, "blocked"
+    reason, status, usage = None, "blocked", None
     try:
         if not heldout:
             raise Halt("empty_evaluation")
@@ -430,9 +443,9 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                     break
                 if number == config.max_attempts:
                     raise Halt("timeout")
-        budget.check()
         if sum(scores["candidate"]) * 1_000_000 < config.min_score_ppm * len(heldout) or (sum(scores["candidate"]) - sum(scores["baseline"])) * 1_000_000 < config.min_improvement_ppm * len(heldout):
             raise Halt("threshold_failed")
+        usage = budget.checked_snapshot()
         status = "passed"
     except Halt as exc:
         reason = str(exc)
@@ -443,4 +456,4 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                   experiment.baseline_sha256, experiment.candidate_sha256, experiment.config_sha256,
                   tuple((e.output.output_id, e.output.revision) for e in heldout),
                   tuple(sorted(dataset.excluded_counts.items())), tuple(attempts),
-                  baseline_score, candidate_score, safety, tuple(sorted(budget.snapshot().items())))
+                  baseline_score, candidate_score, safety, tuple(sorted((usage if usage is not None else budget.snapshot()).items())))

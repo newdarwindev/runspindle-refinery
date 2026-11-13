@@ -19,7 +19,8 @@ manifest is preserved beside the pin. Before export, all six source files were
 read from that exact Git commit and verified against the source manifest. The
 subset manifest binds the five exported files. The consumer independently checks
 the pin, inventories, hashes and three unmodified source-file hashes before
-executing the vendored validator. All fixture provenance remains synthetic and
+executing the vendored validator. Execution compiles the exact verified source
+snapshot directly; import machinery and unpinned bytecode caches are never used. All fixture provenance remains synthetic and
 public-safe. Source rights are retained; no blanket license is granted or inferred.
 No historical source files were imported.
 
@@ -30,7 +31,7 @@ python3.13 -m unittest discover -s tests -v
 python3 tools/check_scaffold.py
 ```
 
-On Python 3.13.18, 31 tests passed: the existing 22 lineage tests and nine new
+On Python 3.13.18, 33 tests passed: the existing 22 lineage tests and eleven new
 consumer tests. Exact test/config/source hashes, timestamp and observed results
 are in [local-shared-fixture-tests.json](local-shared-fixture-tests.json).
 The published vectors test unknown version and wrong host for both kinds. Additional
@@ -38,7 +39,10 @@ consumer checks mutate every identity field, candidate digest and serving receip
 require independent approval bytes, reject incomplete statuses, malformed fields,
 missing identity and altered manifests. Expected identities and receipt observations
 are copied before adapter-output mutation. Internally consistent manifest rewrites
-still fail against the separately reviewed pin. A temporary standalone copy runs in
+still fail against the separately reviewed pin. Regression tests plant a valid
+timestamp/size-matching bytecode cache that breaks the former import loader and
+prove the snapshot loader ignores it, and reject any unverified source reread.
+A temporary standalone copy runs in
 a fresh bounded Python process without access to siblings; the temporary directory
 is removed afterwards. Socket creation, connection and DNS are denied in tests and
 the standalone process. This is Python-level isolation, not an OS network sandbox.

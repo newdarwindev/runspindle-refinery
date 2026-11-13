@@ -3,13 +3,16 @@ import copy
 import hashlib
 import importlib.util
 import json
+import marshal
 from pathlib import Path
 import shutil
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
 import unittest
+from types import ModuleType
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,10 +34,12 @@ def verify_pin(directory=FIXTURES):
     if (pin['source_repository'], pin['source_commit'], pin['source_path'], pin['schema'], pin['component']) != (
             'newdarwindev/runspindle', SOURCE_COMMIT, 'fixtures/v1', 'runspindle.fixture.v1', 'refinery'):
         raise ValueError('source pin mismatch')
-    if sha(origin) != pin['origin_manifest_sha256'] or sha(bundle / 'manifest.json') != pin['subset_manifest_sha256']:
+    origin_raw = origin.read_bytes()
+    manifest_raw = (bundle / 'manifest.json').read_bytes()
+    if hashlib.sha256(origin_raw).hexdigest() != pin['origin_manifest_sha256'] or hashlib.sha256(manifest_raw).hexdigest() != pin['subset_manifest_sha256']:
         raise ValueError('manifest pin mismatch')
-    original = json.loads(origin.read_text())
-    manifest = json.loads((bundle / 'manifest.json').read_text())
+    original = json.loads(origin_raw)
+    manifest = json.loads(manifest_raw)
     if set(pin['subset_kinds']) != KINDS or set(original['components']['refinery']) != KINDS:
         raise ValueError('wrong consumer subset')
     if manifest['component'] != 'refinery' or manifest['schema'] != pin['schema'] or manifest['origin_manifest_sha256'] != pin['origin_manifest_sha256']:
@@ -45,20 +50,32 @@ def verify_pin(directory=FIXTURES):
     actual = {p.relative_to(bundle).as_posix() for p in bundle.rglob('*') if p.is_file() and '__pycache__' not in p.parts}
     if actual != expected | {'manifest.json'}:
         raise ValueError('bundle inventory mismatch')
+    verified = {}
     for name, expected_hash in manifest['files'].items():
         path = bundle / name
-        if path.is_symlink() or sha(path) != expected_hash:
+        if path.is_symlink():
+            raise ValueError('bundle digest mismatch')
+        verified[name] = path.read_bytes()
+        if hashlib.sha256(verified[name]).hexdigest() != expected_hash:
             raise ValueError('bundle digest mismatch')
     for unchanged in ['fixturekit.py', 'contract.json', 'artifact.txt']:
-        if sha(bundle / unchanged) != original['files'][unchanged]:
+        if hashlib.sha256(verified[unchanged]).hexdigest() != original['files'][unchanged]:
             raise ValueError('source bytes mismatch')
-    return pin
+    return pin, verified['fixturekit.py']
 
 
-verify_pin()
-spec = importlib.util.spec_from_file_location('refinery_shared_fixturekit', BUNDLE / 'fixturekit.py')
-kit = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(kit)
+def load_kit(directory=FIXTURES):
+    # Compile only the exact source snapshot whose digest passed the reviewed
+    # pin. Import machinery must not substitute an unpinned bytecode cache.
+    _, source = verify_pin(directory)
+    path = directory / 'shared-v1/fixturekit.py'
+    module = ModuleType('refinery_shared_fixturekit')
+    module.__file__ = str(path)
+    exec(compile(source, str(path), 'exec'), module.__dict__)
+    return module
+
+
+kit = load_kit()
 
 
 class SharedFixtureTests(unittest.TestCase):
@@ -87,7 +104,7 @@ class SharedFixtureTests(unittest.TestCase):
         return result
 
     def test_pinned_subset_inventory_and_source_integrity(self):
-        pin = verify_pin()
+        pin, _ = verify_pin()
         self.assertEqual(pin['source_commit'], SOURCE_COMMIT)
         kit.verify_bundle(BUNDLE)
         self.assertEqual({f['kind'] for f in self.golden}, KINDS)
@@ -177,6 +194,46 @@ class SharedFixtureTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest))
             with self.assertRaisesRegex(ValueError, 'manifest pin'):
                 verify_pin(copied)
+
+    def test_planted_bytecode_cache_never_replaces_verified_source(self):
+        with tempfile.TemporaryDirectory(prefix='refinery-bytecode-') as temporary:
+            directory = Path(temporary) / 'fixtures'
+            shutil.copytree(FIXTURES, directory, ignore=shutil.ignore_patterns('__pycache__'))
+            source = directory / 'shared-v1/fixturekit.py'
+            with patch.object(sys, 'pycache_prefix', None):
+                cache = Path(importlib.util.cache_from_source(str(source)))
+                cache.parent.mkdir()
+                # A valid timestamp/size header would be accepted by Python's
+                # source-file import loader even though these bytes are unpinned.
+                header = importlib.util.MAGIC_NUMBER + struct.pack('<III', 0, int(source.stat().st_mtime), source.stat().st_size)
+                planted = compile("raise AssertionError('unpinned bytecode executed')", str(source), 'exec')
+                cache.write_bytes(header + marshal.dumps(planted))
+                loaded = load_kit(directory)
+                self.assertEqual(loaded.VERSION, 'runspindle.fixture.v1')
+                loaded.verify_bundle(directory / 'shared-v1')
+                # Prove the planted cache is valid and catches the previous
+                # source-file loader behavior, rather than passing by accident.
+                old_spec = importlib.util.spec_from_file_location('deliberately_broken_loader', source)
+                with self.assertRaisesRegex(AssertionError, 'unpinned bytecode executed'):
+                    old_spec.loader.exec_module(importlib.util.module_from_spec(old_spec))
+
+    def test_loader_compiles_verified_snapshot_without_rereading_source(self):
+        with tempfile.TemporaryDirectory(prefix='refinery-source-snapshot-') as temporary:
+            directory = Path(temporary) / 'fixtures'
+            shutil.copytree(FIXTURES, directory, ignore=shutil.ignore_patterns('__pycache__'))
+            source = directory / 'shared-v1/fixturekit.py'
+            read = Path.read_bytes
+            source_reads = []
+            def observed_read(path):
+                if path == source:
+                    source_reads.append(path)
+                    if len(source_reads) > 1:
+                        return b"raise AssertionError('unverified source reread executed')"
+                return read(path)
+            with patch.object(Path, 'read_bytes', observed_read):
+                loaded = load_kit(directory)
+            self.assertEqual(loaded.VERSION, 'runspindle.fixture.v1')
+            self.assertEqual(len(source_reads), 1)
 
     def test_standalone_subset_runs_without_siblings_and_without_network(self):
         # Fresh process patches all Python socket creation and DNS before running

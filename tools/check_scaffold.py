@@ -7,8 +7,19 @@ for name in required:
     assert (root/name).is_file(), f'Missing {name}'
 c = json.loads((root/'component.json').read_text())
 s = json.loads((root/'STATUS.json').read_text())
-assert c['stage'] == 'scaffold'
-assert s['implementation'] == 'not_implemented'
+assert c['stage'] == s['stage']
+assert (c['stage'], s['implementation']) in {
+    ('scaffold', 'not_implemented'),
+    ('lineage_candidate', 'partial_lineage_model'),
+}
+if c['stage'] == 'lineage_candidate':
+    for name in ['refinery/lineage.py', 'tests/test_lineage.py',
+                 'docs/IMPLEMENTATION_EVIDENCE.md', 'docs/local-lineage-tests.json']:
+        assert (root/name).is_file(), f'Missing {name}'
+    assert s['lineage_tests'] in ['not_run', 'passed', 'failed']
+    for name in ['durable_lineage', 'provider_adapter', 'candidate_serving', 'trusted_feedback_adapter']:
+        assert s[name] == 'not_implemented'
+    assert s['shared_contracts'] == 'provisional_not_integrated'
 assert s['live_acceptance'] == 'not_run'
 p = json.loads((root/'provenance.json').read_text())
 for item in p['sources']:

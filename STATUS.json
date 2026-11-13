@@ -1,10 +1,18 @@
 {
+  "candidate_serving": "not_implemented",
   "dev_deployment": "not_run",
-  "implementation": "not_implemented",
+  "durable_lineage": "not_implemented",
+  "github_ci": "not_run",
+  "implementation": "partial_lineage_model",
   "legacy_archival": "not_started",
+  "lineage_test_evidence": "docs/local-lineage-tests.json",
+  "lineage_tests": "passed",
   "live_acceptance": "not_run",
   "production_deployment": "not_run",
+  "provider_adapter": "not_implemented",
   "runner_capacity": "unverified",
   "selected_source_migration": "partial",
-  "stage": "scaffold"
+  "shared_contracts": "provisional_not_integrated",
+  "stage": "lineage_candidate",
+  "trusted_feedback_adapter": "not_implemented"
 }

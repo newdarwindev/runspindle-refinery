@@ -1,6 +1,6 @@
 # refinery specification
 
-Status: planned contract, implementation and live acceptance not verified.
+Status: partial process-local lineage candidate; upstream integration and live acceptance not verified.
 
 ## Responsibility
 
@@ -21,6 +21,6 @@ Preserve explicit authority and unknown outcomes. Distinguish request admission,
 3. Bounded live acceptance in an authorized target.
 4. Failure, restart, uncertain-effect reconciliation and rollback evidence.
 
-None of these product gates has been run for this scaffold.
+Synthetic lineage component tests now run separately. Isolated integration, durable recovery, provider/serving and live acceptance remain blocked/not-run. See [implementation evidence](../docs/IMPLEMENTATION_EVIDENCE.md).
 
 Detailed adaptation: [experiments.md](experiments.md).

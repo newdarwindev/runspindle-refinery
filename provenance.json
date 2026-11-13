@@ -1,4 +1,13 @@
 {
+  "durable_offline_source": {
+    "classification": "original_bounded_implementation_and_synthetic_fixtures",
+    "composition_contract_commit": "445cc8c",
+    "contract": "runspindle.maintained-evidence.v1",
+    "dependencies": "offline/dependencies.json",
+    "legacy_executable_import": "none",
+    "mapping": "specs/durable-offline.md",
+    "toolchain": "offline/toolchain.json"
+  },
   "license_status": "No blanket license is granted to imported material. See LEGAL.md.",
   "new_files": "Original process-local lineage and offline synthetic evaluation implementations and tests, plus pinned composition fixtures; no historical executable source, third-party code, dependencies or Git history imported.",
   "provenance_policy": "Public IDs resolve to a privately retained source record containing repository, exact commit, path, source hash and review notes. Private repository names, URLs and operational details are omitted.",

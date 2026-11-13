@@ -116,3 +116,7 @@ narrow byte-equality evidence. A caller can construct another manifest; authorit
 to select and retain the originally approved lock remains a future registry gate.
 No source migration, deployment, external transmission, paid call or CI runner
 execution is implied.
+
+## Durable offline candidate
+
+See [exact durable test evidence](durable-offline-tests.json) and [mapping](../specs/durable-offline.md). Earlier process-local statements describe the retained original lane; the new SQLite and pinned local DSPy lanes are separate. Production/provider/Tether trust and live acceptance remain unqualified.

@@ -29,3 +29,5 @@ The [bounded offline evaluation seam](offline-evaluation.md) now exercises actua
 process-local runner code with scripted providers, locked lineage and global
 budgets. This is component evidence; real DSPy/provider, durable registry and
 serving acceptance remain blocked.
+
+The [durable offline mapping](durable-offline.md) adds bounded SQLite lineage, experiments and approved disposable synthetic serving. Trusted collection, providers and live acceptance remain unimplemented/not-run.

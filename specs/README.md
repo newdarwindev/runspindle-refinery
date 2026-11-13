@@ -29,3 +29,10 @@ The [bounded offline evaluation seam](offline-evaluation.md) now exercises actua
 process-local runner code with scripted providers, locked lineage and global
 budgets. This is component evidence; real DSPy/provider, durable registry and
 serving acceptance remain blocked.
+
+## Engineering direction
+
+[Desired intent](desired-intent.md) connects this component to scoped access,
+managed sessions, explicit human exceptions and evaluated maintained workflows.
+It adds design and verification obligations without changing runtime schemas,
+existing acceptance results or operational permissions.

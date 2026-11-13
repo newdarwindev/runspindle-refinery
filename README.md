@@ -20,3 +20,15 @@ Selected historical code is preserved as [inert migration references](docs/refer
 New conceptual documentation is in [docs/design](docs/design/README.md). Its published PDFs are ReportLab adaptations; TeX compilation and runtime acceptance are not established.
 
 The [pinned shared fixture consumer](docs/SHARED_FIXTURES.md) tests refinery feedback/candidate observations without sibling checkouts; runtime protocol integration remains provisional.
+
+## Desired technical direction
+
+Measured workflow improvement: this component contributes to turning authorized one-off work into
+repeatable, maintained cross-application workflows. Scoped access, managed
+sessions, explicit human exceptions and evaluated DSPy candidates are intended
+to compose into that capability; no automatic improvement or live integration
+is implied.
+
+Read [the component-specific technical intent](specs/desired-intent.md) for its
+interfaces, privacy boundaries, failure cases and acceptance obligations. Current
+implementation and evidence limits above remain unchanged.

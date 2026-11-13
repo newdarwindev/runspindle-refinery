@@ -13,3 +13,7 @@ This repository is one boundary of [Runspindle](https://github.com/newdarwindev/
 - No credentials, real sessions, messages, datasets, browser profiles or live host inventory belong here.
 
 No old repository is retired by this scaffold. Migration and archival are separate verified gates.
+
+Selected historical code is preserved as [inert migration references](docs/reference/README.md). It is not installed or executed.
+
+New conceptual documentation is in [docs/design](docs/design/README.md). Its published PDFs are ReportLab adaptations; TeX compilation and runtime acceptance are not established.

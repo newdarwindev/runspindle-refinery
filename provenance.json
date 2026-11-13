@@ -5,22 +5,41 @@
   "schema_version": 1,
   "sources": [
     {
+      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
       "destination": "specs/experiments.md",
-      "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
-      "modifications": "Adapted requirements and documented prototype gaps; no executable source port or original Git history imported.",
+      "license_review": "Existing source text and notices retained without a new license; third-party dependency code is not copied.",
+      "migration_status": "partial",
+      "modifications": "Adapted specification plus inert historical source text. No executable port, production activation or dependency-bundle import.",
+      "preserved_references": [
+        {
+          "classification": "historical-inert-reference",
+          "implementation": "not_activated",
+          "path": "docs/reference/experiment-helper.py.txt",
+          "sha256": "b408f36ad1e54add07e2f16dc659f729a7feea950fd9edcb9b64e45f654e555f",
+          "source_id": "SRC-012"
+        }
+      ],
+      "published_adaptations": [
+        "docs/design"
+      ],
       "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
       "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
       "source_id": "SRC-012",
       "status": "adapted_spec"
     },
     {
-      "destination": "docs/design",
+      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
+      "destination": "docs/design/workflow-refinery.pdf",
       "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
-      "modifications": "Not imported; full dependencies, content and rights review remains.",
+      "migration_status": "partial",
+      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
+      "published_adaptations": [
+        "docs/design"
+      ],
       "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
       "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
       "source_id": "SRC-013",
-      "status": "pending_review"
+      "status": "adapted_document"
     },
     {
       "destination": "specs/experiments.md",
@@ -30,6 +49,57 @@
       "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
       "source_id": "SRC-001",
       "status": "adapted_spec"
+    },
+    {
+      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
+      "destination": "docs/design/workflow-refinery.pdf",
+      "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
+      "migration_status": "partial",
+      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
+      "published_adaptations": [
+        "docs/design"
+      ],
+      "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
+      "source_description": "Selected legacy design source; exact source mapping retained privately.",
+      "source_id": "SRC-002",
+      "status": "adapted_document"
+    },
+    {
+      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
+      "destination": "docs/design/workflow-refinery.pdf",
+      "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
+      "migration_status": "partial",
+      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
+      "published_adaptations": [
+        "docs/design"
+      ],
+      "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
+      "source_description": "Selected legacy design source; exact source mapping retained privately.",
+      "source_id": "SRC-005",
+      "status": "adapted_document"
+    },
+    {
+      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
+      "destination": "docs/design/workflow-refinery.pdf",
+      "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
+      "migration_status": "partial",
+      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
+      "published_adaptations": [
+        "docs/design"
+      ],
+      "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
+      "source_description": "Selected legacy design source; exact source mapping retained privately.",
+      "source_id": "SRC-010",
+      "status": "adapted_document"
+    },
+    {
+      "destination": "docs/design/THIRD_PARTY_NOTICES.md",
+      "license_review": "No project license invented; no executable import.",
+      "modifications": "Source-rights status referenced in shared notices only. No browser-documentation implementation copied into this component.",
+      "rights_basis": "Owner-selected review; original rights retained.",
+      "source_description": "Selected legacy browser-documentation source; original mapping retained privately.",
+      "source_id": "SRC-009",
+      "status": "reference_only"
     }
   ]
 }

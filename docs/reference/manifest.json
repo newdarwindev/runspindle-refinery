@@ -1,0 +1,9 @@
+[
+  {
+    "source_id": "SRC-012",
+    "path": "docs/reference/experiment-helper.py.txt",
+    "sha256": "b408f36ad1e54add07e2f16dc659f729a7feea950fd9edcb9b64e45f654e555f",
+    "classification": "historical-inert-reference",
+    "implementation": "not_activated"
+  }
+]

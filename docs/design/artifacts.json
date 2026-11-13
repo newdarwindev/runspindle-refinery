@@ -1,0 +1,72 @@
+{
+  "artifacts": [
+    {
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_mit_notice",
+      "path": "docs/design/LICENSE-SRC-013.txt",
+      "sha256": "fcf64df3e04554728cc4f082f244fa3dc672c2c6368f22360e6491a113204895",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "source_relationship": "byte-preserved source license notice"
+    },
+    {
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "path": "docs/design/README.md",
+      "sha256": "a3ac595c1622b56f2d8d417bb4e22bb37a2654498373487426315e3b3975be10",
+      "source_ids": [],
+      "source_relationship": "new authoring/build metadata"
+    },
+    {
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "path": "docs/design/THIRD_PARTY_NOTICES.md",
+      "sha256": "43548c3d62b980a5e0d03105821e8a49836bb856b0410b09c003dab8afc4987c",
+      "source_ids": [
+        "SRC-002",
+        "SRC-009",
+        "SRC-013"
+      ],
+      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
+    },
+    {
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_reportlab_pdf",
+      "path": "docs/design/workflow-refinery.pdf",
+      "sha256": "e4b6a932a747f86fcdd5fd8a03e3cfd49f04369d7db709d97b6e6353f04f1540",
+      "source_ids": [
+        "SRC-002",
+        "SRC-005",
+        "SRC-010",
+        "SRC-013"
+      ],
+      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
+    },
+    {
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "uncompiled_editable_tex",
+      "path": "docs/design/workflow-refinery.tex",
+      "sha256": "3418001b2f2bfac2c46bd4d135301f8c0ee9e6d52cdc165891a68a699a2fd229",
+      "source_ids": [
+        "SRC-002",
+        "SRC-005",
+        "SRC-010",
+        "SRC-013"
+      ],
+      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
+    }
+  ],
+  "migration_status": "partial",
+  "schema_version": 1,
+  "verification": {
+    "html": "browser_visual_qa_pending",
+    "pdf": "ReportLab output; pages rendered and visually reviewed",
+    "tex": "compile_blocked_missing_formats_and_ini"
+  }
+}

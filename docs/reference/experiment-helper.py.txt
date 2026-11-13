@@ -1,0 +1,97 @@
+# Historical reference SRC-012. Preserved for migration review, not an installed module.
+# This file is intentionally inert text; prototype limitations are documented in README.md.
+# No original license or copyright notice has been removed or reassigned.
+
+"""Bounded DSPy experiment and promotion gates."""
+import hashlib
+import math
+import re
+import json
+from pathlib import Path
+import time
+
+
+def summarize_module():
+    import dspy
+    class Summarize(dspy.Signature):
+        """Summarize the visible thread faithfully in at most two sentences."""
+        thread: str = dspy.InputField()
+        summary: str = dspy.OutputField()
+    class Program(dspy.Module):
+        def __init__(self):
+            super().__init__()
+            self.predict = dspy.Predict(Summarize)
+        def forward(self, thread):
+            return self.predict(thread=thread)
+    return Program()
+
+
+def evaluate(program, cases, successful=None):
+    successful = successful or (lambda expected, actual: expected.strip() == actual.strip())
+    rows = []
+    for c in cases:
+        if not c.get('replayable'):
+            continue
+        start = time.monotonic()
+        try:
+            actual = program(thread='\n'.join(c['observed_input'])).summary
+            ok = bool(successful(c['observed_output'], actual))
+            rows.append({'id': c['id'], 'success': ok, 'latency_s': time.monotonic()-start, 'cost_usd': None, 'safety': 'unknown'})
+        except Exception:
+            rows.append({'id': c['id'], 'success': False, 'latency_s': time.monotonic()-start, 'cost_usd': None, 'safety': 'unknown'})
+    count = len(rows)
+    successes = sum(r['success'] for r in rows)
+    return {'attempted': count, 'successful': successes, 'quality_success_rate': successes/count if count else None, 'cost_per_attempt_usd': None, 'cost_per_success_usd': None, 'safety': 'unknown', 'latency_mean_s': sum(r['latency_s'] for r in rows)/count if count else None, 'cases': rows}
+
+
+def optimize(name, program, train, validation, metric, max_trials, max_calls, approved):
+    if not approved:
+        raise ValueError('provider/data transmission approval required')
+    if name not in ('mipro', 'gepa') or not 1 <= max_trials <= 20 or not 1 <= max_calls <= 200:
+        raise ValueError('invalid optimizer budget')
+    import dspy
+    examples = [dspy.Example(thread='\n'.join(t['observed_input']), summary=t['observed_output']).with_inputs('thread') for t in train if t['replayable']][:max_calls]
+    val = [dspy.Example(thread='\n'.join(t['observed_input']), summary=t['observed_output']).with_inputs('thread') for t in validation if t['replayable']][:max_calls]
+    if not examples or not val:
+        raise ValueError('replayable train and validation examples required')
+    if name == 'mipro':
+        optimizer = dspy.MIPROv2(metric=metric, num_candidates=min(4, max_trials), auto=None)
+        return optimizer.compile(program, trainset=examples, valset=val, num_trials=max_trials, max_bootstrapped_demos=2, max_labeled_demos=2, minibatch=False, program_aware_proposer=False, data_aware_proposer=False, tip_aware_proposer=False, fewshot_aware_proposer=False)
+    def feedback_metric(gold, pred, trace=None, pred_name=None, pred_trace=None):
+        value = metric(gold, pred, trace, pred_name, pred_trace)
+        return value if pred_name is not None else getattr(value, 'score', value)
+    optimizer = dspy.GEPA(metric=feedback_metric, max_metric_calls=max_calls, reflection_lm=dspy.settings.lm)
+    return optimizer.compile(program, trainset=examples, valset=val)
+
+
+def promote(registry, candidate, approval, thresholds):
+    p = Path(registry)
+    data = json.loads(p.read_text()) if p.exists() else {'schema': 1, 'active': None, 'history': []}
+    if not approval.get('human') or not approval.get('actor') or not approval.get('at'):
+        raise ValueError('human promotion approval required')
+    sha = candidate.get('artifact_sha256')
+    if not isinstance(sha, str) or not re.fullmatch(r'[0-9a-f]{64}', sha) or candidate.get('locked_test') is None:
+        raise ValueError('pinned candidate and locked test required')
+    metrics = candidate['locked_test']
+    quality = metrics.get('quality_success_rate')
+    attempted = metrics.get('attempted')
+    minimum = thresholds.get('min_attempts', 1)
+    if type(attempted) is not int or attempted < 1 or type(minimum) is not int or minimum < 1:
+        raise ValueError('invalid evaluation sample count')
+    if approval.get('candidate_sha256') != sha or not isinstance(quality, (int,float)) or not math.isfinite(quality) or not 0 <= quality <= 1 or attempted < minimum or quality < thresholds.get('min_quality', 1.0) or metrics.get('safety') != 'pass':
+        raise ValueError('promotion gates failed')
+    data['history'].append({'previous': data['active'], 'candidate': candidate, 'approval': approval})
+    data['active'] = candidate['artifact_sha256']
+    p.write_text(json.dumps(data, sort_keys=True, indent=2))
+    return data
+
+
+def rollback(registry, approval):
+    p = Path(registry); data = json.loads(p.read_text())
+    if not approval.get('human') or not approval.get('actor') or not approval.get('at') or not data['history']:
+        raise ValueError('approval and prior version required')
+    prior = data['history'][-1]['previous']
+    data['history'].append({'previous': data['active'], 'candidate': {'artifact_sha256': prior}, 'approval': approval, 'rollback': True})
+    data['active'] = prior
+    p.write_text(json.dumps(data, sort_keys=True, indent=2))
+    return data

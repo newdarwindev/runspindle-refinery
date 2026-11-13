@@ -1,0 +1,25 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.95in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype,hyperref,enumitem}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=blue}
+\setlength{\parindent}{0pt}\setlength{\parskip}{0.65em}
+\title{Runspindle Refinery: A Human-Guided Evaluation Loop}\author{Runspindle}\date{Design scaffold | November 2026}
+\begin{document}\maketitle
+\textbf{Status: planned architecture. No live implementation, deployment, benchmark, or savings claim.}
+\section{A bounded system for authorized work}
+Runspindle is a proposed distribution of cooperating components for agent-assisted work. Its aim is to make task boundaries, human control, evidence, and recovery explicit. The current deliverable is a scaffold and design specification. It is not an operating service, a production deployment, or a measured improvement over a native agent product.
+A task begins with a defined outcome, accountable owner, permitted sources and actions, and stop conditions. An agent's ability to perform an action is not authority to perform it. Scope changes and consequential actions require the applicable approval. Product policy and legal constraints remain in force; the architecture is not a mechanism for bypassing them.
+\section{Refinement without default collection}
+The proposed refinery begins only with an explicitly selected workflow and authorized examples. Review and redaction precede dataset entry. Dataset versions should retain source permission, adjudication, group identifiers, and stable train, validation, and held-out splits. Related examples must remain in the same split to reduce leakage. Proposed feedback records would bind attributable reactions or replies to the exact output and its version. Task-specific automatic gold rules may admit examples only under explicit criteria; conflicting signals must be quarantined for adjudication. Gold eligibility is separate from candidate release approval.
+Python DSPy candidates would be compared with a baseline under a fixed task definition and evaluation budget. Quality, safety failures, latency, human repair, and total cost belong in the comparison. Experiments cannot promote themselves. A versioned release needs threshold evidence, human authorization, and a rollback reference. No live collection, provider invocation, training, promotion, or saving is claimed.
+\section{Economics of accepted work}
+Cost per accepted authorized task is total model, tool, human, verification, maintenance, and recovery cost divided by the number of verified authorized completions. Include failed attempts and cleanup in the numerator. If there are no accepted completions, report the cost and zero completions rather than a misleading unit price.
+A specialist system also has fixed integration and evaluation costs. Low-volume workflows may remain cheaper with manual assistance. Break-even depends on measured workload mix, acceptance rate, maintenance cadence, and labor assumptions. Saved minutes do not automatically become cash savings. Provider improvements may remove the advantage of a custom harness, so repeat comparisons after material model or platform changes. Runspindle has no measured savings, prices, break-even point, or market-size estimate.
+\section{Evaluation and release gates}
+Development validation should test contracts and synthetic fixtures first: lease fencing, isolation, duplicate requests, restart recovery, permission changes, cancellation, stream revocation, and unknown external outcomes. Integration tests then need pinned component versions and permissioned environments. No source repository's historical test result transfers automatically to the new system.
+Production readiness requires independently evidenced secrets management, authenticated routing, monitoring, rollback, dependency review, and operator acceptance. Packaging a manifest is not deployment; a passing stub test is not proof of a live system. Development and production deployment remain planned. The distribution must fail closed when prerequisites or authorization are missing.
+\section{Claims, sources, and open questions}
+This migration adapts selected concepts under opaque source identifiers SRC-002, SRC-013, and SRC-009. These are partial migrations and newly written adaptations, not faithful re-renders. Historical PDFs are preserved separately and are not Runspindle builds. Detailed source provenance and review records are kept outside the public candidate. Source selection does not establish a new project license or third-party endorsement.
+The next useful evidence is a reproducible, permissioned end-to-end task that traverses the component boundaries and demonstrates recovery from an uncertain result. Until then, the materials describe a research and engineering plan. Open questions include native session integration, browser lifecycle compatibility, least-privilege secret delivery, evaluation validity, release reproducibility, and operational cost.
+\end{document}

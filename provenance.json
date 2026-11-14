@@ -136,5 +136,9 @@
     "source_pin": "dependencies/tether-feedback.json",
     "live_collection": "not_run",
     "specification": "specs/retained-feedback-collection.md"
+  },
+  "storage_schema_admission": {
+    "implementation": "Original stdlib schema metadata comparison and synthetic SQLite corruption/rollback tests. Existing schema statements/codec/dependency pins unchanged.",
+    "scope": "Partial issues #1/#15; no hostile-storage, migration, live collection or deployment qualification."
   }
 }

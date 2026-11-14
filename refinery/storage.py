@@ -7,7 +7,7 @@ The codec is explicit, deterministic JSON: never pickle or executable payloads.
 from __future__ import annotations
 
 import base64
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import fields, is_dataclass
 import json
 from pathlib import Path
@@ -128,8 +128,20 @@ class LineageStorage(Protocol):
     def lineage(self, snapshot_sha256): ...
 
 
+STATEMENTS = (
+    "CREATE TABLE objects(kind TEXT, identity TEXT, digest TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(kind,identity))",
+    "CREATE TABLE families(identity TEXT PRIMARY KEY, family TEXT NOT NULL)",
+    "CREATE TABLE budgets(identity TEXT PRIMARY KEY, payload BLOB NOT NULL)",
+    "CREATE TABLE experiments(identity TEXT PRIMARY KEY, binding BLOB NOT NULL, state TEXT NOT NULL, report TEXT)",
+    "CREATE TABLE attempts(experiment TEXT, ticket INTEGER, request BLOB NOT NULL, outcome TEXT NOT NULL, receipt BLOB, PRIMARY KEY(experiment,ticket))",
+    "CREATE TABLE environments(identity TEXT PRIMARY KEY, generation INTEGER NOT NULL, active TEXT, pending TEXT)",
+    "CREATE TABLE activations(identity TEXT PRIMARY KEY, environment TEXT NOT NULL, generation INTEGER NOT NULL, candidate TEXT NOT NULL, predecessor TEXT, state TEXT NOT NULL, approval TEXT NOT NULL, UNIQUE(environment,generation))",
+)
+
+
 class Store:
     def __init__(self, path):
+        self._admitted = False
         self.path = Path(path)
         self.db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
         try:
@@ -146,16 +158,7 @@ class Store:
                         "SELECT count(*) FROM sqlite_master WHERE type='table'"
                     ).fetchone()[0]:
                         raise ValueError("unversioned nonempty store")
-                    statements = [
-                        "CREATE TABLE objects(kind TEXT, identity TEXT, digest TEXT NOT NULL, payload BLOB NOT NULL, PRIMARY KEY(kind,identity))",
-                        "CREATE TABLE families(identity TEXT PRIMARY KEY, family TEXT NOT NULL)",
-                        "CREATE TABLE budgets(identity TEXT PRIMARY KEY, payload BLOB NOT NULL)",
-                        "CREATE TABLE experiments(identity TEXT PRIMARY KEY, binding BLOB NOT NULL, state TEXT NOT NULL, report TEXT)",
-                        "CREATE TABLE attempts(experiment TEXT, ticket INTEGER, request BLOB NOT NULL, outcome TEXT NOT NULL, receipt BLOB, PRIMARY KEY(experiment,ticket))",
-                        "CREATE TABLE environments(identity TEXT PRIMARY KEY, generation INTEGER NOT NULL, active TEXT, pending TEXT)",
-                        "CREATE TABLE activations(identity TEXT PRIMARY KEY, environment TEXT NOT NULL, generation INTEGER NOT NULL, candidate TEXT NOT NULL, predecessor TEXT, state TEXT NOT NULL, approval TEXT NOT NULL, UNIQUE(environment,generation))",
-                    ]
-                    for statement in statements:
+                    for statement in STATEMENTS:
                         tx.execute(statement)
                     for table in ("objects", "families"):
                         for action in ("UPDATE", "DELETE"):
@@ -163,9 +166,17 @@ class Store:
                                 f"CREATE TRIGGER {table}_{action} BEFORE {action} ON {table} BEGIN SELECT RAISE(ABORT,'immutable retained record'); END"
                             )
                     tx.execute("PRAGMA user_version=1")
+                self._validate(tx)
+            self._admitted = True
         except BaseException:
             self.db.close()
             raise
+
+    @staticmethod
+    def _validate(tx: sqlite3.Connection) -> None:
+        from .schema import validate
+
+        validate(tx, STATEMENTS, unpack)
 
     def close(self):
         self.db.close()
@@ -180,7 +191,11 @@ class Store:
     def transaction(self):
         self.db.execute("BEGIN IMMEDIATE")
         try:
+            if self._admitted:
+                self._validate(self.db)
             yield self.db
+            if self._admitted:
+                self._validate(self.db)
             self.db.commit()
         except BaseException:
             self.db.rollback()
@@ -235,13 +250,15 @@ class Store:
         return sha
 
     def get(self, kind, identity):
-        row = self.db.execute(
-            "SELECT digest,payload FROM objects WHERE kind=? AND identity=?",
-            (kind, identity),
-        ).fetchone()
-        if not row or lin.digest(row[1]) != row[0]:
-            raise ValueError("unavailable or corrupt immutable record")
-        return unpack(row[1])
+        with nullcontext() if self.db.in_transaction else self.transaction():
+            self._validate(self.db)
+            row = self.db.execute(
+                "SELECT digest,payload FROM objects WHERE kind=? AND identity=?",
+                (kind, identity),
+            ).fetchone()
+            if not row or lin.digest(row[1]) != row[0]:
+                raise ValueError("unavailable or corrupt immutable record")
+            return unpack(row[1])
 
     def commit_lineage(
         self,

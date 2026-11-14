@@ -9,13 +9,13 @@
   "remaining": [
     "actual DSPy optimizer",
     "trusted feedback ingestion",
-    "durable selection or one-time evaluation policy",
+    "global one-time evaluation policy",
     "provider-backed metrics",
     "production serving"
   ],
   "source_files": {
-    "refinery/optimization.py": "c979ccb0d687cc02031316f7daaa9313ba74e95a1b51f4f428724db71733c634",
-    "specs/scripted-training-selection.md": "1438258d10385871cb5cae7b6ba15421d65e57a0eb4e5721ba8eed0ebb31bbd5",
+    "refinery/optimization.py": "44b8ae6a104fbe841eb57d4e386bf4c0459eb5b9d39d32dd91dfbfb20fb30342",
+    "specs/scripted-training-selection.md": "e617b813517434e2bf778111521aee0b72f01604cf1fbbd6908c63914b23ec6d",
     "tests/test_optimization.py": "aba0c82104f91ee770deca3bcabdcb6c5704249d9704d5ac8e7982df99aa16ce"
   },
   "verification": {

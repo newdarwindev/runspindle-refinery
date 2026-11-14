@@ -50,3 +50,7 @@ Run `python3 -m unittest discover -s tests -p test_optimization.py -v` and repea
 with `python3 -O`. All content, costs and latency in these tests are synthetic.
 Network calls are forbidden by an independent socket spy. The existing fixture
 metric is exact-string matching, not a benchmark of real model quality.
+
+Optional persistence is now provided by [the durable wrapper](durable-training-selection.md).
+The base `optimize` function above remains process-local; wrapper guarantees must
+not be attributed to direct callers.

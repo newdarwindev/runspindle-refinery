@@ -75,6 +75,28 @@
     {
       "id": "distributable-build",
       "not_applicable": "No distributable build command exists in this repository validation contract; this does not claim release acceptance."
+    },
+    {
+      "id": "evaluation-mutations",
+      "command": [
+        "python3",
+        "tools/check_evaluation_mutations.py"
+      ],
+      "required_files": [
+        "tools/check_evaluation_mutations.py"
+      ],
+      "timeout_seconds": 600
+    },
+    {
+      "id": "durable-mutations",
+      "command": [
+        "python3",
+        "tools/check_durable_mutations.py"
+      ],
+      "required_files": [
+        "tools/check_durable_mutations.py"
+      ],
+      "timeout_seconds": 600
     }
   ],
   "lockfiles": [

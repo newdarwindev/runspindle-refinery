@@ -23,5 +23,7 @@
   "selected_source_migration": "partial",
   "shared_contracts": "provisional_not_integrated",
   "stage": "durable_offline_candidate",
-  "trusted_feedback_adapter": "not_implemented"
+  "trusted_feedback_adapter": "not_implemented",
+  "feedback_collection_evidence": "docs/feedback-collection-evidence.json",
+  "retained_feedback_collection": "pinned_component_bridge_synthetic_authorities_only"
 }

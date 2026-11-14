@@ -1,0 +1,36 @@
+{
+  "evidence_class": "real_pinned_components_sqlite_synthetic_authority",
+  "base_revision": "4224252bc90c77b373cc05c2e03c7fa02436d77c",
+  "source_sha256": {
+    "refinery/tether_dependency.py": "71d52e2c83287f4987b766cd4003c7e7a26b8aac3f620f312fc420126e2ef8ed",
+    "refinery/feedback_collection.py": "5888cf0c11f2e5bb8c6e254d21905c11ef7389f550994528f1e1cdb028e0621c",
+    "tests/test_feedback_collection.py": "9f18640eea57f6e9d4c36fb2abf5715bea6035f3541c11e67b0d45fe2135607e",
+    "dependencies/tether-feedback.json": "cb90ca57904d85dd8e0594736f459040f853e6f0f11d702372138019bca89e75",
+    "specs/retained-feedback-collection.md": "ede9fe29ee09a547e37e1e80f16dc8abc3a7aab5af66e147c6d361c7d11e98d5",
+    ".github/workflows/validation.yml": "578a42180cd56f9131bb0afe71cee44d2183343e3fddf8bcc07dc376fec36dcb"
+  },
+  "toolchain": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "verification": {
+    "normal_tests": 95,
+    "optimized_tests": 95,
+    "new_tests": 10,
+    "aggregate": "passed",
+    "static": "strict_mypy_and_ruff_pass",
+    "mutation": "removed_commit_guard_causes_observed_unauthorized_persistence",
+    "provider_request_delta": 0,
+    "network": "socket_tripwire",
+    "independent_review": "pending",
+    "runner": "not_run",
+    "final_callback_changes": "all_three_callbacks_edit_delete_conflict_rollback"
+  },
+  "limitations": [
+    "production transport/Core material verification absent",
+    "cross-store reads are not distributed atomicity",
+    "historical snapshots require future-use revalidation",
+    "no live collection or training execution",
+    "issue15 remains open pending full acceptance"
+  ]
+}

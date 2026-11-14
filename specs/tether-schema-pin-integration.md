@@ -1,0 +1,11 @@
+# Pinned Tether schema-admission integration
+
+This integration depends on Refinery structural-store PR #22 and Tether schema-admission PR #18. Its parent includes merged Refinery main `8e7965bdcbed27c83b2ac72df849c0e10938c1ff`. It retains the reviewed Tether source commit `670989839a0fccbcf2014d01609778ae6e4df424`, now reachable from merged Tether main `22546d6b414cb298a6ec60433505ef6cf7ca9883`, rather than replacing the tested pin with a merge identity.
+
+The verified snapshot loader now loads `tether.schema` after sanitization and before admission, journal and feedback. The eight-module inventory and each source SHA-256 must match before any package module executes. The package import path remains empty: there is no installed-package, bytecode or network fallback. CI checks out the same exact revision with persisted credentials disabled. Local validation requires `RUNSPINDLE_TETHER_SOURCE` pointing to the prepared pinned checkout.
+
+Real SQLite tests exercise all three imported Tether store families with missing schema objects. Reopening denies rather than repairing, does not dispatch additional synthetic provider requests and creates no Refinery lineage objects. A fresh optimized Python process verifies all three constructors share the verified schema implementation; changed schema hashes or missing inventory entries deny before package import. Existing collection tests continue exercising selection, independent collection/training consent, restart, revocation and final callback mutation rollback.
+
+This changes dependency admission, not consent or authority. Provider/Core verification remains an explicit trusted adapter seam. Retained transport evidence does not imply current remote existence or Core acceptance. No live data, network calls, providers, training, migrations or service changes are performed. Synthetic test files being unchanged on rejected reopen is a fixture observation, not a universal guarantee for hostile SQLite/WAL files or concurrent hostile storage. Existing stores modified after admission retain the dependency's documented limits; this integration adds no cross-store transaction claim.
+
+Earlier `docs/feedback-collection-evidence.json` and `docs/storage-schema-evidence.json` remain historical, with their original source hashes. Current integration evidence is in `docs/tether-schema-pin-evidence.json`.

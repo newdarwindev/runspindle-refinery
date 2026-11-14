@@ -1,0 +1,21 @@
+{
+  "evidence_class": "component_owned_sqlite",
+  "base_revision": "ee9ac72eb743b96be2938fc0f2ca6dff3baf2554",
+  "passed": [
+    "102 Python tests normally and optimized",
+    "7 real SQLite schema admission regressions",
+    "full implemented validation including maintained mutations",
+    "strict mypy on new schema module and tests"
+  ],
+  "not_claimed": [
+    "universal hostile-storage semantic verification",
+    "physical WAL byte preservation",
+    "production acceptance"
+  ],
+  "source_sha256": {
+    "refinery/storage.py": "677d9dd532ecb4dcfc3a8a3723d890c17bdd6f6e0832e272bb995bf90cdffeb4",
+    "refinery/schema.py": "e7f4dff84a79c9af4995f1f5dd0a54238baf618490d414e4cf0cfbddee23d138",
+    "tests/test_storage_schema.py": "385cffb5c5614482359460bda778c557d25c8885ed09f545a195f97505bf397b",
+    "specs/storage-schema-admission.md": "6f39d0b909b1c264bf7303ac1f852aff14f6c20b139b6500f9757d447c3cda1b"
+  }
+}

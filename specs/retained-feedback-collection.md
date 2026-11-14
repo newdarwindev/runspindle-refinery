@@ -4,7 +4,7 @@ Partial Refinery #15 implementation over actual Tether/Refinery SQLite component
 not live collection or a production authentication claim. Existing
 `Store.commit_lineage` remains the only dataset collector. No outbox, serializer,
 provider or optimizer is duplicated. Tether source is pinned to
-`17c4e8490eabe8876de8c4508ab6aa4d54af8c78` in
+`670989839a0fccbcf2014d01609778ae6e4df424` in
 `dependencies/tether-feedback.json` with hashes for every package module.
 
 ## Inputs, authority and mapping

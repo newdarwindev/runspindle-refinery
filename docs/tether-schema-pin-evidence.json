@@ -1,0 +1,36 @@
+{
+  "evidence_class": "real_pinned_components_synthetic_sqlite_integration",
+  "base_revision": "8e7965bdcbed27c83b2ac72df849c0e10938c1ff",
+  "tether_commit": "670989839a0fccbcf2014d01609778ae6e4df424",
+  "source_sha256": {
+    "refinery/tether_dependency.py": "dd13ddf7458466340eebaeafcc4395b2b7a9ac3e363f953639d8e58af2ba1921",
+    "dependencies/tether-feedback.json": "868d751dec371891a7fddac68b1dfc46d17b7e86086720d2673cd82901b2780e",
+    "tests/test_tether_schema_pin.py": "6e85af709148253a414c98400d7941871680fe1fc33e3695684430baf243e0da",
+    ".github/workflows/validation.yml": "11bf6757b9b5a3fad2dad70c9c8ba44d9e7de0cb3701772fea4f46729b9c6b77",
+    "specs/tether-schema-pin-integration.md": "bd43a88754fec9f646b15552b2343e17c4985a7b1419b403fbd7739c7983c70c",
+    "specs/retained-feedback-collection.md": "3af1b5253a9e2cc7f74d72ac8c8e90c4e31d30dbf5d0ace618c6705eb7946e3d",
+    "provenance.json": "bf8272d618878a61b3ef2cc9a5cd396eb80b8285055d3bcf026c926176ffa9e6"
+  },
+  "toolchain": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "verification": {
+    "normal_tests": 105,
+    "optimized_tests": 105,
+    "new_tests": 3,
+    "aggregate": "passed",
+    "static": "strict_mypy_and_ruff_pass_changed_python",
+    "independent_review": "pending",
+    "runner": "not_run",
+    "source_module_count": 8,
+    "provider_request_delta": 0
+  },
+  "limitations": [
+    "synthetic authorities and SQLite fixtures only",
+    "no live collection or training",
+    "no distributed atomicity or hostile-storage safety guarantee",
+    "existing historical evidence unchanged",
+    "issues1_and15_remain_open"
+  ]
+}

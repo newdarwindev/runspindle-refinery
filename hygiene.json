@@ -46,6 +46,23 @@
       "timeout_seconds": 300
     },
     {
+      "id": "check-paper",
+      "command": [
+        "python3",
+        "tools/check_paper.py"
+      ],
+      "required_files": [
+        "tools/check_paper.py",
+        "docs/design/artifacts.json",
+        "docs/design/build-evidence.json",
+        "docs/design/source-disposition.json",
+        "docs/design/toolchain-lock.json",
+        "docs/design/workflow-refinery.tex",
+        "docs/design/workflow-refinery.pdf"
+      ],
+      "timeout_seconds": 300
+    },
+    {
       "id": "check-references",
       "command": [
         "python3",

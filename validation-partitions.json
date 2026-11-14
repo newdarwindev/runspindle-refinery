@@ -18,6 +18,7 @@
     ],
     "component": [
       "check-artifacts",
+      "check-paper",
       "check-references",
       "python-tests",
       "distributable-build"

@@ -1,72 +1,202 @@
 {
+  "schema_version": 1,
+  "migration_status": "partial",
+  "source_scope_status": {
+    "SRC-013": "component_verified_composition_mirror_pending"
+  },
   "artifacts": [
     {
-      "historical_original": true,
-      "implementation_evidence": false,
-      "kind": "retained_mit_notice",
       "path": "docs/design/LICENSE-SRC-013.txt",
       "sha256": "fcf64df3e04554728cc4f082f244fa3dc672c2c6368f22360e6491a113204895",
       "source_ids": [
         "SRC-013"
       ],
-      "source_relationship": "byte-preserved source license notice"
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_mit_notice",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
     },
     {
-      "historical_original": false,
-      "implementation_evidence": false,
-      "kind": "new_support_document",
       "path": "docs/design/README.md",
-      "sha256": "e326595022ee75293b45a76490a952d521661c9490b86a7a10ed83b88335042b",
-      "source_ids": [],
-      "source_relationship": "new authoring/build metadata"
-    },
-    {
+      "sha256": "c53b6bcedc87f1335e3f8ca4e7ea1b824b5f68a99614abb9f5f8cf885eec4f80",
+      "source_ids": [
+        "SRC-013"
+      ],
       "historical_original": false,
       "implementation_evidence": false,
       "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
       "path": "docs/design/THIRD_PARTY_NOTICES.md",
-      "sha256": "43548c3d62b980a5e0d03105821e8a49836bb856b0410b09c003dab8afc4987c",
+      "sha256": "f37a72d29b7054b180f65f5b1c99e13c3128ac2237d2cc15e725804910efeed3",
       "source_ids": [
-        "SRC-002",
-        "SRC-009",
         "SRC-013"
       ],
-      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
-    },
-    {
       "historical_original": false,
       "implementation_evidence": false,
-      "kind": "new_reportlab_pdf",
+      "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
+      "path": "docs/design/build-evidence.json",
+      "sha256": "6155bf4ffe8652163e4927ea2623cfea141666edb96811fddaf524badd740960",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
+      "path": "docs/design/build-paper.py",
+      "sha256": "55aff60ec397e5e7be76f24b6cec60a8c3dc7966c4a32359004f0aaf7ebe7aff",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
+      "path": "docs/design/figures/01-identity.pdf",
+      "sha256": "1e2a2783b9aa72e6c8b7061dce2c7bc34d437d27c31902d560880770f3b85245",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/02-lifecycle.pdf",
+      "sha256": "aacfb658176506f7ccba445d6445ca13df85d71afcee155ea5a98bb4ee9a7e75",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/03-approval.pdf",
+      "sha256": "b8b6b7721e0933a08604c611da96bf5b3e6d57053c7bf88ecefcc5fac5b91704",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/04-golden-data.pdf",
+      "sha256": "1697092f98162f7959cc001d722285ff250d9121dd7789cf35e5f90f1f3c4f07",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/05-control-planes.pdf",
+      "sha256": "489ae57fb48e81a27021ff2011fe9ecb4681965a4dd0bf12a0c79260983616d4",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/06-constellation.pdf",
+      "sha256": "4f171412f6e0aa17507a2797aaf9f1e0b4ddb0e1240804901966bdd66440716a",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/07-provenance.pdf",
+      "sha256": "908563c718c4db8623c55db0b42a8f83f09f8815d956295d0eb683e93fd317ab",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/figures/08-observation.pdf",
+      "sha256": "e3d956582e24f75146ec897111676730a5d35856966035ac89bca9974dd2fac3",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": true,
+      "implementation_evidence": false,
+      "kind": "retained_cleared_historical_figure",
+      "source_relationship": "cleared selected historical asset, not newly measured evidence"
+    },
+    {
+      "path": "docs/design/source-disposition.json",
+      "sha256": "bf013b827882cd6f04cd9b69a6cf2b4446fbae6765947aea9ea8d7453e14bcec",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
+      "path": "docs/design/toolchain-lock.json",
+      "sha256": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
       "path": "docs/design/workflow-refinery.pdf",
-      "sha256": "e4b6a932a747f86fcdd5fd8a03e3cfd49f04369d7db709d97b6e6353f04f1540",
+      "sha256": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
       "source_ids": [
-        "SRC-002",
-        "SRC-005",
-        "SRC-010",
         "SRC-013"
       ],
-      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
-    },
-    {
       "historical_original": false,
       "implementation_evidence": false,
-      "kind": "uncompiled_editable_tex",
+      "kind": "compiled_adapted_pdf",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
       "path": "docs/design/workflow-refinery.tex",
-      "sha256": "3418001b2f2bfac2c46bd4d135301f8c0ee9e6d52cdc165891a68a699a2fd229",
+      "sha256": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
       "source_ids": [
-        "SRC-002",
-        "SRC-005",
-        "SRC-010",
         "SRC-013"
       ],
-      "source_relationship": "conceptual adaptation of the listed source material; not a faithful re-render"
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "compiled_editable_tex",
+      "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
     }
   ],
-  "migration_status": "partial",
-  "schema_version": 1,
   "verification": {
-    "html": "browser_visual_qa_pending",
-    "pdf": "ReportLab output; pages rendered and visually reviewed",
-    "tex": "compile_blocked_missing_formats_and_ini"
+    "tex": "compiled_with_pinned_existing_toolchain",
+    "pdf": "eight_pages_rendered_and_visually_reviewed",
+    "figures": "eight_individually_reviewed_cleared_historical_assets",
+    "runtime": "not_run"
   }
 }

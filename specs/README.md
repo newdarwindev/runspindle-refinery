@@ -37,3 +37,5 @@ The [durable offline mapping](durable-offline.md) adds bounded SQLite lineage, e
 managed sessions, explicit human exceptions and evaluated maintained workflows.
 It adds design and verification obligations without changing runtime schemas,
 existing acceptance results or operational permissions.
+
+- [Scripted training-only selection](scripted-training-selection.md): bounded offline candidate search using the existing shared budget; no DSPy/live quality or serving claim.

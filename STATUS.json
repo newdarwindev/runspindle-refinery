@@ -11,6 +11,11 @@
   "lineage_tests": "passed",
   "live_acceptance": "not_run",
   "offline_evaluation": "locally_tested_sqlite_scripted_and_pinned_DSPy",
+  "offline_finish": {
+    "evidence": "docs/offline-finish-tests.json",
+    "independent_review": "user_waived_no_review_performed",
+    "reconciliation": "current_main_Strix_CI_included"
+  },
   "production_deployment": "not_run",
   "provider_adapter": "not_implemented",
   "runner_capacity": "unverified",

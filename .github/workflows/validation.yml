@@ -17,5 +17,14 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Checkout pinned Tether feedback source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: newdarwindev/runspindle-tether
+          ref: 17c4e8490eabe8876de8c4508ab6aa4d54af8c78
+          path: .feedback-deps/tether
+          persist-credentials: false
       - name: Run implemented validation
+        env:
+          RUNSPINDLE_TETHER_SOURCE: ${{ github.workspace }}/.feedback-deps/tether
         run: python3 tools/validate.py

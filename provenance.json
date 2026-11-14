@@ -127,5 +127,14 @@
     "source_commit": "e8cd5779968fede213443db13a591c992cd0e183",
     "source_path": "fixtures/v1",
     "source_repository": "newdarwindev/runspindle"
+  },
+  "feedback_collection_source": {
+    "classification": "original_adapter_reusing_existing_component_apis",
+    "legacy_source_import": "none",
+    "tether_repository": "newdarwindev/runspindle-tether",
+    "tether_revision": "17c4e8490eabe8876de8c4508ab6aa4d54af8c78",
+    "source_pin": "dependencies/tether-feedback.json",
+    "live_collection": "not_run",
+    "specification": "specs/retained-feedback-collection.md"
   }
 }

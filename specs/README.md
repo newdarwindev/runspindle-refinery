@@ -42,3 +42,6 @@ existing acceptance results or operational permissions.
 
 - [Durable scripted training selection](durable-training-selection.md): bounded
   SQLite claims, cumulative reservations and exact committed-result recovery.
+
+- [Explicit retained-feedback collection](retained-feedback-collection.md): pinned
+  Tether evidence selection into existing lineage with independent consent checks.

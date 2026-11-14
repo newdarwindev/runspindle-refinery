@@ -1,0 +1,13 @@
+{
+  "repository": "newdarwindev/runspindle-tether",
+  "commit": "17c4e8490eabe8876de8c4508ab6aa4d54af8c78",
+  "files": {
+    "tether/__init__.py": "8c7f563517f58350d1bd45b95b8ea03f5cadbdd98df399c9f9b17b176075d11e",
+    "tether/admission.py": "aad92a4a05abfba0b2b79a278fddd03010ccbbdc1d2a407675ca7572f99e1413",
+    "tether/feedback.py": "562830e29d3258d59e7c672b9dc42769af6465c137c624de4e4740c9498f7237",
+    "tether/journal.py": "6603e7ef2c6a7eb4517a4a1996aa8d95420b0950aac7f8d1dbbe8d482aa5926a",
+    "tether/native_testing.py": "499613371e979d82f4c927ce0f41ec970a66c85c177d72a2e2b6775a9df70d04",
+    "tether/sanitization.py": "2e1735d59b01b844eb508abe8fedb0ed1fc6870e5465edd2bd4eb68f0dea10ed",
+    "tether/testing.py": "2b84de229c6aff62ec48b52c6decb8dd369e20bade2b0b3d16003ed14ff046c9"
+  }
+}

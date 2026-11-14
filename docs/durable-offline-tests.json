@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "evidence_class": "component_and_separate_isolated_dependency_compatibility",
+  "composition_contract": "445cc8c",
+  "component_base": "355ad581e79f4cfce37e3d82192adb55da9b7669",
+  "timestamp": "2026-11-13T22:55:27.247799+00:00",
+  "unit_tests": 70,
+  "unit_command": "python3.13 -m unittest discover -s tests -q",
+  "mutations": {
+    "evidence_class": "component_mutation_detection",
+    "results": [
+      {
+        "mutation": "feedback_rebinding",
+        "detected": true
+      },
+      {
+        "mutation": "budget_reset",
+        "detected": true
+      },
+      {
+        "mutation": "approval_bypass",
+        "detected": true
+      },
+      {
+        "mutation": "serving_attribution",
+        "detected": true
+      }
+    ]
+  },
+  "dspy": {
+    "calls": 4,
+    "candidate_sha256": "297b1e96a05ac723cb2d195b675842bfeab7223f3d608811d05da6c98754b04e",
+    "dependencies_sha256": "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+    "dspy": "3.1.0",
+    "evidence_class": "isolated_dependency_compatibility",
+    "lm_calls": 4,
+    "monetary_cost": "not_measured",
+    "provider_live": "not_run",
+    "quality": "synthetic_exact_match_only",
+    "repeat_runs": 2,
+    "report_sha256": "8e24a84ed5bdba07edb344e5d64f70c02f8b791052b31099d7c543852bcd69d0",
+    "status": "passed"
+  },
+  "fresh_process_checkpoints": [
+    "before_feedback_commit",
+    "after_feedback_commit",
+    "after_budget_reservation",
+    "before_candidate_load",
+    "after_candidate_load"
+  ],
+  "independent_observations": [
+    "SQLite source/output byte hashes",
+    "attempt/reservation rows",
+    "local serving database call counts and active bytes",
+    "actual lookup output plus serving digest"
+  ],
+  "source_hashes": {
+    "refinery/__init__.py": "2a372055baae947e8aaca1df614eefd95755a18654d9db8ca93b73fb86008c61",
+    "refinery/dspy_local.py": "bb9b19ac3b0b9f32ab57e13ea6cbccfd2789d229d7c895ba2f30e8df9d08a67d",
+    "refinery/durable_evaluation.py": "3f99c3631828690ae5cd2b7e8601f40850ec49330c642dcd7f93c9383a743212",
+    "refinery/evaluation.py": "10945a167dd39f520a8956d3b2148800166173ab4e692e442268f98f9d05cd42",
+    "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+    "refinery/serving.py": "336f0ff575d5403305f8b5528cef9c6d12eb8055198f230eea893762a0518a47",
+    "refinery/storage.py": "ee273aaf02edf054365922e7f3f626b49b874eb863c2d17493e1a74f6c6a4718",
+    "tests/test_durable.py": "89cd6e3d71e07a960e48af4b9b644e49ea406730295c6c816643ed84e1211383",
+    "tests/test_evaluation.py": "167aee0b3cd7a44850c825bb4d7e6c5ebebf04c5a0e9b8c0268ffe3ca00ecf5c",
+    "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+    "tests/test_shared_fixtures.py": "78f9f482ca589d5a1b6a064e76b51aba6e8827f9eeeee5365cd973ba27605c05",
+    "tools/acceptance_gate.py": "1937759346b5314da4afc48894c70a5f8b819e6696a074fb55fc254b2bfb79a9",
+    "tools/check_artifacts.py": "08b8d2669e7274201a04d6e9a33fd5237ac054e8ec0c608bcd066434b29aacb3",
+    "tools/check_durable_mutations.py": "76d97af140b3e0687f6ef0e87d26d61ece39b68851cf303f727ab8d906da7b46",
+    "tools/check_evaluation_mutations.py": "584ffab8db3a27a3900aaae06d9a4be4df05647750839fa3f8457fbc4293ac37",
+    "tools/check_references.py": "3676f1d6bf70a196f094bac6ba0194e6573e0b8ff4313231163082a650e352d9",
+    "tools/check_scaffold.py": "a4a73e5705030f5c8839a17c8d4224c3f96041683b83fb02d13b2576787d4b23",
+    "tools/offline_dspy.py": "f300f151d338dfeed8d9a48f78dc239bc1d872c09f869c2dd49562b15c6b1b4f",
+    "tools/test_dspy_local.py": "d38ff95c2989500bd42d1fd26782fc1d8aeefe0fa18c3c1cf2815f75d8345e0b"
+  },
+  "remaining_gaps": [
+    "trusted Tether feedback transport and authentication",
+    "provider quality and actual monetary cost",
+    "optimizer algorithm qualification",
+    "production identity and power-loss storage",
+    "independent review and composition pin update"
+  ],
+  "live_acceptance": "not_run",
+  "production_activation": "not_run",
+  "style": "new modules: Black and Ruff passed"
+}

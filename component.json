@@ -5,5 +5,5 @@
   "implementation_language": "python",
   "repository": "newdarwindev/runspindle-refinery",
   "schema_version": 1,
-  "stage": "lineage_candidate"
+  "stage": "durable_offline_candidate"
 }

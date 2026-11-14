@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "source_revision": "7c2bb995bcdeed57fa03876cc7766c658a034fab",
+  "reconciled_main": "f3964f6",
+  "checks": {
+    "Python3.13_unittest": "70 passed",
+    "DSPy_3.1.0_Linux_arm64": "two repeat-qualified invocations; each compares two normalized runs; passed",
+    "durable_behavioral_mutations": {
+      "evidence_class": "component_mutation_detection",
+      "results": [
+        {
+          "mutation": "feedback_rebinding",
+          "detected": true
+        },
+        {
+          "mutation": "budget_reset",
+          "detected": true
+        },
+        {
+          "mutation": "approval_bypass",
+          "detected": true
+        },
+        {
+          "mutation": "serving_attribution",
+          "detected": true
+        }
+      ]
+    },
+    "scaffold": "passed"
+  },
+  "independent_review": "user_waived_for_offline_tranche; no review performed",
+  "serving": "synthetic disposable adapter only",
+  "provider_live": "not_run",
+  "full_system": "blocked"
+}

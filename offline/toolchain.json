@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "image": "python@sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93",
+  "target": "linux/arm64",
+  "version": "Python 3.14.0",
+  "python_license": "PSF-2.0 and included notices",
+  "notices": {
+    "offline/python-LICENSE": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
+    "offline/tokenizers-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+  },
+  "tokenizers_notice_source": "https://raw.githubusercontent.com/huggingface/tokenizers/v0.23.3/LICENSE",
+  "network": "none during execution",
+  "preparation": "uv pinned wheels only; no dependency imports or source builds",
+  "execution": "not_run"
+}

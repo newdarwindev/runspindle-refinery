@@ -11,6 +11,7 @@ assert c['stage'] == s['stage']
 assert (c['stage'], s['implementation']) in {
     ('scaffold', 'not_implemented'),
     ('lineage_candidate', 'partial_lineage_model'),
+    ('durable_offline_candidate', 'partial_durable_offline_lifecycle'),
 }
 if c['stage'] == 'lineage_candidate':
     for name in ['refinery/lineage.py', 'tests/test_lineage.py',
@@ -20,6 +21,13 @@ if c['stage'] == 'lineage_candidate':
     for name in ['durable_lineage', 'provider_adapter', 'candidate_serving', 'trusted_feedback_adapter']:
         assert s[name] == 'not_implemented'
     assert s['shared_contracts'] == 'provisional_not_integrated'
+if c['stage'] == 'durable_offline_candidate':
+    for name in ['refinery/storage.py', 'refinery/durable_evaluation.py', 'refinery/serving.py', 'refinery/dspy_local.py', 'offline/dependencies.json', 'offline/toolchain.json', 'specs/durable-offline.md', 'docs/durable-offline-tests.json']:
+        assert (root/name).is_file(), f'Missing {name}'
+    assert s['trusted_feedback_adapter'] == 'not_implemented'
+    assert s['provider_adapter'] == 'not_implemented'
+    assert s['durable_lineage'] == 'locally_tested_sqlite'
+    assert s['candidate_serving'] == 'locally_tested_disposable_synthetic_loader'
 assert s['live_acceptance'] == 'not_run'
 p = json.loads((root/'provenance.json').read_text())
 for item in p['sources']:

@@ -109,7 +109,7 @@ class Budget:
         with self._lock:
             self.reason = self.reason or reason
 
-    def reserve(self, maximum: Reservation) -> int:
+    def reserve(self, maximum: Reservation, *, request=None) -> int:
         if type(maximum) is not Reservation:
             raise ValueError("invalid reservation")
         with self._lock:
@@ -129,7 +129,7 @@ class Budget:
             self._pending[self._next] = maximum
             return self._next
 
-    def settle(self, ticket: int, *, tokens: int | None, cost_microunits: int | None):
+    def settle(self, ticket: int, *, tokens: int | None, cost_microunits: int | None, receipt=None):
         _integer(ticket, positive=True)
         with self._lock:
             if ticket not in self._pending:
@@ -207,6 +207,8 @@ class Request:
 
 class ScriptedProvider:
     """An explicit offline adapter; no fallback and no callback to a live provider."""
+    provider_id = "scripted.v1"
+
     def __init__(self, script: tuple[Completion, ...], *, clock: VirtualClock):
         if type(script) is not tuple or len(script) > 4096 or any(type(x) is not Completion for x in script):
             raise ValueError("invalid bounded script")
@@ -251,8 +253,8 @@ class Configuration:
             raise ValueError("invalid budget configuration")
         _hash(self.provider_script_sha256)
         _integer(self.cost_scale, positive=True)
-        if (self.metric, self.provider, self.optimizer, self.currency, self.cost_scale) != (
-                "synthetic_exact_match.v1", "scripted.v1", "scripted_stage.v1", "SYNTHETIC", 1_000_000):
+        if ((self.provider, self.optimizer) not in {("scripted.v1", "scripted_stage.v1"), ("dspy.local.v1", "dspy.predict.v1")}
+                or (self.metric, self.currency, self.cost_scale) != ("synthetic_exact_match.v1", "SYNTHETIC", 1_000_000)):
             raise ValueError("unsupported offline configuration")
         if type(self.preparation) is not tuple or len(self.preparation) > 16 or any(s not in {"optimization", "reflection"} for s in self.preparation):
             raise ValueError("invalid preparation stages")
@@ -380,12 +382,12 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
     All stages share the supplied ledger. Only explicit scripted timeout receipts
     may retry. Unknown/malformed replies stop with zero downstream calls.
     """
-    if type(experiment) is not Experiment or type(provider) is not ScriptedProvider or type(budget) is not Budget:
+    if type(experiment) is not Experiment or not isinstance(provider, ScriptedProvider) or not isinstance(budget, Budget):
         raise ValueError("offline adapters required")
     experiment.__post_init__()
     config = experiment.configuration
     config.__post_init__()
-    if (budget.limits != config.limits or provider.sha256 != config.provider_script_sha256
+    if (config.provider != provider.provider_id or budget.limits != config.limits or provider.sha256 != config.provider_script_sha256
             or budget.clock_ms is not provider.clock):
         raise ValueError("adapter configuration changed")
     train, heldout = _validate_dataset(dataset, split)
@@ -408,7 +410,7 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
             for number in range(1, config.max_attempts + 1):
                 request = Request(stage, example.output.output_id, example.output.revision,
                                   example.source.sha256, artifact, split.sha256, number)
-                ticket = budget.reserve(config.per_call)
+                ticket = budget.reserve(config.per_call, request=request)
                 try:
                     reply = provider.complete(request)
                 except Exception:
@@ -433,7 +435,7 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                 attempts.append(Attempt(request, reply.outcome,
                                         digest(reply.content) if reply.content is not None else None,
                                         reply.tokens, reply.cost_microunits, reply.safety, reply.latency_ms))
-                budget.settle(ticket, tokens=reply.tokens, cost_microunits=reply.cost_microunits)
+                budget.settle(ticket, tokens=reply.tokens, cost_microunits=reply.cost_microunits, receipt=attempts[-1])
                 safeties.append(reply.safety)
                 if reply.safety is not True:
                     raise Halt("unknown_safety" if reply.safety is None else "unsafe")

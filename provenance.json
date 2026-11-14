@@ -140,5 +140,13 @@
   "storage_schema_admission": {
     "implementation": "Original stdlib schema metadata comparison and synthetic SQLite corruption/rollback tests. Existing schema statements/codec/dependency pins unchanged.",
     "scope": "Partial issues #1/#15; no hostile-storage, migration, live collection or deployment qualification."
+  },
+  "tether_schema_pin_integration": {
+    "classification": "original_dependency_integration_and_synthetic_tests",
+    "source_commit": "670989839a0fccbcf2014d01609778ae6e4df424",
+    "repository": "newdarwindev/runspindle-tether",
+    "mapping": "specs/tether-schema-pin-integration.md",
+    "source_copy": "verified external checkout only; no vendored implementation",
+    "evidence": "docs/tether-schema-pin-evidence.json"
   }
 }

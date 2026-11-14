@@ -16,6 +16,7 @@ from typing import Protocol
 
 from . import lineage as lin
 from . import evaluation as ev
+from .optimization import Selection
 
 VERSION = "runspindle.maintained-evidence.v1"
 MAX_PAYLOAD = 1_048_576
@@ -40,6 +41,7 @@ TYPES = {
         ev.Attempt,
         ev.Report,
         ev.Metrics,
+        Selection,
     )
 }
 

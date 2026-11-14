@@ -56,40 +56,11 @@ def optimize(
     The caller can pass the SAME budget/provider to existing held-out evaluation;
     this function never refunds or resets that budget and never promotes output.
     """
-    if type(provider) is not ev.ScriptedProvider or not isinstance(budget, ev.Budget):
-        raise ValueError("only explicit offline adapters supported")
-    if type(per_call) is not ev.Reservation:
-        raise ValueError("invalid reservation")
-    if type(max_attempts) is not int or not 1 <= max_attempts <= 3:
-        raise ValueError("invalid retry bound")
-    if type(candidates) is not tuple or not 1 <= len(candidates) <= 16:
-        raise ValueError("invalid candidate inventory")
-    if any(type(c) is not bytes or not c or len(c) > MAX_BYTES for c in candidates):
-        raise ValueError("invalid immutable candidate bytes")
-    by_digest = {digest(c): c for c in candidates}
-    if len(by_digest) != len(candidates):
-        raise ValueError("duplicate candidate identity")
+    train, by_digest, script_sha, config_sha = _prepare(
+        dataset, split, candidates, provider, budget, per_call, max_attempts
+    )
     ledger: Any = budget
     scripted: Any = provider
-    if ledger.clock_ms is not scripted.clock:
-        raise ValueError("clock binding changed")
-    train, _ = validate_dataset(dataset, split)
-    if len(train) * len(candidates) * max_attempts > 4096:
-        raise ValueError("attempt limit")
-    script_sha = str(scripted.sha256)
-    config_sha = json_digest(
-        {
-            "version": "scripted_training_selection.v1",
-            "dataset": split.dataset_sha256,
-            "split": split.sha256,
-            "candidates": sorted(by_digest),
-            "script": script_sha,
-            "limits": vars(ledger.limits),
-            "per_call": vars(per_call),
-            "max_attempts": max_attempts,
-            "metric": "synthetic_exact_match.v1",
-        }
-    )
     attempts: list[ev.Attempt] = []
     scores: dict[str, int] = {}
     status, reason = "blocked", None
@@ -195,3 +166,50 @@ def optimize(
         tuple(attempts),
         tuple(sorted((usage if usage is not None else ledger.snapshot()).items())),
     )
+
+
+def _prepare(
+    dataset: Dataset,
+    split: LockedSplit,
+    candidates: tuple[bytes, ...],
+    provider: ev.ScriptedProvider,
+    budget: ev.Budget,
+    per_call: ev.Reservation,
+    max_attempts: int,
+) -> tuple[tuple[Example, ...], dict[str, bytes], str, str]:
+    """Validate immutable inputs without ledger writes or provider dispatch."""
+    if type(provider) is not ev.ScriptedProvider or not isinstance(budget, ev.Budget):
+        raise ValueError("only explicit offline adapters supported")
+    if type(per_call) is not ev.Reservation:
+        raise ValueError("invalid reservation")
+    if type(max_attempts) is not int or not 1 <= max_attempts <= 3:
+        raise ValueError("invalid retry bound")
+    if type(candidates) is not tuple or not 1 <= len(candidates) <= 16:
+        raise ValueError("invalid candidate inventory")
+    if any(type(c) is not bytes or not c or len(c) > MAX_BYTES for c in candidates):
+        raise ValueError("invalid immutable candidate bytes")
+    by_digest = {digest(c): c for c in candidates}
+    if len(by_digest) != len(candidates):
+        raise ValueError("duplicate candidate identity")
+    ledger: Any = budget
+    scripted: Any = provider
+    if ledger.clock_ms is not scripted.clock:
+        raise ValueError("clock binding changed")
+    train, _ = validate_dataset(dataset, split)
+    if len(train) * len(candidates) * max_attempts > 4096:
+        raise ValueError("attempt limit")
+    script_sha = str(scripted.sha256)
+    config_sha = json_digest(
+        {
+            "version": "scripted_training_selection.v1",
+            "dataset": split.dataset_sha256,
+            "split": split.sha256,
+            "candidates": sorted(by_digest),
+            "script": script_sha,
+            "limits": vars(ledger.limits),
+            "per_call": vars(per_call),
+            "max_attempts": max_attempts,
+            "metric": "synthetic_exact_match.v1",
+        }
+    )
+    return train, by_digest, script_sha, config_sha

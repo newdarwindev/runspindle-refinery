@@ -39,3 +39,6 @@ It adds design and verification obligations without changing runtime schemas,
 existing acceptance results or operational permissions.
 
 - [Scripted training-only selection](scripted-training-selection.md): bounded offline candidate search using the existing shared budget; no DSPy/live quality or serving claim.
+
+- [Durable scripted training selection](durable-training-selection.md): bounded
+  SQLite claims, cumulative reservations and exact committed-result recovery.

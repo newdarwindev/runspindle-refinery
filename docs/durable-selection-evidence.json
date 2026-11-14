@@ -1,0 +1,33 @@
+{
+  "acceptance": "partial_issue_5_not_closure",
+  "entrypoint": "refinery.durable_optimization.run",
+  "evidence_class": "synthetic_component_actual_sqlite",
+  "remaining": [
+    "actual DSPy optimizer",
+    "trusted feedback collection",
+    "global one-time heldout policy",
+    "live providers",
+    "production serving"
+  ],
+  "source_files": {
+    "refinery/durable_optimization.py": "7ab2638ea69d32fe3625e73ebfe3619f36da28ce2f6d5cd2ff82e1c1ebdcd96c",
+    "refinery/optimization.py": "44b8ae6a104fbe841eb57d4e386bf4c0459eb5b9d39d32dd91dfbfb20fb30342",
+    "refinery/storage.py": "31d194a190998d13852019b4f6ac66fe60386debb37ebae9de0c605f664853a1",
+    "specs/durable-training-selection.md": "194d8ab52c3eac8900d00a3ac0705a8677a28f525f4631aaefb6658c857a489e",
+    "tests/test_durable_optimization.py": "e53520cf516baca847c0ab0e1bc690395bc57829f074314fe659f2051a7f6009"
+  },
+  "verification": {
+    "aggregate_tests": 85,
+    "cached_association": "validated_before_return",
+    "concurrent_claim": "passed",
+    "fresh_process_interruption": "passed",
+    "fresh_provider_cursor": "required_before_new_claim",
+    "independent_review": "pending",
+    "network": "forbidden",
+    "new_tests": 8,
+    "normal": "passed",
+    "optimized": "passed",
+    "replay_mutation": "detected_by_actual_dispatch",
+    "runner": "not_run"
+  }
+}

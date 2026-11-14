@@ -45,3 +45,6 @@ existing acceptance results or operational permissions.
 
 - [Explicit retained-feedback collection](retained-feedback-collection.md): pinned
   Tether evidence selection into existing lineage with independent consent checks.
+
+[SQLite schema admission](storage-schema-admission.md) rejects incomplete or
+incompatible component stores and rolls back invalid transaction changes.

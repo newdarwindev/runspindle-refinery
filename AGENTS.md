@@ -26,3 +26,17 @@ Run `python3 tools/check_scaffold.py` for any change. Add and run real language/
 ## Completion
 
 Update evidence for implemented stories and their remaining gaps. Do not mark selected-source migration complete until all listed source dependencies and rights/content checks are resolved. Do not archive legacy repositories until verified successors and deprecation links exist.
+
+![validation](https://github.com/newdarwindev/runspindle-refinery/actions/workflows/validation.yml/badge.svg) [validation](https://github.com/newdarwindev/runspindle-refinery/actions/workflows/validation.yml)
+
+![fleet-qualification](https://github.com/newdarwindev/runspindle-refinery/actions/workflows/fleet-qualification.yml/badge.svg) [fleet-qualification](https://github.com/newdarwindev/runspindle-refinery/actions/workflows/fleet-qualification.yml)
+
+## Desired capability and implementation discipline
+
+Read [the technical intent](specs/desired-intent.md) before proposing architecture
+or changing workflow behavior. Keep optimizer search inside approved data, budget and effect boundaries. Require immutable lineage, leakage-resistant splits and locked metrics before comparing candidates. Do not label synthetic exact-match tests DSPy gains or implement implicit promotion from a passing score.
+
+Tie each implementation change to a documented intent, existing contract and
+negative test. Preserve all existing permission and evidence boundaries.
+Optimization may change candidate behavior within approved interfaces; it must
+not change authority, conceal uncertainty or reinterpret approval scope.

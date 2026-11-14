@@ -20,3 +20,19 @@ Selected historical code is preserved as [inert migration references](docs/refer
 New conceptual documentation is in [docs/design](docs/design/README.md). Its published PDFs are ReportLab adaptations; TeX compilation and runtime acceptance are not established.
 
 The [pinned shared fixture consumer](docs/SHARED_FIXTURES.md) tests refinery feedback/candidate observations without sibling checkouts; runtime protocol integration remains provisional.
+
+## Implemented validation
+
+Run `python3 tools/validate.py` for all implemented structural, language, fixture, artifact and mutation checks in this repository. The same entrypoint runs on trusted `main` and `ci/*` pushes and manual qualification using disposable Strix x64 guests. Logs include the checkout SHA, image/tool identities, command results and applicable artifact checksums. Unimplemented builds and product acceptance remain explicit in `STATUS.json`; blocked acceptance workflows retain their failing conclusions. ARM64 and native macOS qualification remain pending.
+
+## Desired technical direction
+
+Measured workflow improvement: this component contributes to turning authorized one-off work into
+repeatable, maintained cross-application workflows. Scoped access, managed
+sessions, explicit human exceptions and evaluated DSPy candidates are intended
+to compose into that capability; no automatic improvement or live integration
+is implied.
+
+Read [the component-specific technical intent](specs/desired-intent.md) for its
+interfaces, privacy boundaries, failure cases and acceptance obligations. Current
+implementation and evidence limits above remain unchanged.

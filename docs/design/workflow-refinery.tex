@@ -1,25 +1,113 @@
 \documentclass[11pt]{article}
-\usepackage[margin=0.95in]{geometry}
+\usepackage[margin=0.9in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,microtype,hyperref,enumitem}
-\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=blue}
-\setlength{\parindent}{0pt}\setlength{\parskip}{0.65em}
-\title{Runspindle Refinery: A Human-Guided Evaluation Loop}\author{Runspindle}\date{Design scaffold | November 2026}
-\begin{document}\maketitle
-\textbf{Status: planned architecture. No live implementation, deployment, benchmark, or savings claim.}
-\section{A bounded system for authorized work}
-Runspindle is a proposed distribution of cooperating components for agent-assisted work. Its aim is to make task boundaries, human control, evidence, and recovery explicit. The current deliverable is a scaffold and design specification. It is not an operating service, a production deployment, or a measured improvement over a native agent product.
-A task begins with a defined outcome, accountable owner, permitted sources and actions, and stop conditions. An agent's ability to perform an action is not authority to perform it. Scope changes and consequential actions require the applicable approval. Product policy and legal constraints remain in force; the architecture is not a mechanism for bypassing them.
-\section{Refinement without default collection}
-The proposed refinery begins only with an explicitly selected workflow and authorized examples. Review and redaction precede dataset entry. Dataset versions should retain source permission, adjudication, group identifiers, and stable train, validation, and held-out splits. Related examples must remain in the same split to reduce leakage. Proposed feedback records would bind attributable reactions or replies to the exact output and its version. Task-specific automatic gold rules may admit examples only under explicit criteria; conflicting signals must be quarantined for adjudication. Gold eligibility is separate from candidate release approval.
-Python DSPy candidates would be compared with a baseline under a fixed task definition and evaluation budget. Quality, safety failures, latency, human repair, and total cost belong in the comparison. Experiments cannot promote themselves. A versioned release needs threshold evidence, human authorization, and a rollback reference. No live collection, provider invocation, training, promotion, or saving is claimed.
-\section{Economics of accepted work}
-Cost per accepted authorized task is total model, tool, human, verification, maintenance, and recovery cost divided by the number of verified authorized completions. Include failed attempts and cleanup in the numerator. If there are no accepted completions, report the cost and zero completions rather than a misleading unit price.
-A specialist system also has fixed integration and evaluation costs. Low-volume workflows may remain cheaper with manual assistance. Break-even depends on measured workload mix, acceptance rate, maintenance cadence, and labor assumptions. Saved minutes do not automatically become cash savings. Provider improvements may remove the advantage of a custom harness, so repeat comparisons after material model or platform changes. Runspindle has no measured savings, prices, break-even point, or market-size estimate.
-\section{Evaluation and release gates}
-Development validation should test contracts and synthetic fixtures first: lease fencing, isolation, duplicate requests, restart recovery, permission changes, cancellation, stream revocation, and unknown external outcomes. Integration tests then need pinned component versions and permissioned environments. No source repository's historical test result transfers automatically to the new system.
-Production readiness requires independently evidenced secrets management, authenticated routing, monitoring, rollback, dependency review, and operator acceptance. Packaging a manifest is not deployment; a passing stub test is not proof of a live system. Development and production deployment remain planned. The distribution must fail closed when prerequisites or authorization are missing.
-\section{Claims, sources, and open questions}
-This migration adapts selected concepts under opaque source identifiers SRC-002, SRC-013, and SRC-009. These are partial migrations and newly written adaptations, not faithful re-renders. Historical PDFs are preserved separately and are not Runspindle builds. Detailed source provenance and review records are kept outside the public candidate. Source selection does not establish a new project license or third-party endorsement.
-The next useful evidence is a reproducible, permissioned end-to-end task that traverses the component boundaries and demonstrates recovery from an uncertain result. Until then, the materials describe a research and engineering plan. Open questions include native session integration, browser lifecycle compatibility, least-privilege secret delivery, evaluation validity, release reproducibility, and operational cost.
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,pdftitle={Runspindle Refinery: A Human-Guided Evaluation Loop},pdfauthor={Runspindle contributors},pdfsubject={Reviewed SRC-013 design adaptation; no runtime acceptance claim}}
+\pdfinfoomitdate=1
+\pdftrailerid{}
+\pdfsuppressptexinfo=15
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\newcommand{\view}[4]{\par\noindent\begin{minipage}{\linewidth}\subsection{#1}#2\par\begin{center}\includegraphics[width=#3\linewidth]{figures/#4.pdf}\end{center}\end{minipage}\par\nopagebreak}
+\title{Runspindle Refinery\\\large A human-guided evaluation loop}
+\author{Runspindle contributors\\\small Adapted from SRC-013; copyright 2026 newdarwindev}
+\date{November 2026 | Reviewed design adaptation}
+\begin{document}
+\maketitle
+\begin{abstract}
+An opt-in refinement layer can turn selected agent-assisted workflows into versioned candidates for evaluation. An accountable owner defines the task and data permissions; reviewers minimize examples and curate a golden dataset; bounded experiments compare a baseline with DSPy program configurations or eligible smaller models. Exact candidate evidence, separate release approval and a verified rollback path precede serving. This paper states a testable design, not a deployed system, a measured improvement or permission to collect data. All diagram labels are synthetic.
+\end{abstract}
+\textbf{Evidence boundary.} This is a new compilation of an adapted paper, not the historical PDF and not a runtime acceptance result. Component tests, historical demonstrations, provider-backed experiments and live acceptance are different evidence classes. The repository's versioned implementation evidence remains authoritative for what has actually run.
+\section{Thesis and boundary}
+Repeated computational patterns may justify a narrower, maintained workflow. That is a conditional research thesis: human judgment, relationships, physical work, legal obligations and consent remain important limits. Repetition does not authorize a schedule, collection of conversations, provider transmission or new account access.
+
+A portfolio of bounded programs and models can be coordinated under human governance. The useful unit is a workflow revision: stable inputs, permitted effects, target bindings, exception policy, acceptance criteria and resource budget. A successful completion or an attractive prompt is not that contract. Optimizing a candidate must not change authority, credentials, tool grants or deployment configuration.
+
+Execution and learning are separate. A human correction is first an execution event. It becomes an example only after separate consent, minimization, provenance and suitability review. A feedback signal is not release approval, and release approval does not authorize new effects.
+\clearpage
+\section{A controlled refinement loop}
+\begin{enumerate}
+\item \textbf{Select and authorize.} Record the owner, task revision, approved sources and destinations, output contract, exclusions and stop conditions. Collection and external-provider use need their own scope. Nothing is captured by default.
+\item \textbf{Review and redact.} Inspect proposed examples before admission. Remove secrets, identifiers and unrelated material. Bind feedback to exact source and output revisions, content hashes and its intended target. Quarantine incomplete, conflicting, stale or non-replayable evidence rather than trusting an eligibility flag.
+\item \textbf{Curate and lock.} Version dataset bytes, labeling rules, adjudications, exclusions and split manifest. Keep related thread, run and revision families in one partition; deduplicate before splitting. Lock held-out cases before optimization. Do not select candidates on repeated held-out feedback or silently replace a failed split.
+\item \textbf{Choose bounded candidates.} Pin baseline and candidate bytes, DSPy version, model and provider configuration, metric implementation, optimizer and thresholds. Restrict optimization to training data. Reserve one cumulative call, token, time and cost budget across search, reflection, scoring, baseline/candidate evaluation and retries. Record cancellation or exhaustion; unknown usage cannot be counted as zero.
+\item \textbf{Evaluate.} Compare baseline and candidate on the same locked cases. Include refusal, human exceptions, uncertain effects and out-of-scope requests. Report attempted, usable and excluded counts, error categories, quality, safety, latency, intervention burden and total measured cost. Unknown safety or cost blocks a pass. Byte equality in a synthetic fixture is not general model-quality evidence.
+\item \textbf{Approve and promote.} Authenticate the approver independently. Bind the decision to artifact bytes and digest, evaluation evidence, thresholds and target serving scope. A Boolean or actor label is not authority. Use durable atomic updates, concurrency control and append-only audit evidence. A registry update is not proof that a serving process loaded the candidate.
+\item \textbf{Observe and roll back.} Verify the loaded digest, permitted task boundary and defined metrics. A failed load keeps the last approved version active. Rollback identifies a compatible, available, previously approved artifact, retains output attribution and records the reason. Reconcile an uncertain result before retrying.
+\end{enumerate}
+\clearpage
+\section{Testable hypotheses}
+\textbf{H1: narrower candidates.} Some bounded workflows may run on smaller models at acceptable quality. Compare baseline and candidate with a fixed task, held-out cases and complete cost accounting. Count failed attempts and human repair; zero accepted completions has no finite cost-per-accepted-task result.
+
+\textbf{H2: reviewed data.} Human-adjudicated golden datasets may improve repeatability and error discovery. Compare agreement, coverage and recurring failures across declared dataset versions without contaminating evaluation.
+
+\textbf{H3: governed release.} Versioned artifacts, scoped approvals and rollback may improve reproducibility and recovery. Test reviewability, unauthorized promotion, altered bytes, concurrent writes and failed-load recovery in controlled trials.
+
+No experiment result, score, savings estimate or benchmark is asserted. Historical simulated interface scores are excluded from this adaptation.
+\section{Research domains and limits}
+Possible domains include internal routing, support triage, summary or document work, and separately permissioned research into opportunities. Each needs domain-specific evaluation, appropriate data rights and organizational controls. This paper authorizes no applications, bids, outreach, submissions, purchases or deployment. A possible autonomous operating mode remains bounded by human gates and the applicable policy.
+
+Quality gains are not guaranteed. Dataset bias, incomplete feedback, distribution shift, annotation disagreement and optimization overfitting can defeat apparently strong results. Integration, evaluation, maintenance and recovery costs may outweigh savings at low volume. Changes to models or platforms require renewed comparisons. Safe failures and authority violations cannot be traded against a higher aggregate score.
+\section{Prototype scope and evidence}
+The selected historical artifact described a synthetic interactive showcase of selection, review, simulated evaluation, promotion and rollback. It did not establish a deployed DSPy service. Its historical UI tests and walkthrough are not rerun or imported here; unselected application code and operational records are outside this lift.
+
+This adaptation aligns that argument with the current Runspindle experiment and desired-intent contracts. It does not replace component evidence, certify current deployment, or assert that every specified control is implemented. Local scripted or disposable synthetic tests cannot establish real-provider quality, trusted live collection or production readiness. See the versioned \href{https://github.com/newdarwindev/runspindle-refinery/blob/main/docs/IMPLEMENTATION_EVIDENCE.md}{implementation evidence} and \href{https://github.com/newdarwindev/runspindle-refinery/blob/main/STATUS.json}{status record} for narrower claims and remaining gaps.
+\clearpage
+\section{Eight architecture views}
+The following eight reviewed vector diagrams preserve the selected source's conceptual mechanisms. They contain invented labels, not operational snapshots. Their original color convention is retained: solid teal describes a conceptual binding or explicit scenario premise; dashed amber marks a proposed path. \textbf{Neither color proves that a Runspindle service exists or has passed acceptance.}
+
+The diagrams are retained historical assets embedded in a newly compiled adaptation. Surrounding text supplies current constraints; historical terminology such as GitOps, always-on hosts or cluster choices is illustrative, not a deployment requirement or report about the owner's infrastructure.
+\view{Durable identity binding}{A verified route links repository/worktree, selected host, process, native managed session and destination. Names alone are not authority. Preserve explicit host pins, lease epochs and exact task/intent revisions in the relevant runtime contract. Attribution does not require transcript collection.}{1}{01-identity}
+\textit{Figure 1. Verified identity supports attribution; it does not grant collection or execution permission.}
+\view{Managed-session lifecycle}{Owner-gated admission precedes launch; verified session-start evidence precedes binding. External sessions remain observation-only unless separately enrolled. Resume, interruption and stop must use the bound identity and current authority. Lost or uncertain control results need reconciliation before retry.}{1}{02-lifecycle}
+\textit{Figure 2. Observing a session and controlling it are distinct scopes.}
+\clearpage
+\view{Reaction, approval and execution}{A reaction or request is evidence to inspect in its authorized context, not a universal grant. Verify actor, target, intended action, limits and timing. Existing scoped approval can cover a particular step; feedback classification cannot expand it. Verify the outcome before advancing or retrying.}{1}{03-approval}
+\textit{Figure 3. Evidence, policy evaluation, approval and effect execution remain separate.}
+\view{Reviewed golden-data provenance}{Every admitted example retains source/output versions, feedback target, consent and review disposition. Stable family IDs and deduplication precede the locked train/validation/held-out partition. The historical diagram's deterministic privacy and leakage gates are necessary pipeline checks, not model-quality scores.}{1}{04-golden-data}
+\textit{Figure 4. Related examples remain together; held-out data never guides optimization.}
+\clearpage
+\view{Experiment and deployment control planes}{The experiment plane produces evidence within a fixed budget; it cannot approve its own release. A separate release path checks exact bytes, digest, thresholds, target scope and authenticated approval. The historical Git-reviewed/GitOps path illustrates separation of duties, not an implemented deployment mechanism. A serving-load acknowledgement must be distinguished from a registry commit.}{0.72}{05-control-planes}
+\textit{Figure 5. A good score is not deployment authority.}
+\view{Manually placed compute constellation}{This retained figure is an explicitly hypothetical development scenario: a human chooses app-to-host placement and host availability is assumed. Compose and a single cluster are historical examples, not recommendations or requirements for current infrastructure. No uptime, cluster, machine identity or deployment claim follows. Refinery remains a separately authorized layer.}{0.72}{06-constellation}
+\textit{Figure 6. Placement and availability assumptions must be made explicit before operational evaluation.}
+\clearpage
+\view{Versioned provenance chain}{An approved source becomes a reviewed dataset version, then a bounded experiment's candidate and a separately approved promotion record. Preserve exact source/output feedback lineage, locked split/metric/configuration versions, artifact bytes and digest, release evidence and rollback pointer. A graph edge is a required evidence link, not proof of a live training pipeline.}{1}{07-provenance}
+\textit{Figure 7. Each stage retains the evidence and authority for that specific transition.}
+\view{Observation versus failure}{Observation freshness decreases with time. A missing update is unknown, not proof of failure or permission to restart. Require a verified process/session check and current action authority before control. Preserve stale, failed and uncertain states distinctly so automation does not turn incomplete telemetry into an external effect.}{0.85}{08-observation}
+\textit{Figure 8. Fresh, aging and unknown describe observations, not automatic control decisions.}
+\clearpage
+\section{Sources, adaptations and validation limits}
+SRC-013 identifies the selected historical paper, editable TeX and eight diagrams. Exact source locations, revisions and hashes are retained privately. The public section/figure disposition accounts for every selected part, including removed historical links, excluded simulated scores and changed architecture language. The historical PDF is not distributed as a new Runspindle build.
+
+The selected source explicitly declares its eight vector illustrations original under the MIT license. Each was reviewed individually for visible content, extracted text, metadata, links and embedded content before reuse. The retained copyright and permission notice follows and accompanies the source assets. No unselected code, source history, data, external binary or dependency bundle is imported. No blanket license for unrelated project material is inferred.
+
+Current public contracts: \href{https://github.com/newdarwindev/runspindle-refinery/blob/main/specs/experiments.md}{replayable experiments and promotion}; \href{https://github.com/newdarwindev/runspindle-refinery/blob/main/specs/desired-intent.md}{measured workflow improvement}. Artifact-specific build and review evidence is in \href{https://github.com/newdarwindev/runspindle-refinery/tree/main/docs/design}{the canonical design directory}. These citations replace historical repository links rather than exposing private architecture sources.
+
+Compilation, rendering, link-structure checks and artifact hashes validate this document only. They do not establish provider execution, benchmark gains, candidate serving, live acceptance or production readiness.
+\section*{Retained MIT notice}
+MIT License
+
+Copyright (c) 2026 newdarwindev
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 \end{document}

@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "source_id": "SRC-013",
+  "scope": "complete selected paper/TeX/eight-figure adaptation with documented safe exclusions; not historical re-render or executable implementation",
+  "review_status": "selected_content_reviewed_compiled_and_visually_validated",
+  "rights_basis": "Owner-directed selected adaptation plus source MIT grant; original text explicitly declares all eight vector diagrams original under that license.",
+  "notice": "docs/design/LICENSE-SRC-013.txt",
+  "sections": [
+    {
+      "selected_section": "Abstract",
+      "destination_section": "Abstract",
+      "disposition": "Adapted",
+      "reason": "Preserves opt-in methodology and no-result boundary; adds exact release evidence."
+    },
+    {
+      "selected_section": "1 Thesis and boundary",
+      "destination_section": "1 Thesis and boundary",
+      "disposition": "Adapted",
+      "reason": "Preserves conditional thesis and human limits; distinguishes execution from learning."
+    },
+    {
+      "selected_section": "2 Controlled refinement loop",
+      "destination_section": "2 Controlled refinement loop",
+      "disposition": "Adapted",
+      "reason": "All seven stages retained; adds exact feedback versions, family splits, locked metrics, cumulative budgets, authenticated scoped approval and failed-load rollback."
+    },
+    {
+      "selected_section": "3 Testable hypotheses",
+      "destination_section": "3 Testable hypotheses",
+      "disposition": "Adapted / safe exclusion",
+      "reason": "H1-H3 retained; excludes simulated UI percentages because they are not measurements."
+    },
+    {
+      "selected_section": "4 Research domains and limits",
+      "destination_section": "4 Research domains and limits",
+      "disposition": "Adapted",
+      "reason": "Retains conditional applications and separate permission; adds validity and cost limitations."
+    },
+    {
+      "selected_section": "5 Prototype scope",
+      "destination_section": "5 Prototype scope and evidence",
+      "disposition": "Adapted / safe exclusion",
+      "reason": "Historical showcase described as historical only; no UI-test or runtime result imported; old source repository link omitted."
+    },
+    {
+      "selected_section": "6 Architecture introduction",
+      "destination_section": "6 Eight architecture views",
+      "disposition": "Adapted",
+      "reason": "Retains visual convention but explicitly prevents colors being interpreted as implementation evidence."
+    },
+    {
+      "selected_section": "Source boundaries / citations",
+      "destination_section": "7 Sources, adaptations and validation limits",
+      "disposition": "Adapted / safe exclusion",
+      "reason": "Retains authorship/license declaration; replaces three historical repository links with current public contracts; private-architecture references removed."
+    },
+    {
+      "selected_section": "License dependency",
+      "destination_section": "Retained MIT notice and LICENSE-SRC-013.txt",
+      "disposition": "Retained",
+      "reason": "Exact notice accompanies source and appears in compiled paper."
+    }
+  ],
+  "figures": [
+    {
+      "selected_figure": 1,
+      "destination": "docs/design/figures/01-identity.pdf",
+      "title": "Durable identity binding",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "No private worktree, host, process or route IDs. Current host pins and lease epochs added in prose.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 2,
+      "destination": "docs/design/figures/02-lifecycle.pdf",
+      "title": "Managed-session lifecycle",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "Synthetic lifecycle nodes only. Current authority and uncertain-result reconciliation added.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 3,
+      "destination": "docs/design/figures/03-approval.pdf",
+      "title": "Reaction, approval and execution",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "No actors, destinations or real requests. Clarifies scoped approval and feedback boundaries.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 4,
+      "destination": "docs/design/figures/04-golden-data.pdf",
+      "title": "Reviewed golden-data provenance",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "No dataset rows or private content. Adds immutable feedback, grouping and locked held-out constraints.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 5,
+      "destination": "docs/design/figures/05-control-planes.pdf",
+      "title": "Experiment and deployment control planes",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "Proposed control-plane nodes only. Historical GitOps wording explicitly illustrative, not a current implementation.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 6,
+      "destination": "docs/design/figures/06-constellation.pdf",
+      "title": "Manually placed compute constellation",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "Only invented host A/B/C; no operational topology. Historical Compose/cluster choices explicitly hypothetical and not current requirements.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 7,
+      "destination": "docs/design/figures/07-provenance.pdf",
+      "title": "Versioned provenance chain",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "No real source or candidate IDs. Exact digest, approval and rollback links required in prose.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    },
+    {
+      "selected_figure": 8,
+      "destination": "docs/design/figures/08-observation.pdf",
+      "title": "Observation versus failure",
+      "disposition": "retained_cleared_historical_vector_asset",
+      "review": "Synthetic timeline with no actual times/events. Unknown observation never grants restart authority.",
+      "checks": {
+        "pixels": "reviewed",
+        "extracted_text": "reviewed",
+        "metadata": "reviewed_generic_tool_and_date_only",
+        "links": 0,
+        "attachments": 0,
+        "third_party_credit": "none; explicit original-authorship declaration in selected source"
+      }
+    }
+  ],
+  "dependency_disposition": [
+    {
+      "dependency": "selected TeX",
+      "disposition": "fully reviewed; adapted text and local eight-figure closure only"
+    },
+    {
+      "dependency": "selected historical PDF",
+      "disposition": "privately retained reference; text and 5-page structure reviewed; never represented as a new build"
+    },
+    {
+      "dependency": "selected eight figure PDFs",
+      "disposition": "cleared per figure; retained with notice; no external assets or active content"
+    },
+    {
+      "dependency": "unselected application, tests, history and referenced repositories",
+      "disposition": "not imported or executed; safe exclusion outside selected dependency closure"
+    },
+    {
+      "dependency": "TeX engine, format, packages and fonts",
+      "disposition": "existing trusted system toolchain only; precise loaded input hashes recorded after build; no install or automatic generation"
+    },
+    {
+      "dependency": "historical citations",
+      "disposition": "three repository links omitted; current public contract references supplied instead; no source text fetched/imported from cited repositories"
+    },
+    {
+      "dependency": "Latin Modern embedded fonts",
+      "disposition": "Separate GUST Font License/LPPL typesetting dependency; copyright and official license references recorded in THIRD_PARTY_NOTICES.md. No standalone font import or new license grant."
+    }
+  ],
+  "unresolved_content_or_rights": [],
+  "runtime_acceptance": "not_run"
+}

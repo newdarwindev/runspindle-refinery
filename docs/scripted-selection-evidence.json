@@ -1,0 +1,29 @@
+{
+  "acceptance": "partial_not_issue_closure",
+  "entrypoint": "refinery.optimization.optimize",
+  "evidence_class": "synthetic_component",
+  "issues": [
+    1,
+    5
+  ],
+  "remaining": [
+    "actual DSPy optimizer",
+    "trusted feedback ingestion",
+    "durable selection or one-time evaluation policy",
+    "provider-backed metrics",
+    "production serving"
+  ],
+  "source_files": {
+    "refinery/optimization.py": "c979ccb0d687cc02031316f7daaa9313ba74e95a1b51f4f428724db71733c634",
+    "specs/scripted-training-selection.md": "1438258d10385871cb5cae7b6ba15421d65e57a0eb4e5721ba8eed0ebb31bbd5",
+    "tests/test_optimization.py": "aba0c82104f91ee770deca3bcabdcb6c5704249d9704d5ac8e7982df99aa16ce"
+  },
+  "verification": {
+    "holdout_leak_mutation": "detected_by_actual_provider_requests",
+    "malformed_outcome": "blocked_and_shared_ledger_poisoned",
+    "network": "forbidden_and_independently_observed",
+    "new_tests": 7,
+    "normal": "passed",
+    "optimized": "passed"
+  }
+}

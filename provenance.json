@@ -44,18 +44,22 @@
       "status": "adapted_spec"
     },
     {
-      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
+      "adaptation_limits": "Complete selected paper/TeX/eight-figure scope accounted for with safe exclusions; not a faithful historical re-render, executable port or runtime acceptance. Composition mirror integration is a separate pending gate.",
       "destination": "docs/design/workflow-refinery.pdf",
-      "license_review": "No executable or binary import completed. Retain all required third-party notices when importing.",
-      "migration_status": "partial",
-      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
+      "license_review": "Exact MIT notice retained; selected source explicitly declares original vector authorship; all eight figures individually reviewed. Latin Modern embedded font rights separately disclosed.",
+      "migration_status": "adapted_scope_complete_component_verified_mirror_pending",
+      "modifications": "Adapted all selected sections to current execution/learning, exact feedback, split, bounded experiment and release contracts; excluded historical repository links and simulated scores. Newly compiled eight-page PDF with eight cleared figures.",
       "published_adaptations": [
-        "docs/design"
+        "docs/design/workflow-refinery.tex",
+        "docs/design/workflow-refinery.pdf",
+        "docs/design/figures"
       ],
       "rights_basis": "Owner-directed adaptation. Original rights retained; no blanket relicense.",
       "source_description": "Owner-selected legacy material; detailed source mapping retained privately.",
       "source_id": "SRC-013",
-      "status": "adapted_document"
+      "status": "adapted_document",
+      "disposition": "docs/design/source-disposition.json",
+      "validation": "docs/design/build-evidence.json"
     },
     {
       "destination": "specs/experiments.md",
@@ -67,46 +71,40 @@
       "status": "adapted_spec"
     },
     {
-      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
-      "destination": "docs/design/workflow-refinery.pdf",
+      "adaptation_limits": "This source obligation is not completed by the SRC-013 paper replacement.",
+      "destination": "docs/design/THIRD_PARTY_NOTICES.md",
       "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
       "migration_status": "partial",
-      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
-      "published_adaptations": [
-        "docs/design"
-      ],
+      "modifications": "Historical contribution to superseded concise derivative only; current full paper is scoped to SRC-013 and current public contracts. No additional source expression imported.",
+      "published_adaptations": [],
       "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
       "source_description": "Selected legacy design source; exact source mapping retained privately.",
       "source_id": "SRC-002",
-      "status": "adapted_document"
+      "status": "reference_only"
     },
     {
-      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
-      "destination": "docs/design/workflow-refinery.pdf",
+      "adaptation_limits": "This source obligation is not completed by the SRC-013 paper replacement.",
+      "destination": "docs/design/THIRD_PARTY_NOTICES.md",
       "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
       "migration_status": "partial",
-      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
-      "published_adaptations": [
-        "docs/design"
-      ],
+      "modifications": "Historical contribution to superseded concise derivative only; current full paper is scoped to SRC-013 and current public contracts. No additional source expression imported.",
+      "published_adaptations": [],
       "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
       "source_description": "Selected legacy design source; exact source mapping retained privately.",
       "source_id": "SRC-005",
-      "status": "adapted_document"
+      "status": "reference_only"
     },
     {
-      "adaptation_limits": "New concise conceptual derivatives, not faithful historical re-renders or live implementation. Detailed historical dependencies preserved privately.",
-      "destination": "docs/design/workflow-refinery.pdf",
+      "adaptation_limits": "This source obligation is not completed by the SRC-013 paper replacement.",
+      "destination": "docs/design/THIRD_PARTY_NOTICES.md",
       "license_review": "No new blanket license; applicable MIT notice included with adapted material.",
       "migration_status": "partial",
-      "modifications": "Created and reviewed a new concise conceptual adaptation. Historical original and dependency closure retained privately, not republished. Complete migration and faithful re-render remain unverified.",
-      "published_adaptations": [
-        "docs/design"
-      ],
+      "modifications": "Historical contribution to superseded concise derivative only; current full paper is scoped to SRC-013 and current public contracts. No additional source expression imported.",
+      "published_adaptations": [],
       "rights_basis": "Owner-selected adaptation; original rights and notices retained.",
       "source_description": "Selected legacy design source; exact source mapping retained privately.",
       "source_id": "SRC-010",
-      "status": "adapted_document"
+      "status": "reference_only"
     },
     {
       "destination": "docs/design/THIRD_PARTY_NOTICES.md",

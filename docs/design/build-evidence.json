@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "source_id": "SRC-013",
+  "evidence_class": "compiled_adapted_document_not_runtime_acceptance",
+  "source_sha256": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
+  "pdf_sha256": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+  "pages": 8,
+  "figures": 8,
+  "successful_compile_passes": 3,
+  "pass_history": [
+    {
+      "pass": 1,
+      "pdf_sha256": "aca79121f1963de9746c5b9844153bdeab5dd4bc6fc54a6d829f0f568fa01928",
+      "accepted": false,
+      "reason": "layout corrections required"
+    },
+    {
+      "pass": 2,
+      "pdf_sha256": "4b8ce4a17069b05a3608ea39318d2fb7c7d25b460d00b8f4c8ed34ca62941237",
+      "accepted": false,
+      "reason": "caption paragraph defect required authorized extra run"
+    },
+    {
+      "pass": 3,
+      "pdf_sha256": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+      "accepted": true,
+      "reason": "all eight pages rendered and visually reviewed; no overfull or underfull boxes"
+    }
+  ],
+  "engine": "pdfTeX 3.141592653-2.6-1.40.29 (TeX Live 2026/Debian)",
+  "timeout_seconds_per_pass": 120,
+  "shell_escape": false,
+  "parse_first_line": false,
+  "automatic_generation": false,
+  "network": "unshared_namespace",
+  "recorded_inputs": "only reviewed source/assets, prior auxiliary files and pinned stock TeX trees",
+  "recorded_outputs": "task output directory only",
+  "toolchain_lock": "toolchain-lock.json",
+  "toolchain_lock_sha256": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+  "final_log_sha256": "f245fafaa60e1601afd1951e9779df5244774a548f5d578a07723789617f3ec7",
+  "recorder_sha256": "01eba2ec55d667fbd317997508de48eb22360d2f15f9229e3cef28f2d564c7e6",
+  "warnings": [
+    "epstopdf: shell escape feature is not enabled (expected; no EPS conversion requested)"
+  ],
+  "overfull_boxes": 0,
+  "underfull_boxes": 0,
+  "pdf_links": [
+    "https://github.com/newdarwindev/runspindle-refinery/blob/main/STATUS.json",
+    "https://github.com/newdarwindev/runspindle-refinery/blob/main/docs/IMPLEMENTATION_EVIDENCE.md",
+    "https://github.com/newdarwindev/runspindle-refinery/blob/main/specs/desired-intent.md",
+    "https://github.com/newdarwindev/runspindle-refinery/blob/main/specs/experiments.md",
+    "https://github.com/newdarwindev/runspindle-refinery/tree/main/docs/design"
+  ],
+  "rendering": {
+    "tool": "pdftoppm version 26.07.0",
+    "command": "pdftoppm -scale-to 1300 -png workflow-refinery.pdf rendered/page",
+    "reviewed_pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "page_sha256": {
+      "page-1.png": "2a1dbdb18eb86a8a631e69e64693a2b9cdef946d31486660c96840cab64b3a8e",
+      "page-2.png": "bbcd08fedabfbef6428d0a87d7f8314aeb9f7feec5f49bfeb4de78a687e8b76d",
+      "page-3.png": "be6be1f56ed4e9f3f8b21e226c67b1ac035602cff7858f3b623559e860b20795",
+      "page-4.png": "677fa3b435b7c001c723ad670d742826990ccb5f205d62b91851649751247562",
+      "page-5.png": "4539f0048fb2e067a0d3d0259683a925be05d9afa7c47219e323e73dd08b13cc",
+      "page-6.png": "ee6e5904edba07c91e88ff7d1c65864cc389b0313d1b063894deaf8f40ae050b",
+      "page-7.png": "af3f81182daa15e24d085b1b61d6de402e7a7513374bf4e309c977bd2b5fb8df",
+      "page-8.png": "6a570a2f7606c1a4f12f53e3f32bdbf27ed210622986a41b53ac2f844bbbab72"
+    }
+  },
+  "runtime_acceptance": "not_run",
+  "original_historical_pdf": "not used as compiled output",
+  "independent_review": "pending frozen artifact review",
+  "document_content_commit": "016d0bc145aa428079d75165e9572fb6f23a4ec4",
+  "committed_recipe_execution": "not_run",
+  "compilation_driver": "Reviewed task-local native wrapper; same source/assets, command arguments, environment and confinement as committed build-paper.py. The committed CLI wrapper itself was not executed on the native machine.",
+  "recipe_equivalence": "AST comparison of cmd and env assignments passed against the privately retained tested wrapper; no new compilation for wrapper/type-only edits.",
+  "component_validation": {
+    "mypy": {
+      "version": "1.18.2",
+      "mode": "strict, no incremental cache",
+      "files": [
+        "docs/design/build-paper.py",
+        "tools/check_paper.py",
+        "tests/test_paper.py"
+      ],
+      "status": "passed"
+    },
+    "ruff": {
+      "version": "0.14.5",
+      "lint": "passed",
+      "format": "passed"
+    },
+    "document_tests": {
+      "normal": 6,
+      "optimized": 6,
+      "status": "passed"
+    },
+    "full_component_tests": {
+      "normal": 111,
+      "optimized": 111,
+      "status": "passed",
+      "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424"
+    },
+    "baseline_changes": "none",
+    "runtime_acceptance": "not_run"
+  }
+}

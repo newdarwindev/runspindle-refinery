@@ -46,4 +46,5 @@ for path in (root/'.github/workflows').glob('*.yml'):
     assert 'ubuntu-latest' not in text and 'macos-latest' not in text and 'windows-latest' not in text, path
 subprocess.run([sys.executable,str(root/'tools/check_references.py')],check=True)
 subprocess.run([sys.executable,str(root/'tools/check_artifacts.py')],check=True)
+subprocess.run([sys.executable,str(root/'tools/check_paper.py')],check=True)
 print(json.dumps({'status':'passed','evidence_class':'scaffold_structure','repository':c['repository'],'product_acceptance':'not_run'},sort_keys=True))

@@ -118,13 +118,14 @@ class X64CandidateTests(unittest.TestCase):
             entries = prep.archive_entries(
                 self.artifacts[source], links=folder == "runtime"
             )
-            for path, (kind, _, data) in entries.items():
+            for path, (kind, mode, data) in entries.items():
                 output = self.root / folder / path
                 output.parent.mkdir(parents=True, exist_ok=True)
                 if kind == "link":
                     output.symlink_to(data.decode())
                 else:
                     output.write_bytes(data)
+                    output.chmod(mode)
         for name, value in {
             "LOCK_SHA256": common.digest(lock_bytes),
             "UV_SHA256": common.digest(self.artifacts["uv.tar.gz"]),

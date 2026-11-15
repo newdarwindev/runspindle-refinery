@@ -102,3 +102,10 @@ symlink/FIFO/ancestor-link rejection, mutation/parent-swap detection, confined l
 chains, cycles/traversal, archive bounds, wheel tags and duplicate JSON fields.
 These tests are source-validation evidence only. Real artifact comparison, origin
 review, runtime/host receipts and framework/restart qualification are distinct.
+
+Synthetic installer/runtime files explicitly receive their declared archive modes
+when fixtures are constructed. Inheriting the caller's umask would produce a
+different fixture (for example, 0664 instead of the declared 0644 with umask 0002)
+and reject otherwise valid synthetic candidates before the intended negative
+case. This fixture setup does not chmod prepared candidate inputs or relax the
+auditor's exact-mode comparison.

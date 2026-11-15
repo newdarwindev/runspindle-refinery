@@ -12,7 +12,7 @@ from dataclasses import fields, is_dataclass
 import json
 from pathlib import Path
 import sqlite3
-from typing import Protocol
+from typing import Any, Protocol
 
 from . import lineage as lin
 from . import evaluation as ev
@@ -22,7 +22,7 @@ VERSION = "runspindle.maintained-evidence.v1"
 MAX_PAYLOAD = 1_048_576
 MAX_TOTAL = 67_108_864
 MAX_OBJECTS = 1000
-TYPES = {
+TYPES: dict[str, type[Any]] = {
     t.__name__: t
     for t in (
         lin.SourceRevision,

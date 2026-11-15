@@ -54,3 +54,6 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Durable evaluation provider admission](evaluation-provider-admission.md):
   validate before atomic ledger/claim writes and pin dispatch cursor/configuration.
+
+- [Evaluation admission hygiene integration](evaluation-admission-hygiene-integration.md):
+  preserve reviewed runtime behavior under the existing mandatory quality gate.

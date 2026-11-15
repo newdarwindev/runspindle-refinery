@@ -1,6 +1,7 @@
 """Validate the reviewed paper closure; never implies runtime acceptance."""
 
 from __future__ import annotations
+
 import hashlib
 import json
 import re

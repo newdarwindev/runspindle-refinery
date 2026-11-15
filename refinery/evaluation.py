@@ -3,12 +3,13 @@
 Only ScriptedProvider is supported. Reports are process-local component evidence,
 not provider measurements, durable registry records or general quality evidence.
 """
+
 from __future__ import annotations
 
 import json
 import threading
 from dataclasses import dataclass
-from typing import Callable, cast
+from typing import Callable, Protocol, cast
 
 from .lineage import MAX_BYTES, MAX_RECORDS, Dataset, LockedSplit, digest
 
@@ -21,7 +22,11 @@ def _integer(value: object, *, positive: bool = False) -> None:
 
 
 def _hash(value):
-    if type(value) is not str or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+    if (
+        type(value) is not str
+        or len(value) != 64
+        or any(c not in "0123456789abcdef" for c in value)
+    ):
         raise ValueError("invalid digest")
 
 
@@ -30,8 +35,12 @@ def _bytes(value):
         raise ValueError("invalid immutable bytes")
 
 
-def _digest_json(value):
-    return digest(json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False).encode())
+def _digest_json(value: object) -> str:
+    return digest(
+        json.dumps(
+            value, sort_keys=True, separators=(",", ":"), allow_nan=False
+        ).encode()
+    )
 
 
 @dataclass(frozen=True)
@@ -66,6 +75,7 @@ class Budget:
     A missing/invalid receipt halts the ledger with its reservation retained;
     no unknown usage is refunded. This is memory-only, not a billing system.
     """
+
     def __init__(self, limits: Limits, *, clock_ms: Callable[[], int]):
         if type(limits) is not Limits:
             raise ValueError("invalid limits")
@@ -119,7 +129,10 @@ class Budget:
                 self.reason = "calls_exhausted"
             elif self.tokens + held_tokens + maximum.tokens > self.limits.tokens:
                 self.reason = "tokens_exhausted"
-            elif self.cost_microunits + held_cost + maximum.cost_microunits > self.limits.cost_microunits:
+            elif (
+                self.cost_microunits + held_cost + maximum.cost_microunits
+                > self.limits.cost_microunits
+            ):
                 self.reason = "cost_exhausted"
             if self.reason:
                 raise Halt(self.reason)
@@ -128,7 +141,14 @@ class Budget:
             self._pending[self._next] = maximum
             return self._next
 
-    def settle(self, ticket: int, *, tokens: int | None, cost_microunits: int | None, receipt=None):
+    def settle(
+        self,
+        ticket: int,
+        *,
+        tokens: int | None,
+        cost_microunits: int | None,
+        receipt: object = None,
+    ) -> None:
         _integer(ticket, positive=True)
         with self._lock:
             if ticket not in self._pending:
@@ -151,13 +171,17 @@ class Budget:
         with self._lock:
             self._check()
 
-    def _snapshot_locked(self):
-        return {"calls": self.calls, "tokens": self.tokens if not self._pending else None,
-                    "elapsed_ms": None if self._time_unknown else self._last - self._start,
-                    "cost_microunits": self.cost_microunits if not self._pending else None,
-                    "unresolved_calls": len(self._pending), "reason": self.reason}
+    def _snapshot_locked(self) -> dict[str, int | str | None]:
+        return {
+            "calls": self.calls,
+            "tokens": self.tokens if not self._pending else None,
+            "elapsed_ms": None if self._time_unknown else self._last - self._start,
+            "cost_microunits": self.cost_microunits if not self._pending else None,
+            "unresolved_calls": len(self._pending),
+            "reason": self.reason,
+        }
 
-    def snapshot(self):
+    def snapshot(self) -> dict[str, int | str | None]:
         with self._lock:
             return self._snapshot_locked()
 
@@ -190,7 +214,9 @@ class Completion:
     cost_microunits: int | None
     safety: bool | None
     latency_ms: int = 0
-    outcome: str = "completed"  # timeout is known scripted failure, never real retry authority
+    outcome: str = (
+        "completed"  # timeout is known scripted failure, never real retry authority
+    )
 
 
 @dataclass(frozen=True)
@@ -206,10 +232,15 @@ class Request:
 
 class ScriptedProvider:
     """An explicit offline adapter; no fallback and no callback to a live provider."""
+
     provider_id = "scripted.v1"
 
     def __init__(self, script: tuple[Completion, ...], *, clock: VirtualClock):
-        if type(script) is not tuple or len(script) > 4096 or any(type(x) is not Completion for x in script):
+        if (
+            type(script) is not tuple
+            or len(script) > 4096
+            or any(type(x) is not Completion for x in script)
+        ):
             raise ValueError("invalid bounded script")
         if type(clock) is not VirtualClock:
             raise ValueError("script requires virtual clock")
@@ -218,8 +249,17 @@ class ScriptedProvider:
 
     @property
     def sha256(self):
-        return _digest_json([{**vars(r), "content": digest(r.content) if type(r.content) is bytes else r.content}
-                             for r in self.script])
+        return _digest_json(
+            [
+                {
+                    **vars(r),
+                    "content": digest(r.content)
+                    if type(r.content) is bytes
+                    else r.content,
+                }
+                for r in self.script
+            ]
+        )
 
     def complete(self, request: Request) -> Completion:
         self.calls.append(request)
@@ -234,6 +274,7 @@ class ScriptedProvider:
 @dataclass(frozen=True)
 class Configuration:
     """All executed controls are part of these canonical, hash-locked bytes."""
+
     limits: Limits
     per_call: Reservation
     provider_script_sha256: str
@@ -252,10 +293,20 @@ class Configuration:
             raise ValueError("invalid budget configuration")
         _hash(self.provider_script_sha256)
         _integer(self.cost_scale, positive=True)
-        if ((self.provider, self.optimizer) not in {("scripted.v1", "scripted_stage.v1"), ("dspy.local.v1", "dspy.predict.v1")}
-                or (self.metric, self.currency, self.cost_scale) != ("synthetic_exact_match.v1", "SYNTHETIC", 1_000_000)):
+        if (self.provider, self.optimizer) not in {
+            ("scripted.v1", "scripted_stage.v1"),
+            ("dspy.local.v1", "dspy.predict.v1"),
+        } or (self.metric, self.currency, self.cost_scale) != (
+            "synthetic_exact_match.v1",
+            "SYNTHETIC",
+            1_000_000,
+        ):
             raise ValueError("unsupported offline configuration")
-        if type(self.preparation) is not tuple or len(self.preparation) > 16 or any(s not in {"optimization", "reflection"} for s in self.preparation):
+        if (
+            type(self.preparation) is not tuple
+            or len(self.preparation) > 16
+            or any(s not in {"optimization", "reflection"} for s in self.preparation)
+        ):
             raise ValueError("invalid preparation stages")
         if type(self.max_attempts) is not int or not 1 <= self.max_attempts <= 3:
             raise ValueError("invalid retry bound")
@@ -266,8 +317,16 @@ class Configuration:
 
     @property
     def content(self):
-        return json.dumps({**vars(self), "limits": vars(self.limits), "per_call": vars(self.per_call)},
-                          sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
+        return json.dumps(
+            {
+                **vars(self),
+                "limits": vars(self.limits),
+                "per_call": vars(self.per_call),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode()
 
     @property
     def sha256(self):
@@ -286,14 +345,25 @@ class Experiment:
     config_sha256: str
 
     def __post_init__(self):
-        for value in (self.dataset_sha256, self.split_sha256, self.baseline_sha256,
-                      self.candidate_sha256, self.config_sha256):
+        for value in (
+            self.dataset_sha256,
+            self.split_sha256,
+            self.baseline_sha256,
+            self.candidate_sha256,
+            self.config_sha256,
+        ):
             _hash(value)
-        for content, expected in ((self.baseline, self.baseline_sha256), (self.candidate, self.candidate_sha256)):
+        for content, expected in (
+            (self.baseline, self.baseline_sha256),
+            (self.candidate, self.candidate_sha256),
+        ):
             _bytes(content)
             if digest(content) != expected:
                 raise ValueError("artifact bytes changed")
-        if type(self.configuration) is not Configuration or self.configuration.sha256 != self.config_sha256:
+        if (
+            type(self.configuration) is not Configuration
+            or self.configuration.sha256 != self.config_sha256
+        ):
             raise ValueError("configuration bytes changed")
 
 
@@ -338,12 +408,25 @@ class Report:
 
     def _metrics(self, stage, quality):
         selected = tuple(a for a in self.attempts if a.request.stage == stage)
-        def total(field):
+
+        def total(field: str) -> int | None:
             values = [getattr(a, field) for a in selected]
-            return sum(values) if values and all(type(v) is int and v >= 0 for v in values) else None
+            return (
+                sum(cast(list[int], values))
+                if values and all(type(v) is int and v >= 0 for v in values)
+                else None
+            )
+
         safe = [a.safety for a in selected]
         safety = None if not safe or any(s is None for s in safe) else all(safe)
-        return Metrics(quality, safety, len(selected), total("tokens"), total("cost_microunits"), total("latency_ms"))
+        return Metrics(
+            quality,
+            safety,
+            len(selected),
+            total("tokens"),
+            total("cost_microunits"),
+            total("latency_ms"),
+        )
 
     @property
     def baseline_metrics(self):
@@ -355,7 +438,11 @@ class Report:
 
 
 def _validate_dataset(dataset, split):
-    if type(dataset) is not Dataset or type(split) is not LockedSplit or len(dataset.examples) > MAX_RECORDS:
+    if (
+        type(dataset) is not Dataset
+        or type(split) is not LockedSplit
+        or len(dataset.examples) > MAX_RECORDS
+    ):
         raise ValueError("invalid dataset or split")
     split.verify(dataset)
     # A split lock is integrity, not authentication. Recheck immutable byte links.
@@ -366,15 +453,28 @@ def _validate_dataset(dataset, split):
         if identity in seen or not s.complete or not o.complete or not example.feedback:
             raise ValueError("invalid lineage")
         seen.add(identity)
-        if (digest(s.content) != s.sha256 or digest(o.content) != o.sha256
-                or (o.source_id, o.source_revision, o.source_sha256) != (s.source_id, s.revision, s.sha256)):
+        if (
+            digest(s.content) != s.sha256
+            or digest(o.content) != o.sha256
+            or (o.source_id, o.source_revision, o.source_sha256)
+            != (s.source_id, s.revision, s.sha256)
+        ):
             raise ValueError("changed lineage bytes")
         _bytes(example.gold)
-    return tuple(e for e in dataset.examples if split.partition(e.source.family_id) == "train"), tuple(
-        e for e in dataset.examples if split.partition(e.source.family_id) == "heldout")
+    return tuple(
+        e for e in dataset.examples if split.partition(e.source.family_id) == "train"
+    ), tuple(
+        e for e in dataset.examples if split.partition(e.source.family_id) == "heldout"
+    )
 
 
-def guard_use(budget: Budget, check_use: Callable[[], None]) -> None:
+class _UseBudget(Protocol):
+    def check(self) -> None: ...
+
+    def stop(self, reason: str) -> None: ...
+
+
+def guard_use(budget: _UseBudget, check_use: Callable[[], None]) -> None:
     """No dispatch after cancellation or a denied fresh use check. Never refund."""
     try:
         budget.check()
@@ -385,14 +485,18 @@ def guard_use(budget: Budget, check_use: Callable[[], None]) -> None:
         raise
 
 
-def validate_provider(experiment: Experiment, provider: ScriptedProvider) -> Configuration:
+def validate_provider(
+    experiment: Experiment, provider: ScriptedProvider
+) -> Configuration:
     """Pure admission shared by durable claims and the existing runner."""
     if type(experiment) is not Experiment or not isinstance(provider, ScriptedProvider):
         raise ValueError("offline adapters required")
     cast(Callable[[], None], experiment.__post_init__)()
     config = experiment.configuration
     for validate in (
-        config.__post_init__, config.limits.__post_init__, config.per_call.__post_init__,
+        config.__post_init__,
+        config.limits.__post_init__,
+        config.per_call.__post_init__,
     ):
         cast(Callable[[], None], validate)()
     if (
@@ -409,10 +513,16 @@ def validate_provider(experiment: Experiment, provider: ScriptedProvider) -> Con
     return config
 
 
-def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
-             provider: ScriptedProvider, budget: Budget,
-             check_use: Callable[[], None] = lambda: None,
-             initial_provider_calls: int | None = None) -> Report:
+def evaluate(
+    dataset: Dataset,
+    split: LockedSplit,
+    experiment: Experiment,
+    *,
+    provider: ScriptedProvider,
+    budget: Budget,
+    check_use: Callable[[], None] = lambda: None,
+    initial_provider_calls: int | None = None,
+) -> Report:
     """Evaluate exact pinned artifacts on one lock; passing grants no authority.
 
     All stages share the supplied ledger. Only explicit scripted timeout receipts
@@ -423,10 +533,17 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
     config = validate_provider(experiment, provider)
     if budget.limits != config.limits or budget.clock_ms is not provider.clock:
         raise ValueError("adapter configuration changed")
-    cursor = len(provider.calls) if initial_provider_calls is None else initial_provider_calls
+    cursor = (
+        len(provider.calls)
+        if initial_provider_calls is None
+        else initial_provider_calls
+    )
     _integer(cursor)
     train, heldout = _validate_dataset(dataset, split)
-    if (experiment.dataset_sha256, experiment.split_sha256) != (split.dataset_sha256, split.sha256):
+    if (experiment.dataset_sha256, experiment.split_sha256) != (
+        split.dataset_sha256,
+        split.sha256,
+    ):
         raise ValueError("manifest binding changed")
     # The request object contains hashes/identity only, not gold or feedback text.
     attempts: list[Attempt] = []
@@ -462,10 +579,21 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
         if len(sequence) * config.max_attempts > 4096:
             raise Halt("attempt_limit")
         for stage, example in sequence:
-            artifact = experiment.baseline_sha256 if stage == "baseline" else experiment.candidate_sha256
+            artifact = (
+                experiment.baseline_sha256
+                if stage == "baseline"
+                else experiment.candidate_sha256
+            )
             for number in range(1, config.max_attempts + 1):
-                request = Request(stage, example.output.output_id, example.output.revision,
-                                  example.source.sha256, artifact, split.sha256, number)
+                request = Request(
+                    stage,
+                    example.output.output_id,
+                    example.output.revision,
+                    example.source.sha256,
+                    artifact,
+                    split.sha256,
+                    number,
+                )
                 guard_use(budget, check_use)
                 ticket = budget.reserve(config.per_call, request=request)
                 guard_use(budget, check_use)  # dispatch guard
@@ -473,10 +601,15 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                     reply = provider.complete(request)
                 except Exception:
                     budget.stop("provider_unknown")
-                    attempts.append(Attempt(request, "unknown", None, None, None, None, None))
+                    attempts.append(
+                        Attempt(request, "unknown", None, None, None, None, None)
+                    )
                     raise Halt("provider_unknown") from None
-                valid = (type(reply) is Completion and reply.outcome in {"completed", "timeout"}
-                         and (type(reply.safety) is bool or reply.safety is None))
+                valid = (
+                    type(reply) is Completion
+                    and reply.outcome in {"completed", "timeout"}
+                    and (type(reply.safety) is bool or reply.safety is None)
+                )
                 if valid:
                     try:
                         _integer(reply.latency_ms)
@@ -488,12 +621,27 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                         valid = False
                 if not valid:
                     budget.stop("malformed_reply")
-                    attempts.append(Attempt(request, "malformed", None, None, None, None, None))
+                    attempts.append(
+                        Attempt(request, "malformed", None, None, None, None, None)
+                    )
                     raise Halt("malformed_reply")
-                attempts.append(Attempt(request, reply.outcome,
-                                        digest(reply.content) if reply.content is not None else None,
-                                        reply.tokens, reply.cost_microunits, reply.safety, reply.latency_ms))
-                budget.settle(ticket, tokens=reply.tokens, cost_microunits=reply.cost_microunits, receipt=attempts[-1])
+                attempts.append(
+                    Attempt(
+                        request,
+                        reply.outcome,
+                        digest(reply.content) if reply.content is not None else None,
+                        reply.tokens,
+                        reply.cost_microunits,
+                        reply.safety,
+                        reply.latency_ms,
+                    )
+                )
+                budget.settle(
+                    ticket,
+                    tokens=reply.tokens,
+                    cost_microunits=reply.cost_microunits,
+                    receipt=attempts[-1],
+                )
                 safeties.append(reply.safety)
                 guard_use(budget, check_provider)
                 if reply.safety is not True:
@@ -505,17 +653,41 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
                 if number == config.max_attempts:
                     raise Halt("timeout")
         guard_use(budget, check_provider)
-        if sum(scores["candidate"]) * 1_000_000 < config.min_score_ppm * len(heldout) or (sum(scores["candidate"]) - sum(scores["baseline"])) * 1_000_000 < config.min_improvement_ppm * len(heldout):
+        if sum(scores["candidate"]) * 1_000_000 < config.min_score_ppm * len(
+            heldout
+        ) or (
+            sum(scores["candidate"]) - sum(scores["baseline"])
+        ) * 1_000_000 < config.min_improvement_ppm * len(heldout):
             raise Halt("threshold_failed")
         usage = budget.checked_snapshot()
         status = "passed"
     except Halt as exc:
         reason = str(exc)
-    baseline_score = sum(scores["baseline"]) / len(heldout) if heldout and len(scores["baseline"]) == len(heldout) else None
-    candidate_score = sum(scores["candidate"]) / len(heldout) if heldout and len(scores["candidate"]) == len(heldout) else None
+    baseline_score = (
+        sum(scores["baseline"]) / len(heldout)
+        if heldout and len(scores["baseline"]) == len(heldout)
+        else None
+    )
+    candidate_score = (
+        sum(scores["candidate"]) / len(heldout)
+        if heldout and len(scores["candidate"]) == len(heldout)
+        else None
+    )
     safety = None if not safeties or any(s is None for s in safeties) else all(safeties)
-    return Report(VERSION, status, reason, split.dataset_sha256, split.sha256,
-                  experiment.baseline_sha256, experiment.candidate_sha256, experiment.config_sha256,
-                  tuple((e.output.output_id, e.output.revision) for e in heldout),
-                  tuple(sorted(dataset.excluded_counts.items())), tuple(attempts),
-                  baseline_score, candidate_score, safety, tuple(sorted((usage if usage is not None else budget.snapshot()).items())))
+    return Report(
+        VERSION,
+        status,
+        reason,
+        split.dataset_sha256,
+        split.sha256,
+        experiment.baseline_sha256,
+        experiment.candidate_sha256,
+        experiment.config_sha256,
+        tuple((e.output.output_id, e.output.revision) for e in heldout),
+        tuple(sorted(dataset.excluded_counts.items())),
+        tuple(attempts),
+        baseline_score,
+        candidate_score,
+        safety,
+        tuple(sorted((usage if usage is not None else budget.snapshot()).items())),
+    )

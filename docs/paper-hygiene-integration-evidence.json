@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "evidence_class": "local_hygiene_paper_integration_not_runtime_acceptance",
+  "hygiene_parent": "ee1274fabcce6b6bc7659ac667609608ccf8d8c3",
+  "merged_paper_parent": "80a87f4569f1dfef14b141e141a89f30a9aaf7cd",
+  "published_paper_content_commit": "bfa8f760c1d56ec1c2ce07ea49e4d37ce4c01e5b",
+  "tested_local_commit": "d74ae7e706052fe200415f17bbb0e3e0fa339588",
+  "tested_local_tree": "3e886c6b876a0cdb8ee285d9f49e13d15e7610c8",
+  "source_identity_note": "The tested local commit is a review identity, not a promised public GitHub ref. Reproduce using the containing published checkout and the source hashes below. This additive receipt does not rewrite the original native build evidence.",
+  "tested_worktree_clean": true,
+  "source_sha256": {
+    "hygiene.json": "58775b131f4245e56292d01c1f6662fa890262fba66b4dbfa225db19f4201bbc",
+    "validation-partitions.json": "1e0a8d9ebeea612fe1e765a0f177a4935d74bfada709444191800dc6ed1d5659",
+    "tools/check_scaffold.py": "830efc10e538db89807484afe32f5b5c00371033aeb4cb8ef8c17204556f2d39",
+    "docs/design/artifacts.json": "3d647ffbb4786a3ffa0e059bcdd35f115b81b8ff6d45624b35ef51fcd338cb8a",
+    "docs/design/build-paper.py": "55aff60ec397e5e7be76f24b6cec60a8c3dc7966c4a32359004f0aaf7ebe7aff",
+    "tools/check_paper.py": "cb4981401993b2ef1c810bd386162d3d7003671c8e9734eb26c0a8fcf8284998",
+    "tests/test_paper.py": "189c07c802c46ac54177c4d81f156889619070f307efa0b10641f0a2723fd19f",
+    "tests/test_paper_hygiene.py": "ac4e5230639a26bba8e092e8c9500024eaaf94c60de637ea1367eece92488d5d",
+    "specs/paper-hygiene-integration.md": "b425ef9951d7d969ebec2baee8911e8363925471358e0161b22175bec692dd6b"
+  },
+  "preserved_sha256": {
+    "docs/design/workflow-refinery.tex": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
+    "docs/design/workflow-refinery.pdf": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+    "docs/design/build-evidence.json": "6155bf4ffe8652163e4927ea2623cfea141666edb96811fddaf524badd740960",
+    "docs/design/source-disposition.json": "bf013b827882cd6f04cd9b69a6cf2b4446fbae6765947aea9ea8d7453e14bcec",
+    "docs/design/toolchain-lock.json": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+    ".github/workflows/validation.yml": "2b2180905e9bd10d5d3fe7ea71b6029929c05e80697e7ed9cb9a1fb8e3186b2b",
+    "requirements-quality.txt": "9cbe1331549216b953f2922f1e8321357ca82bb985e1ea595c87fcee8a8fdc84",
+    "tools/quality-baseline.json": "308ea3d32cb043e2ee521a850e77fd2f16cd4157dddfdc60d9fe275c1ce3b748",
+    "dependencies/tether-feedback.json": "868d751dec371891a7fddac68b1dfc46d17b7e86086720d2673cd82901b2780e"
+  },
+  "byte_preservation": "All sixteen paper files other than the manifest and build wrapper match the merged paper parent. The wrapper changed import order only; its non-import AST is unchanged. The checker AST is unchanged. All eight figure bytes and original notices are preserved.",
+  "validation_contract": "One mandatory check-paper inventory entry and one component-partition assignment; removed indirect scaffold invocation. All other partition/image fields and workflow bytes unchanged.",
+  "verification": {
+    "aggregate": "passed",
+    "normal_tests": 168,
+    "optimized_tests": 168,
+    "skipped_tests": 0,
+    "focused_paper_tests": 6,
+    "new_partition_tests": 2,
+    "optimized_paper_checker": "passed",
+    "evaluation_mutations": "passed",
+    "durable_mutations": "passed",
+    "strict_mypy": "passed all four new paper Python files; mypy 1.18.2",
+    "ruff": "passed isolated E4,E7,E9,F,I and format on all four paper Python files; Ruff 0.14.5",
+    "repository_static_quality": "passed with unchanged historical baseline, no new diagnostics",
+    "git_diff_check": "passed",
+    "python": "3.12.14"
+  },
+  "clean_aggregate_receipt_sha256": "17d6ef931e0fbc6d400c0bf1610a948eb9bb1e30cd90bd683e9feca68752b673",
+  "optimized_log_sha256": "41aef2ca532defa17daf2368a8e174dc7ee6f85e25737259b1adec9b0904fc6c",
+  "limitations": [
+    "No additional TeX compilation or page rendering was performed; approved paper bytes are unchanged.",
+    "Committed build-paper.py end-to-end execution remains unrun; prior native command/environment equivalence remains valid.",
+    "Local checks do not qualify the CI runner image, deployment, provider use or live acceptance.",
+    "The composition mirror is a separate dependent integration; issue #3 remains open.",
+    "No software installation, dependency pin, workflow gate or quality-baseline change."
+  ]
+}

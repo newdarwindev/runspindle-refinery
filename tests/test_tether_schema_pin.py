@@ -1,14 +1,17 @@
 """Real pinned SQLite families and subprocess import-integrity checks."""
 
+import importlib
 import json
 import os
-from pathlib import Path
 import sqlite3
 import subprocess
 import sys
 import unittest
+from pathlib import Path
 
-import test_feedback_collection as fixtures
+# Match unittest discovery identity: a second package import duplicates its
+# verified dependency singleton and must not bypass the loader guard.
+fixtures = importlib.import_module("test_feedback_collection")
 
 ROOT = Path(__file__).resolve().parents[1]
 

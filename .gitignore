@@ -11,4 +11,6 @@ target/
 node_modules/
 dist/
 
+# Local sanitized verification reports; no upload policy enabled.
+.verification/
 .feedback-deps/

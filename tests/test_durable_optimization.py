@@ -2,26 +2,26 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import replace
 import importlib
 import importlib.util
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
 import tempfile
 import threading
-from typing import Any
 import unittest
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 from refinery import evaluation as ev
 from refinery.durable_evaluation import SQLiteBudget
 from refinery.durable_optimization import run
-from refinery.storage import VERSION
 from refinery.lineage import digest
+from refinery.storage import VERSION
 
 storage: Any = importlib.import_module("refinery.storage")
 

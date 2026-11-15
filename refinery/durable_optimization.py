@@ -13,7 +13,7 @@ from .durable_evaluation import SQLiteBudget
 from .feedback_use import RetainedFeedbackUse, use_guard
 from .lineage import _token, digest
 from .optimization import Selection, _prepare, optimize
-from .storage import Store, VERSION, pack, version
+from .storage import VERSION, Store, pack, version
 
 encode = cast(Callable[[Any], bytes], pack)
 check_version = cast(Callable[[str], None], version)

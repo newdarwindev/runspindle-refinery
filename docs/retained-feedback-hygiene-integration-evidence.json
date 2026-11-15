@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "evidence_class": "local_retained_feedback_hygiene_integration_not_live_or_image_acceptance",
+  "hygiene_parent": "ec164a3a3a6f9c9df840e07975a9f8ed186ccdfb",
+  "merged_runtime_main": "278ebdfdbaa1a7cc4f5c8b1f4aef430ca6b11023",
+  "published_runtime_head": "080a11f142d87b3f02ecebd2da77a7904a9c6ddf",
+  "published_runtime_tree": "d49900ccceeaf2673a7b70b7351b7ce7f7d96f59",
+  "local_integration_merge": "508959e3dd0d3ef658b318b204159905c914fb17",
+  "local_integration_merge_tree": "ffa3d1462448bf1b6d26584e751d81457af95fe4",
+  "ordered_merge_parents": [
+    "ec164a3a3a6f9c9df840e07975a9f8ed186ccdfb",
+    "278ebdfdbaa1a7cc4f5c8b1f4aef430ca6b11023"
+  ],
+  "tested_local_commit": "dd44ab194b0bab9ae0436fdabc78061f4bfcb87f",
+  "tested_local_tree": "2da590e291871a867b837d138112927afac24cb7",
+  "tested_worktree_clean": true,
+  "source_identity_note": "This clean local source commit is a review identity, not a promised public GitHub ref. This additive receipt/specification were committed afterward, and final-head checks are recorded separately. Historical runtime and paper receipts remain byte-for-byte snapshots of their original sources, not claims that their source hashes describe the normalized files below.",
+  "integration": "Conflict-free merge preserving published hygiene and runtime ancestry. Only three Python files were adjusted afterward for newly surfaced strict-quality diagnostics: formatting, annotations, identity casts, a two-method typing Protocol, and test imports resolving the same unittest discovery modules. No authorization branch, dispatch order, cached association check or negative assertion was removed or changed.",
+  "quality_changes": {
+    "refinery/durable_evaluation.py": "Normalized imports; identity casts describe existing untyped storage/encoding interfaces at three new calls. Call targets are still resolved at use time.",
+    "refinery/evaluation.py": "Normalized imports and Ruff formatting; added function/method annotations, a cast after existing integer validation, and a check/stop Protocol for the use gate.",
+    "tests/test_feedback_use.py": "Normalized imports and dynamic imports of the same unittest discovery fixture modules, preserving the pinned dependency singleton and all assertions."
+  },
+  "normalized_executable_equivalence": {
+    "refinery/durable_evaluation.py": {
+      "before_sha256": "53b41010f5833b2118e3780e8f5e591f46e98c8e291e075c08a1b6136b955577",
+      "after_sha256": "2b3595db0dad959499ab96a99875ee576422f08f115c6f5978b8c92a75b32b51",
+      "normalized_ast_sha256": "1e572dfcef17ed3b0013065471b77ae4f509354ea52ccee4622552e268d93dca"
+    },
+    "refinery/evaluation.py": {
+      "before_sha256": "a9319764aa6074eccf800d29b209079e0e4eb85eae9decc162375fe19abcf89e",
+      "after_sha256": "5e3fe92860cdd35aacbc12bb4e72fd72556a560891b497a0d6f2c15801ba600f",
+      "normalized_ast_sha256": "0796e70ec461d34b7e626f392c330f4dbf7cae5472c740b4cc3e315d83f66e11"
+    },
+    "tests/test_feedback_use.py": {
+      "before_sha256": "ee2c6d27f0fff9560222423d89b8cc1b1158be0ccc824222f874d105567b3187",
+      "after_sha256": "89a63d77639d1a9031695628ba9d5d59458d35953e6a1cc92f4a09ed3f7f2891",
+      "normalized_ast_sha256": "59219e84427509b3b14c278c79f195f247f2a89be917741d56595d19053585af"
+    }
+  },
+  "equivalence_method": "Strip imports, function annotations and the added typing-only Protocol; erase runtime-identity casts; preserve discovery fixture module identities. No production branch, call order, argument, condition or assertion changes.",
+  "source_sha256": {
+    "docs/retained-feedback-use-evidence.json": "d95dafb29aa54041ab79a14e21b21f51a98f52e68c0078763e690918b9b8f599",
+    "refinery/durable_evaluation.py": "2b3595db0dad959499ab96a99875ee576422f08f115c6f5978b8c92a75b32b51",
+    "refinery/durable_optimization.py": "090c2a0814fb45767ea4902b33f946b8d569b64c8c7bbb5019ed8d3ed0763305",
+    "refinery/evaluation.py": "5e3fe92860cdd35aacbc12bb4e72fd72556a560891b497a0d6f2c15801ba600f",
+    "refinery/feedback_use.py": "9ef08a702b0b71471b1083efacfbbcfee9725605913d5ce10e38dd15b415347b",
+    "refinery/optimization.py": "f47407aee51bd0898034517f7dc48cf74231a2ce3ca1cc75e46b1be863bd1ceb",
+    "specs/README.md": "c4bd22034febcfcf7c2067bc063d26314de8950fb2af9555daac43c288e26c38",
+    "specs/retained-feedback-collection.md": "550493720a671b3ac49d22fdd230a808ac8b030fa2094ffbf1b0739d1fd91d07",
+    "specs/retained-feedback-use.md": "155197034ceabb0d1550364d2dfdf5c36924f263a62a5af6c71f6ac0985fc048",
+    "tests/test_durable.py": "a6b16de075e30d71eeaf7dfc63db107db3da65d3ec0661ba2b37615fccb49e7b",
+    "tests/test_durable_optimization.py": "a9c6340c331ef8a781b822abafc3fcdb2a6ad412e9bfdc9519597c50cb0f3c3d",
+    "tests/test_feedback_use.py": "89a63d77639d1a9031695628ba9d5d59458d35953e6a1cc92f4a09ed3f7f2891",
+    "tools/test_dspy_local.py": "6c35f010f253e3432ea4a9d6c8c71534c6bb7161ddba844d8fd0c2f6355c6e58"
+  },
+  "protected_prior_sha256": {
+    ".github/workflows/evaluation.yml": "25463fd65f0a3bd1c274ba577d8e04cb7f533a96501612404d6c424f3611bffc",
+    ".github/workflows/fleet-qualification.yml": "4877c917d24d07fb8ceb882e8c1f801576cc9f6fdd697a352f99950e83d9c829",
+    ".github/workflows/refinery-ci.yml": "2c42947b12a0e484d074329ab6b69414fa6697cc89bb56127de0fd1075e4f2ef",
+    ".github/workflows/validation.yml": "2b2180905e9bd10d5d3fe7ea71b6029929c05e80697e7ed9cb9a1fb8e3186b2b",
+    "docs/design/LICENSE-SRC-013.txt": "fcf64df3e04554728cc4f082f244fa3dc672c2c6368f22360e6491a113204895",
+    "docs/design/README.md": "d81edc6f6ab5dda1f63ac51deac58b0297e2d608f073b7eac061a09753ead286",
+    "docs/design/THIRD_PARTY_NOTICES.md": "f37a72d29b7054b180f65f5b1c99e13c3128ac2237d2cc15e725804910efeed3",
+    "docs/design/artifacts.json": "849bd865abeea7ef754959b291be3943f0ffc9d3ad10ec675071d2ab90210891",
+    "docs/design/build-evidence.json": "6155bf4ffe8652163e4927ea2623cfea141666edb96811fddaf524badd740960",
+    "docs/design/build-paper.py": "55aff60ec397e5e7be76f24b6cec60a8c3dc7966c4a32359004f0aaf7ebe7aff",
+    "docs/design/figures/01-identity.pdf": "1e2a2783b9aa72e6c8b7061dce2c7bc34d437d27c31902d560880770f3b85245",
+    "docs/design/figures/02-lifecycle.pdf": "aacfb658176506f7ccba445d6445ca13df85d71afcee155ea5a98bb4ee9a7e75",
+    "docs/design/figures/03-approval.pdf": "b8b6b7721e0933a08604c611da96bf5b3e6d57053c7bf88ecefcc5fac5b91704",
+    "docs/design/figures/04-golden-data.pdf": "1697092f98162f7959cc001d722285ff250d9121dd7789cf35e5f90f1f3c4f07",
+    "docs/design/figures/05-control-planes.pdf": "489ae57fb48e81a27021ff2011fe9ecb4681965a4dd0bf12a0c79260983616d4",
+    "docs/design/figures/06-constellation.pdf": "4f171412f6e0aa17507a2797aaf9f1e0b4ddb0e1240804901966bdd66440716a",
+    "docs/design/figures/07-provenance.pdf": "908563c718c4db8623c55db0b42a8f83f09f8815d956295d0eb683e93fd317ab",
+    "docs/design/figures/08-observation.pdf": "e3d956582e24f75146ec897111676730a5d35856966035ac89bca9974dd2fac3",
+    "docs/design/source-disposition.json": "bf013b827882cd6f04cd9b69a6cf2b4446fbae6765947aea9ea8d7453e14bcec",
+    "docs/design/source-wrapper-change-evidence.json": "b0f4a8cecd52500d91a99b5057dca5d08f4d5c69055412e46f91eae3f3638c69",
+    "docs/design/toolchain-lock.json": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+    "docs/design/workflow-refinery.pdf": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+    "docs/design/workflow-refinery.tex": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
+    "docs/paper-hygiene-integration-evidence.json": "be06ee9d91833c5eab0603232c3a5dc2852070707bd0b86b59580c536bf68e88",
+    "docs/paper-wrapper-hygiene-integration-evidence.json": "52662cc410bbf49ce97dfe23970b2cdbbab55ca0e2a55d2ec5e080f145ed3332",
+    "hygiene.json": "58775b131f4245e56292d01c1f6662fa890262fba66b4dbfa225db19f4201bbc",
+    "validation-partitions.json": "1e0a8d9ebeea612fe1e765a0f177a4935d74bfada709444191800dc6ed1d5659",
+    "requirements-quality.txt": "9cbe1331549216b953f2922f1e8321357ca82bb985e1ea595c87fcee8a8fdc84",
+    "tools/quality-baseline.json": "308ea3d32cb043e2ee521a850e77fd2f16cd4157dddfdc60d9fe275c1ce3b748",
+    "tools/static_quality.py": "f935576227eb495763c6c8116eb698fe3184e720d21e6bf78f8a9212953e0c9d",
+    "dependencies/tether-feedback.json": "868d751dec371891a7fddac68b1dfc46d17b7e86086720d2673cd82901b2780e",
+    "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525"
+  },
+  "approved_runtime_exact_sha256": {
+    "refinery/feedback_use.py": "9ef08a702b0b71471b1083efacfbbcfee9725605913d5ce10e38dd15b415347b",
+    "refinery/optimization.py": "f47407aee51bd0898034517f7dc48cf74231a2ce3ca1cc75e46b1be863bd1ceb",
+    "docs/retained-feedback-use-evidence.json": "d95dafb29aa54041ab79a14e21b21f51a98f52e68c0078763e690918b9b8f599",
+    "specs/retained-feedback-use.md": "155197034ceabb0d1550364d2dfdf5c36924f263a62a5af6c71f6ac0985fc048"
+  },
+  "verification": {
+    "aggregate": "passed",
+    "normal_tests": 183,
+    "optimized_tests": 183,
+    "skipped_tests": 0,
+    "use_gate_tests_each_mode": 15,
+    "negative_coverage": "Denial/revocation, edits/deletes/conflicts, stale/forged associations, callback mutation and final reread, exact run/config bindings, reservation preservation, cancellation, restart/cache checks and synthetic rebatching denials. Both dispatch-guard removal mutants independently observed forbidden calls in each interpreter mode.",
+    "evaluation_mutations_detected": 3,
+    "durable_mutations_detected": 4,
+    "repository_static_quality": "passed strict unchanged-baseline gate across 47 Python files; zero new diagnostics, 679 surviving historical diagnostics",
+    "quality_history": "Initial integration exposed 10 new diagnostics. Formatting normalization then exposed seven relocated legacy type diagnostics; these were resolved with explicit annotations/identity casts without editing the baseline.",
+    "scoped_strict_mypy": "passed feedback_use.py, optimization.py, durable_optimization.py and test_feedback_use.py with --strict --follow-imports=silent --no-incremental; mypy 1.18.2",
+    "scoped_ruff": "passed isolated E4,E7,E9,F,I on seven runtime/typed-test files; Ruff 0.14.5",
+    "all_changed_python_format": "passed all nine changed Python files",
+    "broader_raw_ruff": "Three inherited I001 findings remain in tests/test_durable.py and tools/test_dspy_local.py. These match existing baseline debt; the standalone nine-file raw lint run did not pass. No new lint exception or exclusion was added.",
+    "paper_checker": "passed normal mandatory check and direct optimized check without modifying any paper bytes",
+    "git_diff_check": "passed",
+    "python": "3.12.14",
+    "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424",
+    "cargo": "unavailable; this component inventory contains no Rust command"
+  },
+  "local_receipt_sha256": {
+    "source-aggregate-evidence.json": "91c47dc7637100048d81ddad6f110bd7d30e10bea6db97bc5b95300bca925aad",
+    "source-optimized.log": "ebd37178d50e4b2dbc235d8a4d8246d3acaa537199667fe3bc9d3f812aa84af5",
+    "source-quality.log": "f54a06f9788c24d3fcf12a785c16d5e228c911de63091129e7b3e34bd5a92c75",
+    "scoped-ruff.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "static-quality.log": "7b91008d3b9d2300ba305ba55ed68c1e367cc2be660ff2d1d5409cb4622879f9",
+    "preservation.json": "a253b90909598bb41c50d50cf9964c8b6015ea60bea0a6ad9c15d08ee309cdd3"
+  },
+  "upstream_runtime_ci": {
+    "url": "https://github.com/newdarwindev/runspindle-refinery/actions/runs/43664412186",
+    "head": "080a11f142d87b3f02ecebd2da77a7904a9c6ddf",
+    "conclusion": "success",
+    "scope": "Historical ordinary CI for its own runtime head only; not qualification of this integrated hygiene candidate or its pinned runner image."
+  },
+  "limitations": [
+    "Independent review of this integrated candidate is pending; exact-head qualified-image CI remains unrun/unverified. Local runner-image identity is unavailable.",
+    "Source checks use real local component stores with synthetic authorities and scripted providers. They do not authenticate external consent or provide atomic cross-database revocation, live provider/training acceptance or production qualification.",
+    "Historical runtime and paper evidence, all 19 design files, workflows, image bindings, baselines, strict inventories and dependency pins remain unchanged. No new PDF was imported or published.",
+    "No native/image/fleet/browser/server/provider/service/install/security operation, shell network fetch, workflow dispatch, publication or remote merge was performed for this local integration. GitHub read-only verification used the existing connector.",
+    "No issue was closed or acceptance boundary upgraded by this integration."
+  ]
+}

@@ -10,11 +10,11 @@
     "production serving"
   ],
   "source_files": {
-    "refinery/durable_optimization.py": "7ab2638ea69d32fe3625e73ebfe3619f36da28ce2f6d5cd2ff82e1c1ebdcd96c",
+    "refinery/durable_optimization.py": "afdac3806dc833a921e595c52fe4603586765f31430597c4b961baf3924a2cc6",
     "refinery/optimization.py": "44b8ae6a104fbe841eb57d4e386bf4c0459eb5b9d39d32dd91dfbfb20fb30342",
-    "refinery/storage.py": "31d194a190998d13852019b4f6ac66fe60386debb37ebae9de0c605f664853a1",
+    "refinery/storage.py": "2a0dd681ddb8ddc89bffc1890b46561b78975f74c877c40622852ad3ef872a2f",
     "specs/durable-training-selection.md": "194d8ab52c3eac8900d00a3ac0705a8677a28f525f4631aaefb6658c857a489e",
-    "tests/test_durable_optimization.py": "e53520cf516baca847c0ab0e1bc690395bc57829f074314fe659f2051a7f6009"
+    "tests/test_durable_optimization.py": "1cca0318da265c70be24c284afb3db76eaa3618c268b1a4def9d3e8dd02a5f37"
   },
   "verification": {
     "aggregate_tests": 85,

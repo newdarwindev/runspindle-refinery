@@ -13,9 +13,8 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-import test_durable
-
 from refinery import storage
+from tests import test_durable
 
 st: Any = storage
 setup: Any = test_durable.setup

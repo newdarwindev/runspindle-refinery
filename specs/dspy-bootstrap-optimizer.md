@@ -87,3 +87,10 @@ Primary API references used in this implementation:
 
 The original project adapter calls those APIs; no third-party implementation code
 was copied into this repository.
+
+A separate [durable lifecycle wrapper](durable-dspy-lifecycle.md) now adds SQLite
+ownership, recovery and store-scoped family holdout seals. Those guarantees belong
+to that wrapper, not these direct process-local functions. Its actual framework
+execution/restart qualification remains unrun. Held-out reports now retain
+per-example prediction digests, and parsed answer bytes must match the final raw
+completion receipt; adapter transformations or whitespace changes fail closed.

@@ -7,15 +7,16 @@ The codec is explicit, deterministic JSON: never pickle or executable payloads.
 from __future__ import annotations
 
 import base64
+import json
+import sqlite3
 from contextlib import contextmanager, nullcontext
 from dataclasses import fields, is_dataclass
-import json
 from pathlib import Path
-import sqlite3
 from typing import Any, Protocol
 
-from . import lineage as lin
 from . import evaluation as ev
+from . import lineage as lin
+from .dspy_optimizer import Compiled
 from .optimization import Selection
 
 VERSION = "runspindle.maintained-evidence.v1"
@@ -42,6 +43,7 @@ TYPES: dict[str, type[Any]] = {
         ev.Report,
         ev.Metrics,
         Selection,
+        Compiled,
     )
 }
 

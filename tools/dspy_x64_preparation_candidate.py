@@ -332,17 +332,34 @@ def check_wheel_paths(wheels: dict[str, bytes]) -> None:
                     raise ValueError("unsafe wheel member path or depth")
 
 
+def expand_tag(value: str) -> set[str]:
+    """Expand the same compressed compatibility-tag grammar on both surfaces."""
+    parts = value.split("-")
+    if len(parts) != 3 or any(
+        not re.fullmatch(r"[a-z0-9_]+(?:\.[a-z0-9_]+)*", part)
+        or len(part.split(".")) != len(set(part.split(".")))
+        for part in parts
+    ):
+        raise ValueError("malformed or duplicate wheel tag component")
+    count = 1
+    for part in parts:
+        count *= len(part.split("."))
+    if count > MAX_FILES:
+        raise ValueError("wheel tag expansion limit")
+    return {
+        f"{p}-{a}-{t}"
+        for p in parts[0].split(".")
+        for a in parts[1].split(".")
+        for t in parts[2].split(".")
+    }
+
+
 def check_wheel_tags(wheels: dict[str, bytes]) -> None:
     for filename, data in wheels.items():
         parts = filename[:-4].split("-")
         if len(parts) not in {5, 6} or not filename.endswith(".whl"):
             raise ValueError("opaque wheel filename")
-        filename_tags = {
-            f"{p}-{a}-{t}"
-            for p in parts[-3].split(".")
-            for a in parts[-2].split(".")
-            for t in parts[-1].split(".")
-        }
+        filename_tags = expand_tag("-".join(parts[-3:]))
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             metadata = [
                 x
@@ -352,7 +369,14 @@ def check_wheel_tags(wheels: dict[str, bytes]) -> None:
             if len(metadata) != 1:
                 raise ValueError("wheel must contain one WHEEL")
             wheel = BytesParser().parsebytes(archive.read(metadata[0]))
-            tags = set(wheel.get_all("Tag", []))
+            tags: set[str] = set()
+            for value in wheel.get_all("Tag", []):
+                expanded = expand_tag(value)
+                if tags & expanded:
+                    raise ValueError("duplicate expanded wheel tag")
+                tags.update(expanded)
+                if len(tags) > MAX_FILES:
+                    raise ValueError("wheel tag expansion limit")
             if tags != filename_tags or not any(compatible_tag(tag) for tag in tags):
                 raise ValueError("incompatible or inconsistent wheel tags")
             metas = [

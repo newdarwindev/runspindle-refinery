@@ -58,6 +58,12 @@ ELF headers are checked for x86_64, and extracted installer/runtime bytes and
 modes must exactly match the pinned archives. The auditor never executes a
 binary to infer its identity.
 
+Dot-compressed tag components in filenames and WHEEL metadata are expanded with
+the same bounded grammar before comparing their exact sets. Duplicate expanded
+tags, empty or malformed components, mismatched sets and profiles with no
+compatible tag are rejected. This supports equivalent compressed representations
+without accepting a different platform or changing the exact runtime-mode policy.
+
 uv's observed root `.lock` is an explicitly separate installer artifact: exactly
 one empty, regular, single-link, mode-0666 file. Its unchanged bytes remain in the
 full candidate manifest and complete tree comparison. Only this artifact is

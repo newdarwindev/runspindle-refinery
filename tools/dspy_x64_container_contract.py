@@ -22,6 +22,7 @@ FIXTURE: Fixture = {
     "cost_microunits": 0,
 }
 ENVIRONMENT = {
+    "HOSTNAME": "runspindle-dspy-smoke",
     "PATH": "/runtime/python/bin",
     "HOME": "/scratch",
     "TMPDIR": "/scratch",
@@ -60,6 +61,8 @@ def create_spec(image: str, contract_sha256: str, source_sha: str) -> dict[str, 
     return {
         "Image": image,
         "User": "65532:65532",
+        "Hostname": "runspindle-dspy-smoke",
+        "Domainname": "",
         "WorkingDir": "/scratch",
         "Entrypoint": [
             "/runtime/python/bin/python3.14",
@@ -97,7 +100,7 @@ def create_spec(image: str, contract_sha256: str, source_sha: str) -> dict[str, 
             "CgroupnsMode": "private",
             "UsernsMode": "",
             "Runtime": "runc",
-            "RestartPolicy": {"Name": "no"},
+            "RestartPolicy": {"Name": "no", "MaximumRetryCount": 0},
             "AutoRemove": False,
             "LogConfig": {"Type": "json-file", "Config": {"max-size": "-1"}},
             "Tmpfs": {
@@ -122,6 +125,8 @@ def check_observation(spec: dict[str, Any], observed: dict[str, Any]) -> None:
         raise ValueError("image or mounts differ")
     for field in (
         "User",
+        "Hostname",
+        "Domainname",
         "WorkingDir",
         "Entrypoint",
         "Cmd",
@@ -133,6 +138,12 @@ def check_observation(spec: dict[str, Any], observed: dict[str, Any]) -> None:
     if sorted(config.get("Env", [])) != sorted(spec["Env"]):
         raise ValueError("container environment differs")
     for field, value in spec["HostConfig"].items():
+        if (
+            field in {"Binds", "Mounts", "Devices", "CapAdd"}
+            and value == []
+            and host.get(field) in (None, [])
+        ):
+            continue  # Equivalent API representations of no added grant/mount.
         if host.get(field) != value:
             raise ValueError("container confinement differs: " + field)
 

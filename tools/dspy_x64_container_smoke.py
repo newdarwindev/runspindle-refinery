@@ -182,8 +182,10 @@ def run(contract: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("unqualified execution identity")
     check_kernel_status(Path("/proc/self/status").read_text())
     sys.path[:0] = ["/source", "/deps"]
-    from tools.dspy_x64_container_contract import FIXTURE, digest, encoded
+    from tools.dspy_x64_container_contract import ENVIRONMENT, FIXTURE, digest, encoded
 
+    if contract["environment"] != ENVIRONMENT or dict(os.environ) != ENVIRONMENT:
+        raise ValueError("actual process environment differs from reviewed contract")
     if contract["fixture_sha256"] != digest(encoded(FIXTURE)):
         raise ValueError("synthetic fixture differs")
     attempts: list[str] = []

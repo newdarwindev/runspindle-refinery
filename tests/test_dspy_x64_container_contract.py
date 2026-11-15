@@ -143,6 +143,18 @@ class ContainerPolicyTests(unittest.TestCase):
             with self.subTest(image=image), self.assertRaises(ValueError):
                 policy.create_spec(image, digest, "c" * 40)
 
+    def test_only_empty_optional_grants_accept_api_null(self) -> None:
+        spec = policy.create_spec("sha256:" + "a" * 64, "b" * 64, "c" * 40)
+        observed = self.observation(spec)
+        for field in ("Binds", "Mounts", "Devices", "CapAdd"):
+            observed["HostConfig"][field] = None
+        policy.check_observation(spec, observed)
+        for field in ("Binds", "Mounts", "Devices", "CapAdd"):
+            changed = copy.deepcopy(observed)
+            changed["HostConfig"][field] = ["unexpected"]
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                policy.check_observation(spec, changed)
+
     def test_output_deadline_and_descendant_evidence_are_required(self) -> None:
         spec = policy.create_spec("sha256:" + "a" * 64, "b" * 64, "c" * 40)
         observed = self.observation(spec)

@@ -4,6 +4,8 @@ import contextlib
 import sys
 import types
 import unittest
+from collections.abc import Iterator
+from typing import Any
 from unittest.mock import patch
 
 from refinery.dspy_local import LocalDSPyProvider
@@ -11,34 +13,34 @@ from refinery.evaluation import Completion, Request, VirtualClock
 
 
 class LocalAdapterContractTests(unittest.TestCase):
-    def exercise(self, *, explicit_retry=False):
-        observed = {}
+    def exercise(self, *, explicit_retry: bool = False) -> None:
+        observed: dict[str, Any] = {}
         original = RuntimeError("synthetic adapter failure")
 
         class BaseLM:
-            def __init__(self, **kwargs):
+            def __init__(self, **kwargs: Any) -> None:
                 observed["lm_configuration"] = kwargs
 
         class ChatAdapter:
             def __init__(
                 self,
                 *,
-                use_native_function_calling=False,
-                use_json_adapter_fallback=True,
-            ):
+                use_native_function_calling: bool = False,
+                use_json_adapter_fallback: bool = True,
+            ) -> None:
                 observed["fallback"] = use_json_adapter_fallback
                 observed["native_tools"] = use_native_function_calling
 
         @contextlib.contextmanager
-        def context(**kwargs):
+        def context(**kwargs: Any) -> Iterator[None]:
             observed.update(kwargs)
             yield
 
         class Predict:
-            def __init__(self, signature):
+            def __init__(self, signature: str) -> None:
                 observed["signature"] = signature
 
-            def __call__(self, **inputs):
+            def __call__(self, **inputs: str) -> None:
                 lm = observed["lm"]
                 lm.forward(messages=[{"role": "user", "content": inputs["case"]}])
                 # Model the documented default retry seam without importing DSPy.
@@ -56,9 +58,12 @@ class LocalAdapterContractTests(unittest.TestCase):
         request = Request(
             "baseline", "synthetic", "revision", "a" * 64, "b" * 64, "c" * 64, 1
         )
-        provider = LocalDSPyProvider(
+        # These existing APIs and the replaceable DSPy seam are dynamically typed.
+        provider_factory: Any = LocalDSPyProvider
+        clock_factory: Any = VirtualClock
+        provider: Any = provider_factory(
             (Completion(b"synthetic", 1, 0, True),),
-            clock=VirtualClock(),
+            clock=clock_factory(),
             dependency_sha256="d" * 64,
         )
         with patch.dict(sys.modules, {"dspy": fake}):
@@ -77,8 +82,8 @@ class LocalAdapterContractTests(unittest.TestCase):
         else:
             self.assertIs(error.exception, original)
 
-    def test_adapter_failure_propagates_without_implicit_retry(self):
+    def test_adapter_failure_propagates_without_implicit_retry(self) -> None:
         self.exercise()
 
-    def test_explicit_second_call_still_fails_closed(self):
+    def test_explicit_second_call_still_fails_closed(self) -> None:
         self.exercise(explicit_retry=True)

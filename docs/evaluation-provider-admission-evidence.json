@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "evidence_class": "local_component_evaluation_admission_not_provider_or_production_acceptance",
+  "base_revision": "278ebdfdbaa1a7cc4f5c8b1f4aef430ca6b11023",
+  "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424",
+  "source_sha256": {
+    "refinery/evaluation.py": "77a0d08ac7bf557eea4da24e9fde7eac9591162500de0bc23117575532900ae5",
+    "refinery/durable_evaluation.py": "3973fbade81d290b65a0583c675f17bc1a2790fdda43083947ff011a690d281a",
+    "tests/test_evaluation_admission.py": "5a25950200e56401cbe6de6975358fac89b98553b4aa8b361eccd7048970fe9a",
+    "specs/evaluation-provider-admission.md": "7a1c491936d4be9605b0d852cd12f1810160c569d6a410ae59ef13ecd5337813",
+    "specs/README.md": "49df76e8c91d26455bb6fa97e602dbb983d3486d993b0fd93a0bd55b34f89291"
+  },
+  "toolchain": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1",
+    "ruff": "0.14.5",
+    "mypy": "1.18.2"
+  },
+  "verification": {
+    "aggregate": "passed python tools/validate.py with preprepared exact Tether source",
+    "normal_tests": {
+      "status": "passed",
+      "count": 140
+    },
+    "optimized_tests": {
+      "status": "passed",
+      "count": 140
+    },
+    "new_admission_tests": {
+      "status": "passed",
+      "count": 14
+    },
+    "evaluation_mutations": {
+      "status": "detected",
+      "count": 3
+    },
+    "durable_mutations": {
+      "status": "detected",
+      "count": 4
+    },
+    "admission_and_cursor_mutations": {
+      "status": "observed forbidden persistence and false passing score in isolated mutants",
+      "count": 2
+    },
+    "ruff_lint_and_import_order": "passed all changed Python with E4,E7,E9,F,I",
+    "ruff_format": "passed durable_evaluation.py and new test; legacy evaluation.py layout preserved",
+    "strict_mypy_typed_seams": {
+      "status": "passed",
+      "files": [
+        "tests/test_evaluation_admission.py",
+        "refinery/optimization.py",
+        "refinery/durable_optimization.py",
+        "refinery/feedback_use.py"
+      ],
+      "arguments": "--strict --follow-imports=silent"
+    },
+    "optional_legacy_full_strict": {
+      "status": "failed inherited untyped-source debt; not a full strict pass",
+      "files": [
+        "refinery/evaluation.py",
+        "refinery/durable_evaluation.py"
+      ],
+      "baseline_diagnostics": 127,
+      "candidate_diagnostics": 111
+    },
+    "independent_review": "separate frozen-commit review required before publication",
+    "runner_ci": "not_run"
+  },
+  "invariants": [
+    "wrong configuration or warmed new cursor produces zero new runner dispatches and no database row changes",
+    "new ledger and new claim commit atomically; failure rolls both back and preserves prior ledger state",
+    "cache, conflicts and owned runs do not construct or mutate an unrelated budget",
+    "cached exact reports remain readable after current authority approval without an unused provider",
+    "cursor and configuration drift is checked after use callbacks, before each reservation/dispatch, after known receipts settle and before quality thresholds/atomic completion",
+    "observed final drift halts the cumulative ledger across pass, failed-quality, unsafe, unknown-safety and timeout exits; no refund or blind replay",
+    "process-local consumed-provider compatibility, held-out partitions, thresholds and post-snapshot cancellation semantics preserved",
+    "known final unsafe and unknown-safety observations remain reflected in report safety when provider drift blocks completion"
+  ],
+  "limitations": [
+    "only actual component SQLite plus synthetic identities, completions and authority callbacks tested",
+    "trusted callbacks may themselves perform calls; the runner detects observed extra calls but is not a hostile-process sandbox",
+    "mutable-state observations are not atomic against arbitrary concurrent memory mutation",
+    "existing historical poisoned claims are not deleted, reclaimed or automatically retried",
+    "no new optimizer, schema, provider, serving adapter, credential, dependency installation, network service, job or deployment",
+    "actual DSPy optimizer, native qualification, provider spending, live acceptance and production serving not run",
+    "Refinery issue 16 remains open"
+  ]
+}

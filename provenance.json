@@ -147,5 +147,13 @@
     "mapping": "specs/tether-schema-pin-integration.md",
     "source_copy": "verified external checkout only; no vendored implementation",
     "evidence": "docs/tether-schema-pin-evidence.json"
+  },
+  "dspy_preparation_candidate": {
+    "classification": "original_source_only_auditor_and_synthetic_tests",
+    "specification": "specs/dspy-preparation-candidate.md",
+    "evidence": "docs/dspy-preparation-candidate-evidence.json",
+    "canonical_pins": "unchanged",
+    "framework_qualification": "not_run",
+    "source_origin_authentication": "not_performed_by_auditor"
   }
 }

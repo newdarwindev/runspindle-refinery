@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "classification": "source_only_synthetic_component_validation",
+  "base_commit": "6a3f5160d4e03f0f5acd6bd4f4ddda3f44bbc2e6",
+  "source_sha256": {
+    "tools/dspy_preparation_candidate.py": "31123590b1d0631d5594fa29c16df0b7071e0c72aaed6e179540bdddc8933df5",
+    "tests/test_dspy_preparation_candidate.py": "be281fa8b60256c1bb77c335a5ba2f1b0ef6eaf55a9dcdb115fa758be3fbc445"
+  },
+  "runtime": "Python 3.12.14",
+  "checks": {
+    "focused_unittest": {
+      "passed": 20
+    },
+    "optimized_python_focused_unittest": {
+      "passed": 20
+    },
+    "full_component_unittest": {
+      "passed": 254,
+      "tether_source_commit": "670989839a0fccbcf2014d01609778ae6e4df424"
+    },
+    "scaffold": "passed",
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 652
+    },
+    "repository_hygiene": "passed",
+    "diff_whitespace": "passed"
+  },
+  "independent_review": {
+    "status": "approved",
+    "record_validation_deletion_mutant": "killed",
+    "scope": "source and synthetic negative tests; not external provenance or native runtime qualification"
+  },
+  "canonical_dependency_manifest": "unchanged",
+  "canonical_toolchain_and_image": "unchanged",
+  "execution_gate": "unchanged",
+  "installer_execution": "not_run",
+  "artifact_source_authentication": "not_run",
+  "native_reproducibility": "not_run",
+  "framework_qualification": "not_run",
+  "issue_16": "remains_open"
+}

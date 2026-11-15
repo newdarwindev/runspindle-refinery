@@ -11,7 +11,9 @@ import hashlib
 import importlib
 import json
 import os
+import posixpath
 import re
+import signal
 import socket
 import stat
 import sys
@@ -48,7 +50,7 @@ def hash_file(path: Path) -> str:
     return value.hexdigest()
 
 
-def tree(root: Path) -> dict[str, dict[str, Any]]:
+def tree(root: Path, *, allow_links: bool = False) -> dict[str, dict[str, Any]]:
     """Inspect immutable image trees without following runtime link entries."""
     if not stat.S_ISDIR(root.lstat().st_mode):
         raise ValueError("image tree root must be a directory")
@@ -70,9 +72,35 @@ def tree(root: Path) -> dict[str, dict[str, Any]]:
                 row = {"kind": "directory", "mode": stat.S_IMODE(info.st_mode)}
             else:
                 raise ValueError("unexpected image tree node")
+            row["uid"], row["gid"] = info.st_uid, info.st_gid
             result[relative] = row
             if len(result) > 30000:
                 raise ValueError("image tree node limit")
+    for name, row in result.items():
+        if row["kind"] != "link":
+            continue
+        if not allow_links:
+            raise ValueError("links permitted only in pinned runtime")
+        current, target, seen = name, row["target"], {name}
+        while True:
+            if target.startswith("/") or "\\" in target:
+                raise ValueError("absolute runtime link")
+            current = posixpath.normpath(
+                posixpath.join(posixpath.dirname(current), target)
+            )
+            if current in {".", ".."} or current.startswith("../") or current in seen:
+                raise ValueError("escaping or cyclic runtime link")
+            seen.add(current)
+            for index in range(1, len(current.split("/"))):
+                prefix = "/".join(current.split("/")[:index])
+                if result.get(prefix, {}).get("kind") == "link":
+                    raise ValueError("indirect runtime directory link")
+            entry = result.get(current)
+            if entry is None or entry["kind"] == "directory":
+                raise ValueError("dangling or directory runtime link")
+            if entry["kind"] == "file":
+                break
+            target = entry["target"]
     return result
 
 
@@ -92,7 +120,7 @@ def verify(
     if set(contract["trees"]) != {"runtime", "deps", "source"}:
         raise ValueError("complete image trees required")
     for name, entries in contract["trees"].items():
-        if tree(root / name) != entries:
+        if tree(root / name, allow_links=name == "runtime") != entries:
             raise ValueError("image tree differs: " + name)
     native: dict[str, Any] = contract["native"]
     if (
@@ -101,11 +129,20 @@ def verify(
         != "static_DT_NEEDED_closure_dynamic_import_unqualified"
     ):
         raise ValueError("reviewed native closure required")
-    for name, expected_hash in native.items():
+    for name, expected_file in native.items():
         if not re.fullmatch(r"lib(?:64|/x86_64-linux-gnu)/[A-Za-z0-9_.+-]+", name):
             raise ValueError("native path outside fixed library roots")
         path = root / name
-        if not stat.S_ISREG(path.lstat().st_mode) or hash_file(path) != expected_hash:
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode):
+            raise ValueError("native file must be regular")
+        observed_file = {
+            "sha256": hash_file(path),
+            "mode": stat.S_IMODE(info.st_mode),
+            "uid": info.st_uid,
+            "gid": info.st_gid,
+        }
+        if observed_file != expected_file:
             raise ValueError("native library differs")
     candidate_path = root / "evidence/candidate.json"
     if (
@@ -200,9 +237,25 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--contract-sha256", required=True)
     arguments = parser.parse_args()
+
+    def expired(signum: int, frame: Any) -> None:
+        raise TimeoutError("bounded smoke wall deadline")
+
+    # Host inspection/cgroup capture must complete before framework imports.
+    signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGUSR1})
+    signal.signal(signal.SIGALRM, expired)
+    signal.alarm(120)
     contract = verify(
         Path("/evidence/contract.json").read_bytes(), arguments.contract_sha256
     )
+    print(
+        json.dumps(
+            {"control": "ready", "contract_sha256": arguments.contract_sha256},
+            sort_keys=True,
+        ),
+        flush=True,
+    )
+    signal.sigwait({signal.SIGUSR1})
     print(json.dumps(run(contract), sort_keys=True))
 
 

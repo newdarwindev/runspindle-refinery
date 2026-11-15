@@ -40,15 +40,29 @@ private namespaces and fixed cgroup/process/memory/CPU/scratch/file limits. No
 restart, auto-removal or rotating Docker logs is permitted. Python is namespace
 PID 1; no unpinned daemon-injected init binary is requested.
 
-The future reviewed host launcher must enforce a 120-second wall bound and stop
+The source-only host launcher in `tools/dspy_x64_container_launcher.py` requires
+independent review before use. It uses the same fixed Unix Engine socket and
+exact JSON request, without CLI proxy/environment injection or an alternative
+daemon. It holds the driver's SIGUSR1 gate until the exact contract-bound ready
+record, Engine identity/PID, PID start time and actual cgroup limits are observed.
+The driver independently arms a 120-second alarm. It must enforce a 120-second wall bound and stop
 on output exceeding 1 MiB per stream, then fully drain and preserve all produced
 logs, including any overrun and shutdown output. It must retain stopped container
-and immutable image evidence. It must observe the actual container cgroup becoming
-unpopulated after stop; leader exit alone is insufficient. `check_result` rejects
+and immutable image evidence. It observes the actual container cgroup becoming
+unpopulated after stop; leader exit alone is insufficient. It acquires an O_PATH
+directory descriptor on the actual cgroup2 mount before release, verifies its
+device/inode, reads cgroup files relative to that descriptor, and preserves those
+identity/resource observations. The distinct `tracked_cgroup_inode_removed`
+proof requires the same held directory inode with nlink zero, initial populated
+one, unchanged pre-release PID start time, exact terminal Engine ID and fully
+drained outputs. It never converts arbitrary path absence into populated zero.
+The [kernel cgroup-v2 removal rule](https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v2.html)
+requires no children or live processes; zombies are not live. This is a separate
+proof kind, not an observed empty-events claim. `check_result` rejects
 nonzero/OOM, timeout/output stops, incomplete stream capture and missing/positive
-cgroup-population evidence. Its inputs must come from actual observations, not
-invented booleans. The host launcher implementation and exact engine/image review
-are still prerequisites; these pure validators do not perform those operations.
+cgroup-population/held-inode evidence. Its inputs must come from actual observations,
+not invented booleans. Independent launcher, exact engine and sealed-image review
+remain prerequisites. None of these source checks establish an actual run.
 
 Any access or isolation denial stops that attempt. Do not retry through another
 daemon, namespace, security profile, user or package source. The earlier bwrap and

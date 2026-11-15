@@ -146,6 +146,7 @@ def check_result(
     deadline_or_output_stop: bool,
     streams_fully_drained: bool,
     cgroup_populated: bool | None,
+    cgroup_proof: dict[str, Any],
 ) -> dict[str, Any]:
     """Fail closed on incomplete externally observed output/descendant evidence.
 
@@ -153,12 +154,12 @@ def check_result(
     inert validator performs no execution, cleanup, resource or authority change.
     """
     check_observation(spec, observed)
+    check_cleanup(observed, cgroup_proof, cgroup_populated)
     state = observed["State"]
     if (
         not 0 <= elapsed_seconds <= 120
         or deadline_or_output_stop
         or not streams_fully_drained
-        or cgroup_populated is not False
         or len(stdout) > 1048576
         or len(stderr) > 1048576
         or state.get("Running") is not False
@@ -168,7 +169,13 @@ def check_result(
         or state.get("Error")
     ):
         raise ValueError("incomplete or failed bounded execution evidence")
-    result: dict[str, Any] = json.loads(stdout)
+    lines = stdout.splitlines()
+    if len(lines) != 2 or json.loads(lines[0]) != {
+        "control": "ready",
+        "contract_sha256": spec["Cmd"][1],
+    }:
+        raise ValueError("exact readiness and terminal records required")
+    result: dict[str, Any] = json.loads(lines[1])
     if (
         result.get("status") != "passed"
         or result.get("evidence_class") != "actual_framework_synthetic_completion_smoke"
@@ -186,3 +193,58 @@ def check_result(
     ):
         raise ValueError("actual smoke receipt differs")
     return result
+
+
+def check_cleanup(
+    observed: dict[str, Any], proof: dict[str, Any], populated: bool | None
+) -> None:
+    """Separate observed empty events from removal of the same held kernel inode.
+
+    Linux cgroup-v2 removal requires no live processes or child cgroups. This
+    rule never treats arbitrary path absence as an empty observation.
+    """
+    identity = observed.get("Id", "")
+    state = observed["State"]
+    limits = proof.get("limits", {})
+    if (
+        not re.fullmatch(r"[0-9a-f]{64}", identity)
+        or proof.get("container_id") != identity
+        or state.get("Running") is not False
+        or state.get("Pid") != 0
+        or proof.get("mount_fstype") != "cgroup2"
+        or proof.get("initial_populated") != 1
+        or proof.get("descriptor_held_before_release") is not True
+        or not isinstance(proof.get("host_pid"), int)
+        or proof["host_pid"] <= 0
+        or not isinstance(proof.get("pid_starttime_ticks"), int)
+        or proof["pid_starttime_ticks"] <= 0
+        or proof.get("pid_starttime_rechecked") != proof["pid_starttime_ticks"]
+        or proof.get("device") != proof.get("held_device")
+        or type(proof.get("device")) is not int
+        or proof["device"] < 0
+        or proof.get("inode") != proof.get("held_inode")
+        or not isinstance(proof.get("inode"), int)
+        or proof["inode"] <= 0
+        or not isinstance(proof.get("mount_id"), int)
+        or proof["mount_id"] <= 0
+        or proof.get("held_mode") != 0o040000
+        or limits.get("pids") != 64
+        or limits.get("memory") != 2147483648
+        or limits.get("swap") != 0
+        or not isinstance(limits.get("cpu_period"), int)
+        or limits["cpu_period"] <= 0
+        or limits.get("cpu_quota") != limits["cpu_period"]
+    ):
+        raise ValueError("unbound or incomplete cgroup cleanup evidence")
+    if proof.get("kind") == "cgroup.events":
+        if (
+            populated is not False
+            or proof.get("populated") != 0
+            or proof.get("held_nlink", 0) <= 0
+        ):
+            raise ValueError("live or unknown cgroup population")
+    elif proof.get("kind") == "tracked_cgroup_inode_removed":
+        if populated is not None or proof.get("held_nlink") != 0:
+            raise ValueError("tracked inode removal not established")
+    else:
+        raise ValueError("unknown cgroup cleanup proof kind")

@@ -15,9 +15,38 @@ from tools import dspy_x64_container_contract as policy
 from tools import dspy_x64_container_smoke as smoke
 
 
+def synthetic_cleanup(kind: str = "cgroup.events") -> dict[str, Any]:
+    return {
+        "kind": kind,
+        "container_id": "d" * 64,
+        "host_pid": 123,
+        "pid_starttime_ticks": 456,
+        "pid_starttime_rechecked": 456,
+        "mount_id": 10,
+        "mount_fstype": "cgroup2",
+        "initial_populated": 1,
+        "descriptor_held_before_release": True,
+        "device": 20,
+        "held_device": 20,
+        "inode": 30,
+        "held_inode": 30,
+        "held_mode": 0o040000,
+        "held_nlink": 0 if kind == "tracked_cgroup_inode_removed" else 2,
+        "populated": 0,
+        "limits": {
+            "pids": 64,
+            "memory": 2147483648,
+            "swap": 0,
+            "cpu_quota": 100000,
+            "cpu_period": 100000,
+        },
+    }
+
+
 class ContainerPolicyTests(unittest.TestCase):
     def observation(self, spec: dict[str, Any]) -> dict[str, Any]:
         return {
+            "Id": "d" * 64,
             "Image": spec["Image"],
             "Mounts": [],
             "AppArmorProfile": "docker-default",
@@ -77,6 +106,34 @@ class ContainerPolicyTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 smoke.check_kernel_status(text)
 
+    def test_tracked_removed_inode_is_distinct_and_requires_complete_binding(
+        self,
+    ) -> None:
+        spec = policy.create_spec("sha256:" + "a" * 64, "b" * 64, "c" * 40)
+        observed = self.observation(spec)
+        observed["State"] = {"Running": False, "Pid": 0}
+        proof = synthetic_cleanup("tracked_cgroup_inode_removed")
+        policy.check_cleanup(observed, proof, None)
+        changes: list[tuple[str, Any]] = [
+            ("kind", "path_missing"),
+            ("held_nlink", 1),
+            ("held_inode", 31),
+            ("held_device", 21),
+            ("held_mode", 0o100000),
+            ("mount_fstype", "tmpfs"),
+            ("initial_populated", 0),
+            ("descriptor_held_before_release", False),
+            ("pid_starttime_rechecked", 457),
+            ("container_id", "e" * 64),
+        ]
+        for field, value in changes:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                policy.check_cleanup(observed, {**proof, field: value}, None)
+        with self.assertRaises(ValueError):
+            policy.check_cleanup(observed, proof, False)  # Not a populated=0 reading.
+        with self.assertRaises(ValueError):
+            policy.check_cleanup(observed, {}, None)
+
     def test_mutable_images_and_malformed_digests_refused(self) -> None:
         for image, digest in (
             ("ubuntu:latest", "b" * 64),
@@ -115,8 +172,14 @@ class ContainerPolicyTests(unittest.TestCase):
             "deadline_or_output_stop": False,
             "streams_fully_drained": True,
             "cgroup_populated": False,
+            "cgroup_proof": synthetic_cleanup(),
         }
-        stdout = policy.encoded(result)
+        stdout = (
+            policy.encoded({"control": "ready", "contract_sha256": "b" * 64})
+            + b"\n"
+            + policy.encoded(result)
+            + b"\n"
+        )
         self.assertEqual(
             policy.check_result(spec, observed, stdout, b"", **kwargs), result
         )
@@ -172,7 +235,14 @@ class ImageContractTests(unittest.TestCase):
                 name: smoke.tree(self.root / name)
                 for name in ("runtime", "deps", "source")
             },
-            "native": {"lib/x86_64-linux-gnu/libc.so.6": smoke.hash_file(native)},
+            "native": {
+                "lib/x86_64-linux-gnu/libc.so.6": {
+                    "sha256": smoke.hash_file(native),
+                    "mode": native.stat().st_mode & 0o7777,
+                    "uid": native.stat().st_uid,
+                    "gid": native.stat().st_gid,
+                }
+            },
             "native_scope": "static_DT_NEEDED_closure_dynamic_import_unqualified",
             "fixture_sha256": policy.digest(policy.encoded(policy.FIXTURE)),
         }
@@ -223,3 +293,18 @@ class ImageContractTests(unittest.TestCase):
         (self.root / "alias").symlink_to(self.root / "runtime")
         with self.assertRaises(ValueError):
             smoke.tree(self.root / "alias")
+
+    def test_only_lexically_contained_runtime_file_links(self) -> None:
+        runtime = self.root / "runtime"
+        (runtime / "alias").symlink_to("python")
+        self.assertEqual(
+            smoke.tree(runtime, allow_links=True)["alias"]["target"], "python"
+        )
+        with self.assertRaises(ValueError):
+            smoke.tree(runtime)
+        for number, target in enumerate(("/outside", "../outside", "cycle")):
+            directory = self.root / str(number)
+            directory.mkdir()
+            (directory / "cycle").symlink_to(target)
+            with self.subTest(target=target), self.assertRaises(ValueError):
+                smoke.tree(directory, allow_links=True)

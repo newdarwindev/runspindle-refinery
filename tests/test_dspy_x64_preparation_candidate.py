@@ -76,7 +76,9 @@ class WheelTagTests(unittest.TestCase):
                 prep.check_wheel_tags(self.wheel(filename, tags))
 
     def test_compression_preserves_exact_set_and_compatibility(self) -> None:
-        filename = "example-1.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+        filename = (
+            "example-1.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+        )
         for tags in (
             ["cp314-cp314-manylinux2014_x86_64"],
             ["cp314-cp314-manylinux2014_x86_64.linux_aarch64"],

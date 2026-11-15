@@ -10,6 +10,7 @@ The original complete historical PDF remains a separate private reference.
 
 - [Section, figure and dependency disposition](source-disposition.json) accounts for every selected part, every safe exclusion, rights review and changed interpretation.
 - [Build evidence](build-evidence.json) binds the source/PDF hashes, eight pages, eight figures, five unique public links, render hashes and bounded build history.
+- [Source-wrapper change evidence](source-wrapper-change-evidence.json) separately records the later import-order-only correction for Ruff 0.14.5 with explicit `E4,E7,E9,F,I` selection. The historical build receipt is unchanged; all non-import AST nodes, command/environment assignments and compiled artifact bytes remain identical. This correction is not a new paper build or an execution of the committed wrapper.
 - [Pinned toolchain](toolchain-lock.json) records all 80 loaded stock TeX inputs plus the engine, timeout and confinement executable hashes. Dependency bytes are not bundled.
 - Raw compiler logs, recorder files and correction history are preserved privately. Public evidence records their hashes, normalized task scope and stock tool identities without private paths.
 - [Artifact manifest](artifacts.json) distinguishes retained historical assets, adapted source and newly compiled output. Overall repository selected-source migration remains partial because other source IDs are separate obligations.

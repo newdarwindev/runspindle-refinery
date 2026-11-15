@@ -59,7 +59,8 @@
       "source_id": "SRC-013",
       "status": "adapted_document",
       "disposition": "docs/design/source-disposition.json",
-      "validation": "docs/design/build-evidence.json"
+      "validation": "docs/design/build-evidence.json",
+      "source_wrapper_validation": "docs/design/source-wrapper-change-evidence.json"
     },
     {
       "destination": "specs/experiments.md",

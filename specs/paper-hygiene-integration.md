@@ -9,3 +9,26 @@ The TeX source, accepted PDF, all eight figures, license, notices, disposition, 
 The workflow, qualified runner-image gate, Tether dependency pin, pinned quality requirements and quality baseline remain unchanged. Fresh local integration receipts are separate from the original paper build evidence. Local aggregate validation is not qualified-runner CI, deployment, provider use or live acceptance. The umbrella mirror remains a separate dependency and issue #3 remains open.
 
 Run `python3 tools/validate.py` in the prepared validation environment, then `python3 -O -m unittest discover -s tests`. The pinned Tether checkout must be supplied as `RUNSPINDLE_TETHER_SOURCE`. No installation or unpinned dependency fallback is part of these commands.
+
+## Canonical wrapper evidence integration
+
+Merged PR #25 main `fc79d78f3eed3423da901b1c5b623e76ce08e7c4` is
+integrated into published PR #18 head
+`6bf2a366a39d74cb102b220d5560e4e721c9b17b` without rewriting its ancestry.
+The existing hygiene branch already had the same import-order-only wrapper.
+This merge brings in the canonical supplemental receipt, README link, artifact
+manifest entry and provenance link. All 19 design files match merged main.
+
+The [separate integration receipt](../docs/paper-wrapper-hygiene-integration-evidence.json)
+records fresh local checks and byte-preservation evidence. Both earlier receipts
+retain their historical meaning and exact bytes. The unchanged paper checker
+rejects a missing or tampered supplement and a tampered historical build receipt
+under normal and optimized Python. No new paper build or wrapper execution ran.
+The mandatory inventory, single paper-check partition assignment, workflows,
+runner-image binding, quality baseline and Tether pin remain unchanged.
+
+Local aggregate validation and 168 tests in each interpreter mode pass with zero
+skips. Cargo is unavailable, and this component inventory contains no Rust
+command. This does not qualify Rust, the runner image, native/live execution or
+the separate composition mirror. Independent review and qualified-image CI
+remain separate gates; this integration does not dispatch CI or claim them.

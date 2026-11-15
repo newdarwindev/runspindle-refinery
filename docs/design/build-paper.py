@@ -1,12 +1,12 @@
 """Bounded local paper build. Existing Debian TeX Live only; no installers."""
 
-from pathlib import Path
+import argparse
 import hashlib
 import json
 import shutil
 import subprocess
 import sys
-import argparse
+from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--output", required=True, type=Path)

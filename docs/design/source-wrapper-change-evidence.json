@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "source_id": "SRC-013",
+  "evidence_class": "source_wrapper_import_order_validation_not_a_new_paper_build",
+  "change": "Reorder existing standard-library imports only to satisfy pinned Ruff 0.14.5 E4/E7/E9/F/I selection; no body, command, environment, confinement or toolchain changes.",
+  "base_commit": "80a87f4569f1dfef14b141e141a89f30a9aaf7cd",
+  "wrapper": {
+    "path": "docs/design/build-paper.py",
+    "before_sha256": "6eee7d3513778e27e73a78bcb9424f5f5eae421c46324c3014239a4fae813891",
+    "after_sha256": "55aff60ec397e5e7be76f24b6cec60a8c3dc7966c4a32359004f0aaf7ebe7aff"
+  },
+  "equivalence": {
+    "method": "Python ast.dump(include_attributes=False); compare sorted import nodes and all non-import nodes; exact byte comparison from parser assignment onward",
+    "import_inventory": [
+      "Import(names=[alias(name='argparse')])",
+      "Import(names=[alias(name='hashlib')])",
+      "Import(names=[alias(name='json')])",
+      "Import(names=[alias(name='shutil')])",
+      "Import(names=[alias(name='subprocess')])",
+      "Import(names=[alias(name='sys')])",
+      "ImportFrom(module='pathlib', names=[alias(name='Path')], level=0)"
+    ],
+    "non_import_ast_sha256": "b56fd953efd05eda267ed95b147966d0b1d05cebf5fc0ab79608d3848cea10a6",
+    "executable_body_sha256": "c8ab9ec1fb35876b100938170e976061a4c5659f2f977e48334865e903a34486",
+    "assignment_ast_sha256": {
+      "cmd": "343354b7e7a48a75364a17a1649bab520c09175003a53df83d9d1a6597842d1d",
+      "env": "695cfc2f6415cbaef0518a34b40b3283cfe6dedd59b065b95581d43f691491e2"
+    },
+    "result": "unchanged_except_standard_library_import_order",
+    "builder_execution": "not_run"
+  },
+  "unchanged_artifacts": {
+    "docs/design/workflow-refinery.pdf": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+    "docs/design/workflow-refinery.tex": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
+    "docs/design/toolchain-lock.json": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+    "docs/design/build-evidence.json": "6155bf4ffe8652163e4927ea2623cfea141666edb96811fddaf524badd740960",
+    "docs/design/figures/01-identity.pdf": "1e2a2783b9aa72e6c8b7061dce2c7bc34d437d27c31902d560880770f3b85245",
+    "docs/design/figures/02-lifecycle.pdf": "aacfb658176506f7ccba445d6445ca13df85d71afcee155ea5a98bb4ee9a7e75",
+    "docs/design/figures/03-approval.pdf": "b8b6b7721e0933a08604c611da96bf5b3e6d57053c7bf88ecefcc5fac5b91704",
+    "docs/design/figures/04-golden-data.pdf": "1697092f98162f7959cc001d722285ff250d9121dd7789cf35e5f90f1f3c4f07",
+    "docs/design/figures/05-control-planes.pdf": "489ae57fb48e81a27021ff2011fe9ecb4681965a4dd0bf12a0c79260983616d4",
+    "docs/design/figures/06-constellation.pdf": "4f171412f6e0aa17507a2797aaf9f1e0b4ddb0e1240804901966bdd66440716a",
+    "docs/design/figures/07-provenance.pdf": "908563c718c4db8623c55db0b42a8f83f09f8815d956295d0eb683e93fd317ab",
+    "docs/design/figures/08-observation.pdf": "e3d956582e24f75146ec897111676730a5d35856966035ac89bca9974dd2fac3"
+  },
+  "historical_build_receipt": "docs/design/build-evidence.json",
+  "historical_build_receipt_policy": "Retained byte-for-byte as evidence for the original compilation and validation; this supplement records the later stricter import-order check separately.",
+  "validation": {
+    "python": "3.12.14",
+    "ruff": {
+      "version": "0.14.5",
+      "command": "ruff check --isolated --select E4,E7,E9,F,I docs/design/build-paper.py",
+      "before": "one I001 diagnostic",
+      "after": "passed",
+      "format_command": "ruff format --check --isolated docs/design/build-paper.py",
+      "format": "passed"
+    },
+    "mypy": {
+      "version": "1.18.2",
+      "command": "mypy --strict --no-incremental docs/design/build-paper.py tools/check_paper.py tests/test_paper.py",
+      "status": "passed"
+    },
+    "component_tests": {
+      "command": "python3 [-O] -m unittest discover -s tests -v",
+      "normal": 111,
+      "optimized": 111,
+      "skipped": 0,
+      "status": "passed",
+      "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424"
+    },
+    "mutation_checks": {
+      "evaluation": 3,
+      "durable": 4,
+      "status": "all deliberate mutations detected"
+    }
+  },
+  "limitations": {
+    "new_compilation": "not_run",
+    "committed_recipe_execution": "not_run",
+    "new_visual_review": "not_run_unchanged_bytes",
+    "runtime_acceptance": "not_run",
+    "deployment": "not_run",
+    "quality_baseline_changes": "none",
+    "composition_mirror": "not_updated_by_this_change_requires_explicit_new_canonical_identity"
+  }
+}

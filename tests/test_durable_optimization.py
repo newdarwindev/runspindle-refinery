@@ -46,6 +46,7 @@ def invoke(path: str, checkpoint: Any = lambda _: None, **changes: Any) -> Any:
             provider=provider,
             limits=LIMITS,
             per_call=ev.Reservation(10, 10),
+            synthetic_fixture=True,
             budget_id="shared",
             checkpoint=checkpoint,
         )
@@ -279,6 +280,7 @@ print(len(calls))
                     provider=provider,
                     limits=LIMITS,
                     per_call=ev.Reservation(10, 10),
+                    synthetic_fixture=True,
                     budget_id="shared",
                 )
             self.assertEqual(len(provider.calls), 1)

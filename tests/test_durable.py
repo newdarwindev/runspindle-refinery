@@ -274,6 +274,7 @@ class DurableTests(DurableBase):
             snapshot,
             exp,
             provider=provider,
+            synthetic_fixture=True,
             budget_id="budget",
         )
         self.assertEqual(report.status, "passed")
@@ -291,6 +292,7 @@ class DurableTests(DurableBase):
                 snapshot,
                 exp,
                 provider=replay_provider,
+                synthetic_fixture=True,
                 budget_id="budget",
             )
             self.assertEqual(report, replay)
@@ -313,11 +315,12 @@ class DurableTests(DurableBase):
                 snapshot,
                 replace(exp, candidate=b"changed", candidate_sha256=digest(b"changed")),
                 provider=provider,
+                synthetic_fixture=True,
                 budget_id="budget",
             )
 
     def test_interrupted_reservation_retains_budget_and_never_replays(self):
-        code = "from test_durable import setup; from refinery.storage import Store,VERSION; from refinery.durable_evaluation import run; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); snap,exp,p=setup(s); run(s,VERSION,'interrupted',snap,exp,provider=p,budget_id='shared',checkpoint=lambda point:os._exit(92) if point=='after_budget_reservation' else None)"
+        code = "from test_durable import setup; from refinery.storage import Store,VERSION; from refinery.durable_evaluation import run; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); snap,exp,p=setup(s); run(s,VERSION,'interrupted',snap,exp,provider=p,budget_id='shared',synthetic_fixture=True,checkpoint=lambda point:os._exit(92) if point=='after_budget_reservation' else None)"
         child(code, self.directory, 92)
         snapshot, exp, provider = setup(self.store)
         with self.assertRaisesRegex(Halt, "interrupted_or_owned"):
@@ -328,6 +331,7 @@ class DurableTests(DurableBase):
                 snapshot,
                 exp,
                 provider=provider,
+                synthetic_fixture=True,
                 budget_id="shared",
             )
         self.assertEqual(provider.calls, [])
@@ -374,6 +378,7 @@ class DurableTests(DurableBase):
             snapshot,
             exp,
             provider=provider,
+            synthetic_fixture=True,
             budget_id="unknown",
         )
         self.assertEqual(report.reason, "unknown_or_invalid_usage")
@@ -405,6 +410,7 @@ class ServingTests(DurableBase):
             snapshot,
             exp,
             provider=provider,
+            synthetic_fixture=True,
             budget_id="budget-" + name,
         )
         registry = Registry(
@@ -500,6 +506,7 @@ class ServingTests(DurableBase):
                 snapshot,
                 exp,
                 provider=provider,
+                synthetic_fixture=True,
                 budget_id=name,
             )
             with self.assertRaises(ValueError):

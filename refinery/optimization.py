@@ -48,6 +48,7 @@ def optimize(
     budget: ev.Budget,
     per_call: ev.Reservation,
     max_attempts: int = 1,
+    check_use: Callable[[], None] = lambda: None,
 ) -> Selection:
     """Choose the highest training exact-match count; deterministic SHA tie break.
 
@@ -83,7 +84,9 @@ def optimize(
                         split.sha256,
                         number,
                     )
+                    ev.guard_use(ledger, check_use)
                     ticket = ledger.reserve(per_call, request=request)
+                    ev.guard_use(ledger, check_use)  # dispatch guard
                     try:
                         reply = scripted.complete(request)
                     except Exception:

@@ -375,8 +375,20 @@ def _validate_dataset(dataset, split):
         e for e in dataset.examples if split.partition(e.source.family_id) == "heldout")
 
 
+def guard_use(budget: Budget, check_use: Callable[[], None]) -> None:
+    """No dispatch after cancellation or a denied fresh use check. Never refund."""
+    try:
+        budget.check()
+        check_use()
+        budget.check()
+    except Halt as error:
+        budget.stop(str(error))
+        raise
+
+
 def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
-             provider: ScriptedProvider, budget: Budget) -> Report:
+             provider: ScriptedProvider, budget: Budget,
+             check_use: Callable[[], None] = lambda: None) -> Report:
     """Evaluate exact pinned artifacts on one lock; passing grants no authority.
 
     All stages share the supplied ledger. Only explicit scripted timeout receipts
@@ -410,7 +422,9 @@ def evaluate(dataset: Dataset, split: LockedSplit, experiment: Experiment, *,
             for number in range(1, config.max_attempts + 1):
                 request = Request(stage, example.output.output_id, example.output.revision,
                                   example.source.sha256, artifact, split.sha256, number)
+                guard_use(budget, check_use)
                 ticket = budget.reserve(config.per_call, request=request)
+                guard_use(budget, check_use)  # dispatch guard
                 try:
                     reply = provider.complete(request)
                 except Exception:

@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "evidence_class": "local_pinned_signed_feedback_component_consumption",
+  "base_revision": "994ccfafadc2e88fab99cd828154456eebd5dd3a",
+  "validated_source_revision": "5a3b3c635aa1bcf4813b907f184ca4f00acec538",
+  "validated_source_tree": "cd585b2a8a386b275f34122e4f86cbdbe993d8e7",
+  "python": "3.12.14",
+  "dependency": {
+    "repository": "newdarwindev/runspindle-tether",
+    "commit": "040b71f2213a34f34e6b6a40124ed1164b93ce30",
+    "pull_request": "https://github.com/newdarwindev/runspindle-tether/pull/28",
+    "closure": "dependencies/tether-feedback.json",
+    "loaded_modules": 11,
+    "previous_commit": "670989839a0fccbcf2014d01609778ae6e4df424",
+    "publication_state": "held_pending_dependency_disposition_and_coordinator",
+    "http_tls_pr_27": "not_included"
+  },
+  "sha256": {
+    ".github/workflows/validation.yml": "f160ba699b8a651a291ed232ca61abac52b50321e24aa52527eb97b0875a527a",
+    "dependencies/tether-feedback.json": "5e42e669096d65a7790a749a755b0d8e67993b5f65311bed37942d4ce5866ee2",
+    "refinery/tether_dependency.py": "8f0f888fa6da504d7370f1e4aca054db58e36b1354d1ed84abe3cb38948792d0",
+    "specs/signed-feedback-consumption.md": "0354885bc26287983aa8a3743bea635ec4b9cd0d4ff44b36b6a27144dec0254d",
+    "tests/test_signed_feedback_collection.py": "4556a9fed0c04b0960bbab5f9f2b52a78364165eb09de1ca626373a7b10be98a",
+    "tests/test_tether_schema_pin.py": "013b0b317e982fbb5a5b6321a3d0acbb1855c0da69f6457a4915e14fec52add6",
+    "requirements-quality.txt": "9cbe1331549216b953f2922f1e8321357ca82bb985e1ea595c87fcee8a8fdc84",
+    "tools/quality-baseline.json": "308ea3d32cb043e2ee521a850e77fd2f16cd4157dddfdc60d9fe275c1ce3b748"
+  },
+  "commands": [
+    {
+      "command": "RUNSPINDLE_TETHER_SOURCE=/path/to/exact/tether python3 -m unittest discover -s tests -p test_signed_feedback_collection.py -v",
+      "status": "passed",
+      "tests": 9
+    },
+    {
+      "command": "RUNSPINDLE_TETHER_SOURCE=/path/to/exact/tether python3 -O -m unittest discover -s tests -p test_signed_feedback_collection.py -q",
+      "status": "passed",
+      "tests": 9
+    },
+    {
+      "command": "RUNSPINDLE_TETHER_SOURCE=/path/to/exact/tether python3 -m unittest discover -s tests -p test_tether_schema_pin.py -q",
+      "status": "passed",
+      "tests": 3
+    },
+    {
+      "command": "RUNSPINDLE_TETHER_SOURCE=/path/to/exact/tether python3 -O -m unittest discover -s tests -q",
+      "status": "passed",
+      "tests": 263,
+      "skipped": 0
+    },
+    {
+      "command": "RUNSPINDLE_TETHER_SOURCE=/path/to/exact/tether python3 tools/validate.py",
+      "environment": "Existing pinned quality tools on PATH, no install",
+      "status": "passed",
+      "normal_python_tests": 263,
+      "checks": [
+        {
+          "id": "reproducible-inputs",
+          "status": "passed"
+        },
+        {
+          "id": "scaffold",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "static-quality",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "repository-hygiene",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "check-artifacts",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "check-paper",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "check-references",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "python-tests",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "distributable-build",
+          "status": "not_applicable"
+        },
+        {
+          "id": "evaluation-mutations",
+          "status": "passed",
+          "exit_code": 0
+        },
+        {
+          "id": "durable-mutations",
+          "status": "passed",
+          "exit_code": 0
+        }
+      ]
+    }
+  ],
+  "independent_review": {
+    "source_revision": "5a3b3c635aa1bcf4813b907f184ca4f00acec538",
+    "status": "approved_no_blocking_source_findings",
+    "checks": "9 focused normal/optimized and 3 schema tests; additional correctly signed actor/channel/thread/workspace/app rejection and forged target correction probes; no provider/admission/network effects",
+    "finding_resolved": "Mutation now directly observes wrong-key event yielding one contaminated dataset example under bypass, separately from the rejection regression failure."
+  },
+  "actual_path": [
+    "independent synthetic raw Slack callback/HMAC signer",
+    "verified Tether SignedSlackIngress and actual Admission SQLite",
+    "actual ProviderJournal with synthetic retained provider readback",
+    "verified SignedSlackFeedback and actual FeedbackStore",
+    "existing Refinery collect and immutable lineage SQLite",
+    "existing RetainedFeedbackUse direct verification without dispatch"
+  ],
+  "observations": {
+    "restart": "Fresh optimized processes reopen actual stores; replay/import idempotence, conflict quarantine and separately revoked retention/collection/use verified",
+    "conflict": "Already-imported feedback quarantined with existing conflicting_feedback_id; historical snapshot retained and its use rejected",
+    "exact_target": "Output revision/content and authenticated actor preserved; source-family rebinding denied",
+    "forbidden_effects": "Sockets denied, provider/admission ledgers unchanged; Popen restricted to exact loader git rev-parse during collection/use",
+    "mutation": "Comparison fault admits wrong-key event and a contaminated dataset; independent forgery regression fails",
+    "source_integrity": "Altered pinned adapter bytes denied before Refinery persistence"
+  },
+  "synthetic_boundaries": [
+    "Slack producer and key",
+    "task execution/source material authority",
+    "retained delivery provider",
+    "retention/collection/training/use consent callbacks"
+  ],
+  "failed_preliminary_attempts": [
+    "Initial conflict expectation unavailable_target corrected to observed existing cross-batch conflicting_feedback_id; no product behavior changed.",
+    "Test Store typing corrected without baseline changes.",
+    "Aggregate source-stability rejected source edits during refinement; final clean exact-source aggregate passed.",
+    "Reviewer found overstatement of mutation persistence observation; explicit actual persistence observation added and revalidated."
+  ],
+  "not_run": [
+    "live Slack",
+    "production source/consent authorities",
+    "model/provider execution",
+    "Refinery CI on publication head",
+    "deployment",
+    "full issue15 acceptance"
+  ],
+  "not_implemented": [
+    "provider feedback edits/deletes and current-message freshness"
+  ],
+  "limits": "Historical create evidence only. Revoked retention blocks ingestion, not automatic revocation of all prior dataset/use authority; collection/use decisions remain separate. Pending dependency merge and coordinator authorization before publication. Issue15 stays open. This evidence-only file records validated source identity, not recursive self-validation.",
+  "provenance": "Original source-closure integration and synthetic tests; no vendored sources/new packages. Quality baseline, historical evidence, runner policy, permissions and action pins unchanged."
+}

@@ -51,3 +51,6 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Retained-feedback use eligibility](retained-feedback-use.md): fresh exact-snapshot
   authority and pinned-evidence checks at durable dispatch, commit and cached reuse.
+
+- [Durable evaluation provider admission](evaluation-provider-admission.md):
+  validate before atomic ledger/claim writes and pin dispatch cursor/configuration.

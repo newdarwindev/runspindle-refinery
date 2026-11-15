@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+from contextlib import nullcontext
 from typing import Any, Callable, cast
 
 from .evaluation import (
@@ -17,6 +18,7 @@ from .evaluation import (
     Reservation,
     _integer,
     evaluate,
+    validate_provider,
 )
 from .feedback_use import RetainedFeedbackUse, use_guard
 from .lineage import _token, digest
@@ -78,7 +80,12 @@ class SQLiteBudget(Budget):
             experiment,
             checkpoint,
         )
-        with store.transaction() as tx:
+        # Admission can share the caller's claim transaction, just like Store.get.
+        with (
+            nullcontext(store.db)
+            if store.db.in_transaction
+            else store.transaction() as tx
+        ):
             row = tx.execute(
                 "SELECT payload FROM budgets WHERE identity=?", (identity,)
             ).fetchone()
@@ -184,6 +191,8 @@ def run(
     version(api_version)
     _token(identity)
     _token(budget_id)
+    if type(experiment) is not Experiment:
+        raise ValueError("offline adapters required")
     experiment.__post_init__()
     dataset, split = store.lineage(snapshot_sha256)
     if (experiment.dataset_sha256, experiment.split_sha256) != (
@@ -202,15 +211,6 @@ def run(
         synthetic_fixture=synthetic_fixture,
     )
     check_use()
-    # Construct/open ledger first, preserving its original start and reservations.
-    budget = SQLiteBudget(
-        store,
-        budget_id,
-        experiment.configuration.limits,
-        clock_ms=provider.clock,
-        experiment=identity,
-        checkpoint=checkpoint,
-    )
     with store.transaction() as tx:
         check_use()
         row = tx.execute(
@@ -259,6 +259,19 @@ def run(
                 check_use()
                 return report
             raise Halt("interrupted_or_owned_experiment")
+        # Recheck after use callbacks, before any ledger or claim mutation.
+        validate_provider(experiment, provider)
+        if provider.calls:
+            raise ValueError("new evaluation requires pristine provider cursor")
+        # New ledger and claim commit together; existing ledgers never reset.
+        budget = SQLiteBudget(
+            store,
+            budget_id,
+            experiment.configuration.limits,
+            clock_ms=provider.clock,
+            experiment=identity,
+            checkpoint=checkpoint,
+        )
         store.room(tx, "experiments")
         store.put(tx, "experiment", identity, experiment)
         tx.execute(
@@ -272,6 +285,7 @@ def run(
         provider=provider,
         budget=budget,
         check_use=check_use,
+        initial_provider_calls=0,
     )
     with store.transaction() as tx:
         report_sha = digest(pack(report))

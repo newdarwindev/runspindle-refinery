@@ -16,7 +16,7 @@ from .lineage import MAX_BYTES, MAX_RECORDS, Dataset, LockedSplit, digest
 VERSION = "runspindle.runtime.v1"
 
 
-def _integer(value, *, positive=False):
+def _integer(value: object, *, positive: bool = False) -> None:
     if type(value) is not int or value < (1 if positive else 0) or value > 2**64 - 1:
         raise ValueError("invalid bounded integer")
 
@@ -485,6 +485,34 @@ def guard_use(budget: _UseBudget, check_use: Callable[[], None]) -> None:
         raise
 
 
+def validate_provider(
+    experiment: Experiment, provider: ScriptedProvider
+) -> Configuration:
+    """Pure admission shared by durable claims and the existing runner."""
+    if type(experiment) is not Experiment or not isinstance(provider, ScriptedProvider):
+        raise ValueError("offline adapters required")
+    cast(Callable[[], None], experiment.__post_init__)()
+    config = experiment.configuration
+    for validate in (
+        config.__post_init__,
+        config.limits.__post_init__,
+        config.per_call.__post_init__,
+    ):
+        cast(Callable[[], None], validate)()
+    if (
+        type(provider.script) is not tuple
+        or len(provider.script) > 4096
+        or any(type(reply) is not Completion for reply in provider.script)
+        or type(provider.calls) is not list
+        or type(provider.clock) is not VirtualClock
+        or config.provider != provider.provider_id
+        or provider.sha256 != config.provider_script_sha256
+    ):
+        raise ValueError("adapter configuration changed")
+    _integer(provider.clock())
+    return config
+
+
 def evaluate(
     dataset: Dataset,
     split: LockedSplit,
@@ -493,28 +521,24 @@ def evaluate(
     provider: ScriptedProvider,
     budget: Budget,
     check_use: Callable[[], None] = lambda: None,
+    initial_provider_calls: int | None = None,
 ) -> Report:
     """Evaluate exact pinned artifacts on one lock; passing grants no authority.
 
     All stages share the supplied ledger. Only explicit scripted timeout receipts
     may retry. Unknown/malformed replies stop with zero downstream calls.
     """
-    if (
-        type(experiment) is not Experiment
-        or not isinstance(provider, ScriptedProvider)
-        or not isinstance(budget, Budget)
-    ):
+    if not isinstance(budget, Budget):
         raise ValueError("offline adapters required")
-    experiment.__post_init__()
-    config = experiment.configuration
-    config.__post_init__()
-    if (
-        config.provider != provider.provider_id
-        or budget.limits != config.limits
-        or provider.sha256 != config.provider_script_sha256
-        or budget.clock_ms is not provider.clock
-    ):
+    config = validate_provider(experiment, provider)
+    if budget.limits != config.limits or budget.clock_ms is not provider.clock:
         raise ValueError("adapter configuration changed")
+    cursor = (
+        len(provider.calls)
+        if initial_provider_calls is None
+        else initial_provider_calls
+    )
+    _integer(cursor)
     train, heldout = _validate_dataset(dataset, split)
     if (experiment.dataset_sha256, experiment.split_sha256) != (
         split.dataset_sha256,
@@ -522,8 +546,29 @@ def evaluate(
     ):
         raise ValueError("manifest binding changed")
     # The request object contains hashes/identity only, not gold or feedback text.
-    attempts, scores, safeties = [], {"baseline": [], "candidate": []}, []
+    attempts: list[Attempt] = []
+    scores: dict[str, list[int]] = {"baseline": [], "candidate": []}
+    safeties: list[bool | None] = []
     reason, status, usage = None, "blocked", None
+
+    authority_check = check_use
+
+    def check_provider() -> None:
+        try:
+            validate_provider(experiment, provider)
+            if budget.limits != config.limits or budget.clock_ms is not provider.clock:
+                raise ValueError("adapter configuration changed")
+        except Exception:
+            raise Halt("adapter_configuration_changed") from None
+        if len(provider.calls) != cursor + len(attempts):
+            raise Halt("provider_cursor_changed")
+
+    def check_dispatch() -> None:
+        authority_check()
+        check_provider()
+
+    check_use = check_dispatch
+
     try:
         if not heldout:
             raise Halt("empty_evaluation")
@@ -598,6 +643,7 @@ def evaluate(
                     receipt=attempts[-1],
                 )
                 safeties.append(reply.safety)
+                guard_use(budget, check_provider)
                 if reply.safety is not True:
                     raise Halt("unknown_safety" if reply.safety is None else "unsafe")
                 if reply.outcome == "completed":
@@ -606,6 +652,7 @@ def evaluate(
                     break
                 if number == config.max_attempts:
                     raise Halt("timeout")
+        guard_use(budget, check_provider)
         if sum(scores["candidate"]) * 1_000_000 < config.min_score_ppm * len(
             heldout
         ) or (

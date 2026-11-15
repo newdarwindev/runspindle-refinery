@@ -4,15 +4,17 @@
 Preparation never imports a dependency. No source builds or implicit downloads
 are permitted in the execution lane.
 """
+
 import argparse
-from email.parser import BytesParser
 import hashlib
 import json
-from pathlib import Path
+import signal
 import subprocess
 import sys
 import uuid
-import signal
+from email.parser import BytesParser
+from pathlib import Path
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE = "python@sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93"
@@ -79,16 +81,18 @@ def inventory(base):
     }
 
 
-def execute(prepared):
+def execute(prepared: str, suite: str = "predict") -> Any:
+    if suite not in {"predict", "optimizer"}:
+        raise ValueError("unqualified DSPy suite")
     base = Path(prepared).resolve()
     declared = json.loads((ROOT / "offline/dependencies.json").read_bytes())
-    if inventory(base) != declared:
+    if cast(Any, inventory)(base) != declared:
         raise ValueError("prepared dependency bytes differ from reviewed manifest")
     toolchain = json.loads((ROOT / "offline/toolchain.json").read_bytes())
     if toolchain["image"] != IMAGE or toolchain["target"] != "linux/arm64":
         raise ValueError("unqualified execution target")
     if any(
-        sha(ROOT / relative) != expected
+        cast(Any, sha)(ROOT / relative) != expected
         for relative, expected in toolchain["notices"].items()
     ):
         raise ValueError("toolchain notice mismatch")
@@ -140,7 +144,9 @@ def execute(prepared):
                 "HF_HUB_OFFLINE=1",
                 IMAGE,
                 "python",
-                "tools/test_dspy_local.py",
+                "tools/test_dspy_local.py"
+                if suite == "predict"
+                else "tools/test_dspy_optimizer.py",
             ],
             capture_output=True,
             text=True,
@@ -171,8 +177,9 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, interrupted)
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepared", default=str(ROOT / "local/python-deps"))
+    parser.add_argument("--suite", choices=("predict", "optimizer"), default="predict")
     parser.add_argument("--report", required=True)
     args = parser.parse_args()
-    report = execute(args.prepared)
+    report = execute(args.prepared, args.suite)
     Path(args.report).write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))

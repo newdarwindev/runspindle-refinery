@@ -57,3 +57,7 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Evaluation admission hygiene integration](evaluation-admission-hygiene-integration.md):
   preserve reviewed runtime behavior under the existing mandatory quality gate.
+
+- [DSPy BootstrapFewShot component](dspy-bootstrap-optimizer.md): genuine optimizer
+  source adapter with locked candidate serialization and an unrun pinned-runtime
+  qualification entrypoint. Framework qualification and issue #16 remain open.

@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "issue": 16,
+  "source_base": "435e232f039555fe7c4a936d35d676f279b4f5f8",
+  "classification": "unqualified_framework_adapter_with_tested_offline_boundaries",
+  "checks": {
+    "boundary_tests_normal": {
+      "status": "passed",
+      "count": 14
+    },
+    "boundary_tests_optimized": {
+      "status": "passed",
+      "count": 14
+    },
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 653
+    },
+    "scaffold": {
+      "status": "passed"
+    },
+    "aggregate_validation": {
+      "status": "passed",
+      "source_worktree_dirty": false,
+      "checks": {
+        "reproducible-inputs": "passed",
+        "scaffold": "passed",
+        "static-quality": "passed",
+        "repository-hygiene": "passed",
+        "check-artifacts": "passed",
+        "check-paper": "passed",
+        "check-references": "passed",
+        "python-tests": "passed",
+        "distributable-build": "not_applicable",
+        "evaluation-mutations": "passed",
+        "durable-mutations": "passed"
+      },
+      "normal_python_tests": 211,
+      "toolchain_qualification": "not_claimed"
+    },
+    "actual_dspy_optimizer": {
+      "status": "blocked_not_run",
+      "reason": "qualified Python 3.14 linux/arm64 dependency runtime absent from source-development executor; no alternative runtime or pin change attempted"
+    },
+    "live_provider": {
+      "status": "not_run"
+    },
+    "durable_optimizer_recovery": {
+      "status": "not_implemented"
+    },
+    "full_optimized_python_tests": {
+      "status": "passed",
+      "count": 211
+    }
+  },
+  "remaining": [
+    "Actual framework qualification on unchanged pinned isolated lane",
+    "Durable optimizer ownership and result recovery",
+    "Global held-out evaluation policy",
+    "Adversarial framework campaigns beyond component boundary tests"
+  ],
+  "artifacts": {
+    "refinery/dspy_optimizer.py": "1b624643b242e96c2346ad54d782be320d6bf2fb3fe2f6eccc7b80e65cfac4ef",
+    "tests/test_dspy_optimizer.py": "f8e3421a5240bc41015114037708d950bf0f99275c0a794092c4cdfa5a8ccf6b",
+    "tools/test_dspy_optimizer.py": "37a12976b591126433c0c3d6526af5443dac7bc6c3326d500be1dfb87f079831",
+    "tools/offline_dspy.py": "bffe71e5b5d65546ae050971f250862acd722003fc4460e8f2fa7547e489ee65",
+    "offline/dependencies.json": "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+    "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+    "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e"
+  },
+  "tested_source_commit": "d7db18226a7de0b9e0a0a05e16a2039ff8718ec8",
+  "prerequisites": {
+    "tether_commit": "670989839a0fccbcf2014d01609778ae6e4df424",
+    "quality_dependencies": "requirements-quality.txt",
+    "command": "RUNSPINDLE_TETHER_SOURCE=<verified-pinned-checkout> python3 tools/validate.py",
+    "optimized_command": "RUNSPINDLE_TETHER_SOURCE=<verified-pinned-checkout> python3 -O -m unittest discover -s tests -v"
+  },
+  "initial_attempts": [
+    {
+      "status": "failed",
+      "reason": "missing pinned Tether fixture environment variable; corrected before final validation"
+    },
+    {
+      "status": "failed",
+      "reason": "missing quality-tool PATH and source changed during verification; frozen-source validation rerun passed"
+    }
+  ]
+}

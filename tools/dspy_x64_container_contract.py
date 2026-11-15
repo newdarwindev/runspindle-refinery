@@ -31,6 +31,7 @@ ENVIRONMENT = {
     "PYTHONNOUSERSITE": "1",
     "DSPY_CACHEDIR": "/scratch/dspy-cache",
     "LITELLM_LOCAL_MODEL_COST_MAP": "True",
+    "LD_LIBRARY_PATH": "/runtime/python/lib:/deps/numpy.libs:/lib/x86_64-linux-gnu",
 }
 
 

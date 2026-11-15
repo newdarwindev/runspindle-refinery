@@ -32,6 +32,11 @@ Static DT_NEEDED enumeration must include dependencies of every runtime and
 dependency ELF, recursively resolved against bundled libraries and pinned host
 DSOs. It does not establish arbitrary dynamic-import/dlopen completeness. Missing
 native imports fail the actual run; no on-the-fly install or alternative setup.
+The image-only loader path is explicitly
+`/runtime/python/lib:/deps/numpy.libs:/lib/x86_64-linux-gnu`, all present in the
+sealed inventory. It does not alter host settings or library bytes. Static review
+must account for each ELF's RPATH/RUNPATH precedence; the environment alone is
+not proof of dynamic loading, unexercised Tcl or arbitrary dlopen completeness.
 
 `create_spec` is an inert exact Engine request. Before start, `check_observation`
 requires the image, source/contract labels, non-root identity, exact environment,

@@ -203,9 +203,11 @@ class LauncherTests(unittest.TestCase):
                 raise PermissionError("synthetic log denial")
 
         fake = DeniedLogs(self.spec)
-        with self.assertRaises(PermissionError):
+        with self.assertRaises(RuntimeError):
             launcher.launch(self.spec, fake, self.directory)
         self.assertEqual(fake.signals, ["SIGKILL"])
+        receipt = json.loads((self.directory / "launcher-receipt.json").read_bytes())
+        self.assertEqual(receipt["capture"]["capture_error"], "PermissionError")
 
     def test_malformed_stream_is_retained_and_fails(self) -> None:
         self.directory.mkdir()

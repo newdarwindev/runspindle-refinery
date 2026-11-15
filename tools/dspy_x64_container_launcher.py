@@ -112,7 +112,7 @@ class Docker:
         self.request("POST", f"/containers/{identity}/kill?signal={signal}")
 
     def logs(self, identity: str) -> Stream:
-        connection = UnixConnection(timeout=3)
+        connection = UnixConnection(timeout=125)
         connection.request(
             "GET", f"/v1.51/containers/{identity}/logs?stdout=1&stderr=1&follow=1"
         )
@@ -120,10 +120,6 @@ class Docker:
         if response.status != 200:
             connection.close()
             raise RuntimeError("Docker log access refused: " + str(response.status))
-        if connection.sock is None:
-            connection.close()
-            raise RuntimeError("log stream socket not available")
-        connection.sock.settimeout(125)
         return DockerStream(connection, response)
 
     @staticmethod
@@ -361,6 +357,18 @@ def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str,
             kill_sent = True
             backend.signal(identity, "SIGKILL")
 
+    def capture_backend(identity: str, event: threading.Event) -> None:
+        # Header/body waits happen off the controlling thread, so a stalled
+        # log API cannot prevent its wall watchdog and same-route stop.
+        try:
+            capture(
+                backend.logs(identity), directory, event, capture_result, spec["Cmd"][1]
+            )
+        except Exception as error:
+            capture_result["capture_error"] = type(error).__name__
+            capture_result["capture_reason"] = str(error)
+            event.set()
+
     try:
         identity = backend.create(spec)
         receipt["container_id"] = identity
@@ -383,14 +391,8 @@ def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str,
             raise RuntimeError("initial populated cgroup not observed")
         event = threading.Event()
         thread = threading.Thread(
-            target=capture,
-            args=(
-                backend.logs(identity),
-                directory,
-                event,
-                capture_result,
-                spec["Cmd"][1],
-            ),
+            target=capture_backend,
+            args=(identity, event),
             daemon=True,
         )
         thread.start()

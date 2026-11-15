@@ -1,0 +1,51 @@
+{
+  "evidence_class": "pinned_component_use_gate_synthetic_authorities",
+  "base_revision": "fc79d78f3eed3423da901b1c5b623e76ce08e7c4",
+  "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424",
+  "source_sha256": {
+    "refinery/feedback_use.py": "9ef08a702b0b71471b1083efacfbbcfee9725605913d5ce10e38dd15b415347b",
+    "refinery/durable_evaluation.py": "1e75113437ed23e339b3ca293bcbd97f72bf865543c1c5d0c44c8024f413da0f",
+    "refinery/durable_optimization.py": "9b94bdebf694e60c66b144e33240989eeac8ce83a71c98a38f02a5dc99e48666",
+    "refinery/evaluation.py": "a9319764aa6074eccf800d29b209079e0e4eb85eae9decc162375fe19abcf89e",
+    "refinery/optimization.py": "f47407aee51bd0898034517f7dc48cf74231a2ce3ca1cc75e46b1be863bd1ceb",
+    "tests/test_feedback_use.py": "33325af5f8f22c75156c0ce8234a0e91cc2ec9df7252c2a6da39e56890e978c1",
+    "tests/test_durable.py": "a6b16de075e30d71eeaf7dfc63db107db3da65d3ec0661ba2b37615fccb49e7b",
+    "tests/test_durable_optimization.py": "6862a9dc38b3ace45efd0abf199f4bbe26d684e9831c91520e7325370ac001a3",
+    "tools/test_dspy_local.py": "6c35f010f253e3432ea4a9d6c8c71534c6bb7161ddba844d8fd0c2f6355c6e58",
+    "specs/retained-feedback-use.md": "0924d53ab51b59527c45ba1e2c3eef72af101787877dd208353e7cb4ed3d110c"
+  },
+  "toolchain": {
+    "python": "3.12.14",
+    "sqlite": "3.53.1"
+  },
+  "verification": {
+    "normal_tests": 125,
+    "optimized_tests": 125,
+    "new_use_gate_tests": 14,
+    "aggregate": "passed",
+    "evaluation_mutations_detected": 3,
+    "durable_mutations_detected": 4,
+    "use_dispatch_removal_mutants_observed_forbidden_calls": 2,
+    "ruff_lint": "passed_all_changed_python",
+    "ruff_format": "passed_new_and_changed_formatted_modules; legacy evaluation.py formatting preserved",
+    "strict_mypy": "passed feedback_use.py, optimization.py, durable_optimization.py, test_feedback_use.py with follow-imports=silent",
+    "independent_review": "separate_exact_commit_gate",
+    "runner_ci": "not_run"
+  },
+  "boundaries": [
+    "default-deny current use authority bound to exact snapshot, receipt, batch, purpose, configuration and run",
+    "pinned actual Tether evidence reread after callbacks and before each dispatch, result commit and cached return",
+    "changed or unavailable evidence denies use without rewriting immutable lineage or results",
+    "post-reservation denial preserves charge and unknown attempt; no automatic retry, refund, recollection or repartition",
+    "standalone synthetic opt-in rejects known retained batch and feedback identities"
+  ],
+  "limitations": [
+    "synthetic callbacks do not authenticate external consent or source-material authority",
+    "separate SQLite observations do not provide atomic cross-database revocation",
+    "component-owned storage and callbacks remain trusted; deliberately erased provenance cannot be inferred",
+    "direct process-local synthetic APIs are not production retained-data entrypoints",
+    "conservative gate rejects historical unavailable selections and additional cross-batch conflict snapshots",
+    "no real provider, paid evaluation, live training, deployment, native build, schema, collector, credential, service or fleet change",
+    "issues15_and16_remain_open"
+  ]
+}

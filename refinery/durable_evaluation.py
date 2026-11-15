@@ -12,6 +12,7 @@ from .evaluation import (
     evaluate,
     _integer,
 )
+from .feedback_use import RetainedFeedbackUse, use_guard
 from .lineage import digest, _token
 from .storage import Store, VERSION, pack, unpack, version
 
@@ -171,6 +172,8 @@ def run(
     provider,
     budget_id,
     checkpoint=lambda _: None,
+    retained_use: RetainedFeedbackUse | None = None,
+    synthetic_fixture: bool = False,
 ):
     version(api_version)
     _token(identity)
@@ -183,6 +186,16 @@ def run(
     ):
         raise ValueError("experiment lineage conflict")
     binding = pack((VERSION, snapshot_sha256, experiment, budget_id))
+    check_use = use_guard(
+        store,
+        snapshot_sha256,
+        purpose="evaluation",
+        configuration_sha256=experiment.config_sha256,
+        run_sha256=digest(pack((identity, binding))),
+        retained_use=retained_use,
+        synthetic_fixture=synthetic_fixture,
+    )
+    check_use()
     # Construct/open ledger first, preserving its original start and reservations.
     budget = SQLiteBudget(
         store,
@@ -193,6 +206,7 @@ def run(
         checkpoint=checkpoint,
     )
     with store.transaction() as tx:
+        check_use()
         row = tx.execute(
             "SELECT binding,state,report FROM experiments WHERE identity=?", (identity,)
         ).fetchone()
@@ -200,7 +214,9 @@ def run(
             if row[0] != binding:
                 raise ValueError("immutable experiment conflict")
             if row[1] == "complete":
-                return store.get("report", row[2])
+                report = store.get("report", row[2])
+                check_use()
+                return report
             raise Halt("interrupted_or_owned_experiment")
         store.room(tx, "experiments")
         store.put(tx, "experiment", identity, experiment)
@@ -208,7 +224,14 @@ def run(
             "INSERT INTO experiments VALUES(?,?,'running',NULL)", (identity, binding)
         )
     checkpoint("after_experiment_commit")
-    report = evaluate(dataset, split, experiment, provider=provider, budget=budget)
+    report = evaluate(
+        dataset,
+        split,
+        experiment,
+        provider=provider,
+        budget=budget,
+        check_use=check_use,
+    )
     with store.transaction() as tx:
         report_sha = digest(pack(report))
         store.put(tx, "report", report_sha, report)
@@ -217,5 +240,7 @@ def run(
             (report_sha, identity),
         )
         checkpoint("before_report_commit")
+        check_use()
     checkpoint("after_report_commit")
+    check_use()
     return report

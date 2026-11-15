@@ -55,7 +55,8 @@ commit, plus separate collection/training references.
 
 This is not a distributed SQLite transaction. Tether or external authority can
 change after the final read. Receipts identify observed state, not timeless truth;
-future dataset use must revalidate selections/permissions. Old snapshots remain
+future dataset use must revalidate selections/permissions. The durable evaluation
+and selection paths now enforce the separate [use-time eligibility gate](retained-feedback-use.md). Old snapshots remain
 immutable historical records and are not retroactively authorization-valid or
 automatically purged. This bridge does not install a global training-use gate.
 Component-owned files/processes are trusted; hostile database/process mutation,

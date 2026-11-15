@@ -115,6 +115,8 @@ def create_spec(image: str, contract_sha256: str, source_sha: str) -> dict[str, 
 def check_observation(spec: dict[str, Any], observed: dict[str, Any]) -> None:
     """Require reviewed settings before start, without changing any settings."""
     config, host = observed["Config"], observed["HostConfig"]
+    if observed.get("AppArmorProfile") != "docker-default":
+        raise ValueError("existing default AppArmor profile required")
     if observed["Image"] != spec["Image"] or observed.get("Mounts"):
         raise ValueError("image or mounts differ")
     for field in (

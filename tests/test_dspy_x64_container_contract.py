@@ -20,6 +20,7 @@ class ContainerPolicyTests(unittest.TestCase):
         return {
             "Image": spec["Image"],
             "Mounts": [],
+            "AppArmorProfile": "docker-default",
             "Config": {
                 key: copy.deepcopy(value)
                 for key, value in spec.items()
@@ -59,6 +60,22 @@ class ContainerPolicyTests(unittest.TestCase):
         observed["Config"]["Env"].append("PRIVATE_TOKEN=synthetic")
         with self.assertRaises(ValueError):
             policy.check_observation(spec, observed)
+        observed = self.observation(spec)
+        observed["AppArmorProfile"] = "unconfined"
+        with self.assertRaises(ValueError):
+            policy.check_observation(spec, observed)
+
+    def test_kernel_confinement_status_required(self) -> None:
+        good = "NoNewPrivs: 1\nSeccomp: 2\nCapEff: 0000000000000000\n"
+        smoke.check_kernel_status(good)
+        for text in (
+            "",
+            good.replace("NoNewPrivs: 1", "NoNewPrivs: 0"),
+            good.replace("Seccomp: 2", "Seccomp: 0"),
+            good.replace("0000000000000000", "0000000000000001"),
+        ):
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                smoke.check_kernel_status(text)
 
     def test_mutable_images_and_malformed_digests_refused(self) -> None:
         for image, digest in (

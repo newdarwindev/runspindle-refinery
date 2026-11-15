@@ -21,6 +21,16 @@ from typing import Any
 CANDIDATE_SHA256 = "d1660d0927cd2b325a50b426af7cd608311dafa367dd453f51d21418a7ad285f"
 
 
+def check_kernel_status(text: str) -> None:
+    fields = dict(line.split(":", 1) for line in text.splitlines() if ":" in line)
+    if (
+        fields.get("NoNewPrivs", "").strip() != "1"
+        or fields.get("Seccomp", "").strip() != "2"
+        or fields.get("CapEff", "").strip() != "0000000000000000"
+    ):
+        raise ValueError("kernel process confinement differs")
+
+
 def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -133,6 +143,7 @@ def run(contract: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("unqualified actual runtime")
     if os.getuid() != 65532 or sys.executable != "/runtime/python/bin/python3.14":
         raise ValueError("unqualified execution identity")
+    check_kernel_status(Path("/proc/self/status").read_text())
     sys.path[:0] = ["/source", "/deps"]
     from tools.dspy_x64_container_contract import FIXTURE, digest, encoded
 

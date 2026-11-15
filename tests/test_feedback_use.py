@@ -418,6 +418,46 @@ class UseTests(unittest.TestCase):
                     case.invoke(purpose, ready, provider=fresh)
                 self.assertEqual(fresh.calls, [])
 
+    def test_cached_evaluation_report_must_match_approved_run(self) -> None:
+        ready = self.prepare("evaluation")
+        original = self.invoke("evaluation", ready)
+        original_sha = lin.digest(encode(original))
+        changes = (
+            {"version": "unrelated.v1"},
+            {"dataset_sha256": "1" * 64},
+            {"split_sha256": "2" * 64},
+            {"config_sha256": "3" * 64},
+            {"baseline_sha256": "4" * 64},
+            {"candidate_sha256": "5" * 64},
+            {"heldout_cases": (("unrelated", "1"),)},
+            {"excluded_counts": (("forged", 1),)},
+            {"status": "unknown"},
+            {"reason": "forged"},
+            {"status": "blocked"},
+        )
+        records: list[tuple[Any, str | None]] = [
+            (replace(original, **change), None) for change in changes
+        ]
+        records.extend(
+            ((original, "unrelated-cache-key"), ({"unrelated": "canary"}, None))
+        )
+        provider = ev.ScriptedProvider(ready[1].script, clock=legacy.VirtualClock())
+        budget_before = self.store.db.execute("SELECT * FROM budgets").fetchall()
+        for report, alias in records:
+            key = alias or lin.digest(encode(report))
+            with self.store.transaction() as tx:
+                self.store.put(tx, "report", key, report)
+                tx.execute(
+                    "UPDATE experiments SET report=? WHERE identity='run'", (key,)
+                )
+            with self.assertRaisesRegex(ValueError, "evaluation result association"):
+                self.invoke("evaluation", ready, provider=provider)
+            self.assertEqual(provider.calls, [])
+            self.assertEqual(
+                self.store.db.execute("SELECT * FROM budgets").fetchall(), budget_before
+            )
+        self.assertEqual(self.store.get("report", original_sha), original)
+
     def test_fresh_process_cannot_reuse_success_without_a_use_authority(self) -> None:
         ready = self.prepare("evaluation")
         self.invoke("evaluation", ready)

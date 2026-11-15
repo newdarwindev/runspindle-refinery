@@ -53,7 +53,10 @@ not previously committed attempts or reservations. Another check runs after the
 post-commit checkpoint and before returning. If revocation is observed after a
 successful commit, the historical result stays immutable, but the invocation and
 later cached reuse are denied. Cached results require the same fresh checks even
-when no provider calls are needed.
+when no provider calls are needed. Cached evaluation reports also verify their
+content-addressed key, type, version, dataset/split, baseline/candidate/configuration,
+held-out cases and exclusions against the approved run. A mutable result pointer
+cannot substitute an unrelated retained report.
 
 Standalone synthetic fixtures are a separate explicit test path:
 `synthetic_fixture=True` requires the existing `synthetic-consent` fixture marker,
@@ -73,7 +76,7 @@ retained data through standalone synthetic seams.
 `tests/test_feedback_use.py` exercises real pinned Tether/Refinery stores with
 invented data, socket denial and scripted provider request ledgers. It covers
 collect-then-edit/delete/conflict/revoke; missing/false/raising authorities; absent
-or substituted evidence; forged receipt, batch, snapshot and material associations;
+or substituted evidence; forged receipt, batch, snapshot, material and cached-report associations;
 mutating callbacks; post-reservation and between-call/retry revocation; cancellation;
 pre/post-result-commit denial; successful split preservation; fresh-process denial
 without authority and cached reopened-store checks. Removing only either dispatch

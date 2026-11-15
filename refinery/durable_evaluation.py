@@ -9,6 +9,8 @@ from .evaluation import (
     Halt,
     Limits,
     Reservation,
+    Report,
+    VERSION as EVALUATION_VERSION,
     evaluate,
     _integer,
 )
@@ -215,6 +217,41 @@ def run(
                 raise ValueError("immutable experiment conflict")
             if row[1] == "complete":
                 report = store.get("report", row[2])
+                if (
+                    type(report) is not Report
+                    or digest(pack(report)) != row[2]
+                    or (
+                        report.version,
+                        report.dataset_sha256,
+                        report.split_sha256,
+                        report.baseline_sha256,
+                        report.candidate_sha256,
+                        report.config_sha256,
+                        report.heldout_cases,
+                        report.excluded_counts,
+                    )
+                    != (
+                        EVALUATION_VERSION,
+                        split.dataset_sha256,
+                        split.sha256,
+                        experiment.baseline_sha256,
+                        experiment.candidate_sha256,
+                        experiment.config_sha256,
+                        tuple(
+                            (e.output.output_id, e.output.revision)
+                            for e in dataset.examples
+                            if split.partition(e.source.family_id) == "heldout"
+                        ),
+                        tuple(sorted(dataset.excluded_counts.items())),
+                    )
+                    or report.status not in {"passed", "blocked"}
+                    or (report.status == "passed" and report.reason is not None)
+                    or (
+                        report.status == "blocked"
+                        and (type(report.reason) is not str or not report.reason)
+                    )
+                ):
+                    raise ValueError("invalid evaluation result association")
                 check_use()
                 return report
             raise Halt("interrupted_or_owned_experiment")

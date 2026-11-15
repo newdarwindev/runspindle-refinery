@@ -4,24 +4,24 @@
   "tether_revision": "670989839a0fccbcf2014d01609778ae6e4df424",
   "source_sha256": {
     "refinery/feedback_use.py": "9ef08a702b0b71471b1083efacfbbcfee9725605913d5ce10e38dd15b415347b",
-    "refinery/durable_evaluation.py": "1e75113437ed23e339b3ca293bcbd97f72bf865543c1c5d0c44c8024f413da0f",
+    "refinery/durable_evaluation.py": "53b41010f5833b2118e3780e8f5e591f46e98c8e291e075c08a1b6136b955577",
     "refinery/durable_optimization.py": "9b94bdebf694e60c66b144e33240989eeac8ce83a71c98a38f02a5dc99e48666",
     "refinery/evaluation.py": "a9319764aa6074eccf800d29b209079e0e4eb85eae9decc162375fe19abcf89e",
     "refinery/optimization.py": "f47407aee51bd0898034517f7dc48cf74231a2ce3ca1cc75e46b1be863bd1ceb",
-    "tests/test_feedback_use.py": "33325af5f8f22c75156c0ce8234a0e91cc2ec9df7252c2a6da39e56890e978c1",
+    "tests/test_feedback_use.py": "ee2c6d27f0fff9560222423d89b8cc1b1158be0ccc824222f874d105567b3187",
     "tests/test_durable.py": "a6b16de075e30d71eeaf7dfc63db107db3da65d3ec0661ba2b37615fccb49e7b",
     "tests/test_durable_optimization.py": "6862a9dc38b3ace45efd0abf199f4bbe26d684e9831c91520e7325370ac001a3",
     "tools/test_dspy_local.py": "6c35f010f253e3432ea4a9d6c8c71534c6bb7161ddba844d8fd0c2f6355c6e58",
-    "specs/retained-feedback-use.md": "0924d53ab51b59527c45ba1e2c3eef72af101787877dd208353e7cb4ed3d110c"
+    "specs/retained-feedback-use.md": "155197034ceabb0d1550364d2dfdf5c36924f263a62a5af6c71f6ac0985fc048"
   },
   "toolchain": {
     "python": "3.12.14",
     "sqlite": "3.53.1"
   },
   "verification": {
-    "normal_tests": 125,
-    "optimized_tests": 125,
-    "new_use_gate_tests": 14,
+    "normal_tests": 126,
+    "optimized_tests": 126,
+    "new_use_gate_tests": 15,
     "aggregate": "passed",
     "evaluation_mutations_detected": 3,
     "durable_mutations_detected": 4,
@@ -37,7 +37,8 @@
     "pinned actual Tether evidence reread after callbacks and before each dispatch, result commit and cached return",
     "changed or unavailable evidence denies use without rewriting immutable lineage or results",
     "post-reservation denial preserves charge and unknown attempt; no automatic retry, refund, recollection or repartition",
-    "standalone synthetic opt-in rejects known retained batch and feedback identities"
+    "standalone synthetic opt-in rejects known retained batch and feedback identities",
+    "cached evaluation report type, digest-key and run associations checked before current-use return"
   ],
   "limitations": [
     "synthetic callbacks do not authenticate external consent or source-material authority",

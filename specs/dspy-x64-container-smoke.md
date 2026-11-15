@@ -50,6 +50,10 @@ independent review before use. It uses the same fixed Unix Engine socket and
 exact JSON request, without CLI proxy/environment injection or an alternative
 daemon. It holds the driver's SIGUSR1 gate until the exact contract-bound ready
 record, Engine identity/PID, PID start time and actual cgroup limits are observed.
+Immediately before release, the reader and controller share a state lock and
+reject known stream errors, declared/observed output overrun, an exited reader or
+an expired deadline, even if ready was observed. This does not predict unknown
+future peer data; later failures still fail result admission and stop the run.
 The driver independently arms a 120-second alarm. It must enforce a 120-second wall bound and stop
 on output exceeding 1 MiB per stream, then fully drain and preserve all produced
 logs, including any overrun and shutdown output. It must retain stopped container

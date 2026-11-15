@@ -15,6 +15,7 @@ import stat
 import struct
 import threading
 import time
+from _thread import LockType
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -277,8 +278,10 @@ def capture(
     stopped: threading.Event,
     result: dict[str, Any],
     contract_sha256: str,
+    state_lock: LockType | None = None,
 ) -> None:
     """Retain every received byte, including over-limit and shutdown bytes."""
+    lock = state_lock or threading.Lock()
     try:
         with (
             (directory / "docker-stream.bin").open("xb") as raw,
@@ -296,7 +299,8 @@ def capture(
             while True:
                 header = read(8)
                 if not header:
-                    result["drained"] = True
+                    with lock:
+                        result["drained"] = True
                     break
                 if (
                     len(header) != 8
@@ -305,37 +309,59 @@ def capture(
                 ):
                     raise RuntimeError("malformed Docker stream header")
                 remaining = struct.unpack(">I", header[4:])[0]
+                if counts[header[0]] + remaining > 1048576:
+                    with lock:
+                        result["output_stop"] = True
+                        stopped.set()
                 target = stdout if header[0] == 1 else stderr
                 while remaining:
                     block = read(min(remaining, 65536))
                     if not block:
                         raise RuntimeError("incomplete Docker stream payload")
                     target.write(block)
-                    if (
-                        header[0] == 1
-                        and not result.get("ready")
-                        and len(first_line) <= 1048576
-                    ):
-                        first_line.extend(block)
-                        if b"\n" in first_line:
-                            line = bytes(first_line).split(b"\n", 1)[0]
-                            if json.loads(line) != {
-                                "control": "ready",
-                                "contract_sha256": contract_sha256,
-                            }:
-                                raise RuntimeError("readiness contract differs")
-                            result["ready"] = True
-                    remaining -= len(block)
-                    counts[header[0]] += len(block)
-                    if counts[header[0]] > 1048576:
-                        result["output_stop"] = True
-                        stopped.set()
-            result["counts"] = counts
+                    with lock:
+                        if (
+                            header[0] == 1
+                            and not result.get("ready")
+                            and len(first_line) <= 1048576
+                        ):
+                            first_line.extend(block)
+                            if b"\n" in first_line:
+                                line = bytes(first_line).split(b"\n", 1)[0]
+                                if json.loads(line) != {
+                                    "control": "ready",
+                                    "contract_sha256": contract_sha256,
+                                }:
+                                    raise RuntimeError("readiness contract differs")
+                                result["ready"] = True
+                        remaining -= len(block)
+                        counts[header[0]] += len(block)
+                        if counts[header[0]] > 1048576:
+                            result["output_stop"] = True
+                            stopped.set()
+            with lock:
+                result["counts"] = counts
     except Exception as error:
-        result["capture_error"] = type(error).__name__
-        stopped.set()
+        with lock:
+            result["capture_error"] = type(error).__name__
+            stopped.set()
     finally:
         stream.close()
+
+
+def check_release_phase(
+    result: dict[str, Any], event: threading.Event, reader_alive: bool, elapsed: float
+) -> None:
+    """Call under collector lock; do not predict unknown future peer data."""
+    if (
+        not result.get("ready")
+        or event.is_set()
+        or result.get("output_stop")
+        or "capture_error" in result
+        or not reader_alive
+        or elapsed > 120
+    ):
+        raise RuntimeError("known collection failure or deadline before release")
 
 
 def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str, Any]:
@@ -346,6 +372,7 @@ def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str,
     kill_sent = False
     thread: threading.Thread | None = None
     capture_result: dict[str, Any] = {"drained": False, "output_stop": False}
+    state_lock = threading.Lock()
     receipt: dict[str, Any] = {
         "classification": "actual_attempt_not_qualification",
         "spec": spec,
@@ -362,12 +389,18 @@ def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str,
         # log API cannot prevent its wall watchdog and same-route stop.
         try:
             capture(
-                backend.logs(identity), directory, event, capture_result, spec["Cmd"][1]
+                backend.logs(identity),
+                directory,
+                event,
+                capture_result,
+                spec["Cmd"][1],
+                state_lock,
             )
         except Exception as error:
-            capture_result["capture_error"] = type(error).__name__
-            capture_result["capture_reason"] = str(error)
-            event.set()
+            with state_lock:
+                capture_result["capture_error"] = type(error).__name__
+                capture_result["capture_reason"] = str(error)
+                event.set()
 
     try:
         identity = backend.create(spec)
@@ -404,9 +437,12 @@ def launch(spec: dict[str, Any], backend: Backend, directory: Path) -> dict[str,
             ):
                 kill()
                 raise RuntimeError("exact readiness not observed within bounds")
-        if time.monotonic() - started > 120:
-            raise RuntimeError("readiness exceeded wall bound")
-        backend.signal(identity, "SIGUSR1")
+        with state_lock:
+            check_release_phase(
+                capture_result, event, thread.is_alive(), time.monotonic() - started
+            )
+            backend.signal(identity, "SIGUSR1")
+            receipt["release_phase"] = "known_reader_state_checked_under_lock"
         deadline_stop = False
         while thread.is_alive():
             if event.wait(0.05) or time.monotonic() - started > 120:

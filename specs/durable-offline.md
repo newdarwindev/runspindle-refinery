@@ -75,3 +75,9 @@ aarch64-unknown-linux-gnu --python-version 3.14 --only-binary :all:
 --no-compile-bytecode`. Execution never downloads. Python image/notices and the
 dependency byte inventory are in `offline/`; keep downloaded packages in ignored
 `local/`. Missing or changed preparation blocks execution.
+
+The historical preparation command above is incomplete for byte reproducibility:
+its installer version and preparation interpreter prefix were not retained.
+See [candidate preparation](dspy-preparation-candidate.md) for the separate explicit
+recipe/audit contract. It does not relax the existing byte-equality execution gate
+or approve a replacement manifest.

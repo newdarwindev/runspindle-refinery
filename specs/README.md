@@ -64,3 +64,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Durable DSPy lifecycle](durable-dspy-lifecycle.md): shared SQLite ownership,
   immutable checkpoint recovery and store-scoped family holdout seals. Framework
   execution/restart qualification remains separate and unrun.
+- [DSPy preparation candidates](dspy-preparation-candidate.md): source-only explicit
+  recipe and local artifact auditor; canonical pins and execution gate unchanged.

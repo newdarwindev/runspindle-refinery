@@ -97,3 +97,11 @@ no permission to alter pins, deploy, serve or close issue #16.
 files, archives and mocked candidate inventory, not actual uv, wheels or DSPy. These tests demonstrate
 local validation and canonical non-mutation, not original artifact recovery,
 native reproducibility or framework acceptance.
+
+
+The strict `tools/offline_dspy.py` inventory also rejects cache directories and
+`.pyc` files before admitting a dependency tree or invoking Docker. Python's
+`PYTHONDONTWRITEBYTECODE` prevents cache writes, not cached-code reads; it is not
+an inventory-integrity check. Synthetic inventory tests observe zero subprocess
+calls for rejected trees and detect a guard-removal mutation that restores the
+old false inventory match. No cached payload is executed by these tests.

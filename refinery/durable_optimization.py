@@ -10,6 +10,7 @@ from typing import Any, Callable, cast
 
 from . import evaluation as ev
 from .durable_evaluation import SQLiteBudget
+from .feedback_use import RetainedFeedbackUse, use_guard
 from .lineage import _token, digest
 from .optimization import Selection, _prepare, optimize
 from .storage import Store, VERSION, pack, version
@@ -31,6 +32,8 @@ def run(
     budget_id: str,
     max_attempts: int = 1,
     checkpoint: Callable[[str], None] = lambda _: None,
+    retained_use: RetainedFeedbackUse | None = None,
+    synthetic_fixture: bool = False,
 ) -> Selection:
     """Claim once, cache committed results, reject uncertain/interrupted repeats.
 
@@ -53,7 +56,18 @@ def run(
     # with this same key cannot match our domain-separated immutable binding.
     key = "selection-" + digest(identity.encode())
     binding = encode((VERSION, "selection.v1", snapshot_sha256, config, budget_id))
+    check_use = use_guard(
+        store,
+        snapshot_sha256,
+        purpose="optimization",
+        configuration_sha256=config,
+        run_sha256=digest(encode((identity, binding))),
+        retained_use=retained_use,
+        synthetic_fixture=synthetic_fixture,
+    )
+    check_use()
     with db.transaction() as tx:
+        check_use()
         row = tx.execute(
             "SELECT binding,state,report FROM experiments WHERE identity=?", (key,)
         ).fetchone()
@@ -104,6 +118,7 @@ def run(
                     or result.selected_sha256 is not None
                 ):
                     raise ValueError("invalid selection status")
+                check_use()
                 return result
             raise ev.Halt("interrupted_or_owned_selection")
         if scripted.calls:
@@ -111,6 +126,7 @@ def run(
         db.room(tx, "experiments")
         tx.execute("INSERT INTO experiments VALUES(?,?,'running',NULL)", (key, binding))
     checkpoint("after_selection_claim")
+    check_use()
     ledger = SQLiteBudget(
         store,
         budget_id,
@@ -127,6 +143,7 @@ def run(
         budget=ledger,
         per_call=per_call,
         max_attempts=max_attempts,
+        check_use=check_use,
     )
     with db.transaction() as tx:
         sha = digest(encode(result))
@@ -137,5 +154,7 @@ def run(
             (sha, key),
         )
         checkpoint("before_selection_commit")
+        check_use()
     checkpoint("after_selection_commit")
+    check_use()
     return result

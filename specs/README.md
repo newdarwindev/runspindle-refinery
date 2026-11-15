@@ -48,3 +48,6 @@ existing acceptance results or operational permissions.
 
 [SQLite schema admission](storage-schema-admission.md) rejects incomplete or
 incompatible component stores and rolls back invalid transaction changes.
+
+- [Retained-feedback use eligibility](retained-feedback-use.md): fresh exact-snapshot
+  authority and pinned-evidence checks at durable dispatch, commit and cached reuse.

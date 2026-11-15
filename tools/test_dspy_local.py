@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Separately runnable real pinned DSPy/durable evaluation/local serving lane."""
+
 import hashlib
 import json
 import os
@@ -61,6 +62,7 @@ def run():
                 snapshot,
                 exp,
                 provider=provider,
+                synthetic_fixture=True,
                 budget_id="shared",
             )
             check(

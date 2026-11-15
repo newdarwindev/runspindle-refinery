@@ -18,7 +18,7 @@
     },
     {
       "path": "docs/design/README.md",
-      "sha256": "c53b6bcedc87f1335e3f8ca4e7ea1b824b5f68a99614abb9f5f8cf885eec4f80",
+      "sha256": "d81edc6f6ab5dda1f63ac51deac58b0297e2d608f073b7eac061a09753ead286",
       "source_ids": [
         "SRC-013"
       ],
@@ -158,6 +158,17 @@
       "implementation_evidence": false,
       "kind": "new_support_document",
       "source_relationship": "full-scope reviewed adaptation or supporting validation, not historical re-render or runtime acceptance"
+    },
+    {
+      "path": "docs/design/source-wrapper-change-evidence.json",
+      "sha256": "b0f4a8cecd52500d91a99b5057dca5d08f4d5c69055412e46f91eae3f3638c69",
+      "source_ids": [
+        "SRC-013"
+      ],
+      "historical_original": false,
+      "implementation_evidence": false,
+      "kind": "new_support_document",
+      "source_relationship": "source-wrapper import-order validation supplement; original compiled artifact and build receipt bytes unchanged"
     },
     {
       "path": "docs/design/toolchain-lock.json",

@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "issue": 16,
+  "source_base": "19f366758b594fed84fb78aa5ab51209a13710e0",
+  "classification": "actual_sqlite_lifecycle_with_explicit_result_fixtures_not_framework_qualification",
+  "checks": {
+    "lifecycle_tests": {
+      "status": "passed",
+      "count": 23
+    },
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 652
+    },
+    "scaffold": {
+      "status": "passed"
+    },
+    "aggregate_validation": {
+      "status": "passed",
+      "source_worktree_dirty": false,
+      "checks": {
+        "reproducible-inputs": "passed",
+        "scaffold": "passed",
+        "static-quality": "passed",
+        "repository-hygiene": "passed",
+        "check-artifacts": "passed",
+        "check-paper": "passed",
+        "check-references": "passed",
+        "python-tests": "passed",
+        "distributable-build": "not_applicable",
+        "evaluation-mutations": "passed",
+        "durable-mutations": "passed"
+      },
+      "normal_python_tests": 234,
+      "toolchain_qualification": "not_claimed"
+    },
+    "full_optimized_python_tests": {
+      "status": "passed",
+      "count": 234
+    },
+    "actual_dspy_optimizer": {
+      "status": "blocked_not_run",
+      "reason": "qualified Python 3.14 linux/arm64 DSPy runtime unavailable; pins unchanged"
+    },
+    "actual_framework_restart": {
+      "status": "not_run"
+    },
+    "live_provider": {
+      "status": "not_run"
+    },
+    "lifecycle_tests_optimized": {
+      "status": "passed",
+      "count": 23
+    }
+  },
+  "scope": [
+    "Existing component Store, immutable objects, experiments, attempts and SQLiteBudget; no schema migration",
+    "Atomic compilation ownership, committed partial checkpoint, one-shot evaluation, no uncertain replay",
+    "Current-authority zero-call completed recovery; exact script, receipt, prediction, usage and candidate association",
+    "Store-scoped immutable train/heldout family enrollment and exact candidate seals across overlapping cohorts",
+    "Shared durable-use policy rechecked after authority callbacks; source policy-removal mutation detected by real provider calls"
+  ],
+  "limitations": [
+    "Handwritten result fixtures test real storage primitives; no fake framework is treated as DSPy execution",
+    "No guarantees across new stores, invented unrelated family identities or storeless low-level APIs",
+    "Hostile wholesale database replacement and multi-host storage are outside scope",
+    "No quality gain, serving authority, deployment or paid provider claim"
+  ],
+  "prerequisites": {
+    "tether_commit": "670989839a0fccbcf2014d01609778ae6e4df424",
+    "quality_dependencies": "requirements-quality.txt",
+    "aggregate_command": "RUNSPINDLE_TETHER_SOURCE=<verified-pinned-checkout> python3 tools/validate.py",
+    "optimized_command": "RUNSPINDLE_TETHER_SOURCE=<verified-pinned-checkout> python3 -O -m unittest discover -s tests -v"
+  },
+  "artifacts": {
+    "refinery/dspy_optimizer.py": "242c689a4a3f722befd86f2d78b4e8c9c58e4459a2d25384bf58e896bc3e8c63",
+    "refinery/durable_dspy.py": "09681d0ad9fb6b69ba433d23f4de41187f82ced89ff5e86021082017ca97d555",
+    "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+    "refinery/feedback_use.py": "f9a0b050d6b3dc2d099532becd2842373b7681a5276473452456e907c09b5cd5",
+    "refinery/storage.py": "de813dc6842969e8b51a9a20c1095831ad7b36ff77ac5bcb4b7adf01838d0ebd",
+    "tests/test_durable_dspy.py": "12eee4f6ece059f35374c257e560bef6c10a4aaa57a82bd0736c27ef55dd84eb",
+    "tools/test_dspy_optimizer.py": "b4d15d6debea1ed711e96f5dda3d479c45afd6e33ede274eef388ec436a2e65c",
+    "offline/dependencies.json": "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+    "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e",
+    "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525"
+  },
+  "tested_source_commit": "4b92d2886152a9605b248690a256ee03ab20c997",
+  "independent_review": {
+    "status": "passed",
+    "scope": "source, exact-commit lifecycle tests and adversarial mutation probes; actual framework execution not qualified"
+  }
+}

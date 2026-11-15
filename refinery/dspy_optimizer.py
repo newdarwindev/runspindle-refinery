@@ -519,6 +519,7 @@ def evaluate_locked(
     dspy = framework()
     scores: dict[str, int] = {}
     attempts: list[ev.Attempt] = []
+    predictions: list[tuple[str, str, str, str]] = []
     try:
         for stage in ("baseline", "candidate"):
             artifact = (
@@ -552,7 +553,28 @@ def evaluate_locked(
                     for example in heldout:
                         dispatch.guard()
                         prediction = student(case=case(example))
-                        score += int(prediction.answer.encode() == example.gold)
+                        answer = prediction.answer.encode()
+                        last = dispatch.attempts[-1]
+                        if (
+                            last.request.output_id,
+                            last.request.output_revision,
+                            last.content_sha256,
+                        ) != (
+                            example.output.output_id,
+                            example.output.revision,
+                            digest(answer),
+                        ):
+                            ledger.stop("prediction_receipt_mismatch")
+                            raise ev.Halt("prediction_receipt_mismatch")
+                        predictions.append(
+                            (
+                                stage,
+                                example.output.output_id,
+                                example.output.revision,
+                                digest(answer),
+                            )
+                        )
+                        score += int(answer == example.gold)
             finally:
                 attempts.extend(dispatch.attempts)
             dispatch.guard()  # seal phase exit before accepting a new controller
@@ -565,6 +587,7 @@ def evaluate_locked(
             "status": "blocked",
             "scores": scores,
             "attempts": tuple(attempts),
+            "predictions": tuple(predictions),
             "candidate_sha256": expected_sha256,
             "usage": budget.snapshot(),
         }
@@ -572,6 +595,7 @@ def evaluate_locked(
         "status": "evaluated",
         "scores": scores,
         "attempts": tuple(attempts),
+        "predictions": tuple(predictions),
         "candidate_sha256": expected_sha256,
         "usage": budget.snapshot(),
         "quality": "synthetic_exact_match_only",

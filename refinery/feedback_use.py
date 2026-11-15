@@ -217,6 +217,7 @@ def use_guard(
     run_sha256: str,
     retained_use: RetainedFeedbackUse | None,
     synthetic_fixture: bool,
+    policy_owner: str | None = None,
 ) -> Callable[[], None]:
     """Bind a fresh checker, with a separately marked standalone fixture path.
 
@@ -231,6 +232,16 @@ def use_guard(
             snapshot = db.get("lineage", snapshot_sha256)
             if lin.digest(encode(snapshot)) != snapshot_sha256:
                 raise ValueError("snapshot changed")
+            from .heldout_policy import check as check_holdout
+
+            check_holdout(
+                store,
+                snapshot["dataset"],
+                snapshot["split"],
+                purpose=purpose,
+                configuration_sha256=configuration_sha256,
+                owner=policy_owner,
+            )
             reference = snapshot["collection_evidence"]
             if synthetic_fixture is True:
                 if retained_use is not None or reference != SYNTHETIC_FIXTURE_REFERENCE:
@@ -268,6 +279,14 @@ def use_guard(
                         or used & retained_ids
                     ):
                         raise ValueError("retained batch is not a standalone fixture")
+                check_holdout(
+                    store,
+                    snapshot["dataset"],
+                    snapshot["split"],
+                    purpose=purpose,
+                    configuration_sha256=configuration_sha256,
+                    owner=policy_owner,
+                )
                 return
             if (
                 synthetic_fixture is not False
@@ -284,6 +303,14 @@ def use_guard(
                     configuration_sha256,
                     run_sha256,
                 ),
+            )
+            check_holdout(
+                store,
+                snapshot["dataset"],
+                snapshot["split"],
+                purpose=purpose,
+                configuration_sha256=configuration_sha256,
+                owner=policy_owner,
             )
         except Exception:
             raise UseDenied("retained_feedback_use_denied") from None

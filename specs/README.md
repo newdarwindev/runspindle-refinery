@@ -61,3 +61,6 @@ incompatible component stores and rolls back invalid transaction changes.
 - [DSPy BootstrapFewShot component](dspy-bootstrap-optimizer.md): genuine optimizer
   source adapter with locked candidate serialization and an unrun pinned-runtime
   qualification entrypoint. Framework qualification and issue #16 remain open.
+- [Durable DSPy lifecycle](durable-dspy-lifecycle.md): shared SQLite ownership,
+  immutable checkpoint recovery and store-scoped family holdout seals. Framework
+  execution/restart qualification remains separate and unrun.

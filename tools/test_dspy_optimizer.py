@@ -163,6 +163,57 @@ def run() -> dict[str, Any]:
                     "durable receipts missing",
                 )
                 check(not forbidden, "forbidden network effect attempted")
+                lifecycle: Any = importlib.import_module("refinery.durable_dspy")
+                lifecycle_path = Path(directory) / "lifecycle.sqlite"
+                with storage.Store(lifecycle_path) as durable_store:
+                    durable_snapshot, _, _ = fixture.setup(durable_store)
+                    durable_provider = ev.ScriptedProvider(
+                        script, clock=ev.VirtualClock()
+                    )
+                    session = lifecycle.Session(
+                        durable_store,
+                        storage.VERSION,
+                        "qualified-dspy",
+                        durable_snapshot,
+                        provider=durable_provider,
+                        limits=ev.Limits(100, 1000, 1000, 1000),
+                        per_call=ev.Reservation(10, 10),
+                        settings=optimizer.Settings(1, 2),
+                        budget_id="shared",
+                        synthetic_fixture=True,
+                    )
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        durable_compiled = session.compile()
+                    check(
+                        durable_compiled.status == "compiled", "durable compiler failed"
+                    )
+                    durable_report = session.evaluate()
+                    check(
+                        durable_report["status"] == "evaluated",
+                        "durable heldout evaluation failed",
+                    )
+                    durable_calls = len(durable_provider.calls)
+                with storage.Store(lifecycle_path) as reopened:
+                    recovered_provider = ev.ScriptedProvider(
+                        script, clock=ev.VirtualClock()
+                    )
+                    recovered = lifecycle.Session(
+                        reopened,
+                        storage.VERSION,
+                        "qualified-dspy",
+                        durable_snapshot,
+                        provider=recovered_provider,
+                        limits=ev.Limits(100, 1000, 1000, 1000),
+                        per_call=ev.Reservation(10, 10),
+                        settings=optimizer.Settings(1, 2),
+                        budget_id="shared",
+                        synthetic_fixture=True,
+                    ).evaluate()
+                    check(
+                        recovered == durable_report and recovered_provider.calls == [],
+                        "durable result recovery replayed or changed output",
+                    )
+                check(not forbidden, "forbidden durable network effect attempted")
                 return {
                     "status": "passed",
                     "evidence_class": "isolated_offline_dspy_optimizer_component",
@@ -176,12 +227,21 @@ def run() -> dict[str, Any]:
                     "forbidden_network_attempts": len(forbidden),
                     "quality": "synthetic_exact_match_only",
                     "live_provider": "not_run",
-                    "durable_run_recovery": "not_implemented",
+                    "durable_run_recovery": "reopened_store_zero_call_completion",
+                    "durable_framework_calls": durable_calls,
+                    "durable_report_sha256": optimizer.digest(
+                        storage.pack(durable_report)
+                    ),
+                    "framework_restart_after_compile": "not_run",
                     "promotion": "not_authorized",
                     "source_sha256": {
                         p: optimizer.digest((ROOT / p).read_bytes())
                         for p in (
                             "refinery/dspy_optimizer.py",
+                            "refinery/durable_dspy.py",
+                            "refinery/heldout_policy.py",
+                            "refinery/feedback_use.py",
+                            "refinery/storage.py",
                             "tests/test_durable.py",
                             "tests/test_lineage.py",
                             "offline/dependencies.json",

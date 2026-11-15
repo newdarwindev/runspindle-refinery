@@ -81,3 +81,14 @@ its installer version and preparation interpreter prefix were not retained.
 See [candidate preparation](dspy-preparation-candidate.md) for the separate explicit
 recipe/audit contract. It does not relax the existing byte-equality execution gate
 or approve a replacement manifest.
+
+The local DSPy provider explicitly disables ChatAdapter's JSON-adapter fallback.
+Pinned DSPy 3.1.0 defaults `use_json_adapter_fallback` to true and can otherwise
+retry after an adapter exception. Static inspection of its
+`dspy/adapters/chat_adapter.py` (SHA256
+`173b82a5ec09301e0069a19d1b19744864ab6a270868257d4a2dee803ce822b2`)
+establishes this constructor contract. The existing one-call guard still rejects
+an explicit second LM call. Synthetic tests in `tests/test_dspy_local_contract.py`
+verify the disabled fallback and propagation of the original exception without
+importing DSPy. They do not establish actual framework compatibility or diagnose
+any previously reported `provider_unknown` result.

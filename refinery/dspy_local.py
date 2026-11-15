@@ -79,7 +79,9 @@ class LocalDSPyProvider(ScriptedProvider):
                 )
 
         # ChatAdapter uses the supported BaseLM path; history and fallback are disabled.
-        adapter = dspy.ChatAdapter(use_native_function_calling=False)
+        adapter = dspy.ChatAdapter(
+            use_native_function_calling=False, use_json_adapter_fallback=False
+        )
         with dspy.context(
             lm=LocalLM(), adapter=adapter, disable_history=True, callbacks=[]
         ):

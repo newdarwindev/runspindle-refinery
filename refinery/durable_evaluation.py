@@ -3,20 +3,24 @@
 from __future__ import annotations
 
 import threading
+from typing import Any, Callable, cast
+
+from .evaluation import (
+    VERSION as EVALUATION_VERSION,
+)
 from .evaluation import (
     Budget,
     Experiment,
     Halt,
     Limits,
-    Reservation,
     Report,
-    VERSION as EVALUATION_VERSION,
-    evaluate,
+    Reservation,
     _integer,
+    evaluate,
 )
 from .feedback_use import RetainedFeedbackUse, use_guard
-from .lineage import digest, _token
-from .storage import Store, VERSION, pack, unpack, version
+from .lineage import _token, digest
+from .storage import VERSION, Store, pack, unpack, version
 
 
 def _state(budget):
@@ -193,7 +197,7 @@ def run(
         snapshot_sha256,
         purpose="evaluation",
         configuration_sha256=experiment.config_sha256,
-        run_sha256=digest(pack((identity, binding))),
+        run_sha256=digest(cast(Callable[[Any], bytes], pack)((identity, binding))),
         retained_use=retained_use,
         synthetic_fixture=synthetic_fixture,
     )
@@ -216,10 +220,10 @@ def run(
             if row[0] != binding:
                 raise ValueError("immutable experiment conflict")
             if row[1] == "complete":
-                report = store.get("report", row[2])
+                report = cast(Callable[[str, str], Any], store.get)("report", row[2])
                 if (
                     type(report) is not Report
-                    or digest(pack(report)) != row[2]
+                    or digest(cast(Callable[[Any], bytes], pack)(report)) != row[2]
                     or (
                         report.version,
                         report.dataset_sha256,

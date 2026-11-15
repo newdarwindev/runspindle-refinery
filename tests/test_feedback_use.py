@@ -1,12 +1,12 @@
 """Real pinned Tether/Refinery stores with synthetic use authorities and calls."""
 
-from dataclasses import replace
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
-from typing import Any, Callable, cast
 import unittest
+from dataclasses import replace
+from pathlib import Path
+from typing import Any, Callable, cast
 from unittest.mock import patch
 
 from refinery import durable_evaluation as de
@@ -15,8 +15,10 @@ from refinery import evaluation as ev
 from refinery import lineage as lin
 from refinery import optimization as opt
 from refinery.feedback_use import RetainedFeedbackUse, UseDenied
-from refinery.storage import Store, VERSION, pack, unpack
-import test_feedback_collection as collection_fixture
+from refinery.storage import VERSION, Store, pack, unpack
+
+# Preserve unittest discovery's verified dependency singleton.
+collection_fixture = importlib.import_module("test_feedback_collection")
 
 ROOT = Path(__file__).resolve().parents[1]
 LIMITS = ev.Limits(20, 200, 2000, 200)
@@ -657,9 +659,7 @@ with Store(sys.argv[1]) as store:
             self.assertEqual(case.ledger()["calls"], 1)
 
     def test_standalone_fixture_opt_in_is_explicit(self) -> None:
-        from test_durable import setup
-
-        fixture: Any = setup
+        fixture: Any = importlib.import_module("test_durable").setup
         snapshot, experiment, provider = fixture(self.store)
         with self.assertRaises(UseDenied):
             de.run(

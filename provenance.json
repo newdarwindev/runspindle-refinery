@@ -205,5 +205,13 @@
     "quality_baseline": "unchanged",
     "pinned_DSPy_final_head": "blocked_missing_prepared_dependency_tree",
     "independent_review": "pending"
+  },
+  "python313_preparation_candidate": {
+    "classification": "original_read_only_auditor_and_synthetic_tests",
+    "recipe": "offline/python313/recipe.json",
+    "specification": "specs/dspy-arm313-preparation-candidate.md",
+    "dependencies": "existing_versions_and_hashes_preserved_separate_wheel_selection",
+    "third_party_payloads": "retained_only_in_ignored_local_inputs_not_published",
+    "qualification": "native_preparation_and_framework_not_run"
   }
 }

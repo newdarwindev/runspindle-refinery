@@ -453,8 +453,9 @@ class Session:
         return None
 
     def commit_compiled(self, result: opt.Compiled) -> None:
-        self.guard("optimization")
         encode: Any = pack
+        result_bytes = encode(result)
+        self.guard("optimization")
         with self.store.transaction() as tx:
             row = self.row(tx)
             if row is None or row[1] != "compiling":
@@ -466,6 +467,9 @@ class Session:
                 "clock_ms": self.provider.clock(),
             }
             sha = self.store.put(tx, "dspy_compiled", self.key, record)
+            self.verify_result_identity(
+                "dspy_compiled", "result", result, result_bytes, sha
+            )
             verified, _ = self.compiled()
             if encode(verified) != encode(result):
                 raise ValueError("compiled result changed")
@@ -486,6 +490,10 @@ class Session:
                 dict(result.usage), success=result.status == "compiled"
             )
             self.verify_cursor(result.attempts)
+            self.verify_result_identity(
+                "dspy_compiled", "result", result, result_bytes, sha
+            )
+            self.compiled()
         self.checkpoint("after_dspy_compile_commit")
         self.guard("optimization")
         self.verify_cursor(result.attempts)
@@ -494,6 +502,33 @@ class Session:
         self.verify_current_usage(
             dict(result.usage), success=result.status == "compiled"
         )
+        self.verify_result_identity(
+            "dspy_compiled", "result", result, result_bytes, sha
+        )
+        self.compiled()
+
+    def verify_result_identity(
+        self,
+        kind: str,
+        field: str,
+        result: Any,
+        expected_bytes: bytes,
+        record_sha256: str,
+    ) -> None:
+        """Callback-free equality of caller result and its exact durable record.
+
+        Capture the caller's canonical bytes before any authority/checkpoint
+        callback. A valid but different result is not a replacement approval.
+        This check does not rewrite previously committed historical evidence.
+        """
+        encode: Any = pack
+        record = self.store.get(kind, self.key)
+        if (
+            encode(result) != expected_bytes
+            or digest(encode(record)) != record_sha256
+            or encode(record[field]) != expected_bytes
+        ):
+            raise ValueError("DSPy result identity changed")
 
     def compile(self) -> opt.Compiled:
         cached = self.recover_compiled()
@@ -726,6 +761,8 @@ class Session:
         return compiled
 
     def commit_evaluated(self, report: dict[str, Any]) -> None:
+        encode: Any = pack
+        report_bytes = encode(report)
         self.guard("evaluation")
         with self.store.transaction() as tx:
             row = self.row(tx)
@@ -743,6 +780,9 @@ class Session:
                 "report": report,
             }
             sha = self.store.put(tx, "dspy_evaluated", self.key, record)
+            self.verify_result_identity(
+                "dspy_evaluated", "report", report, report_bytes, sha
+            )
             tx.execute(
                 "UPDATE experiments SET state='complete',report=? WHERE identity=?",
                 (sha, self.key),
@@ -755,6 +795,10 @@ class Session:
                 report.get("usage"), success=report["status"] == "evaluated"
             )
             self.verify_cursor(compiled.attempts + report["attempts"])
+            self.verify_result_identity(
+                "dspy_evaluated", "report", report, report_bytes, sha
+            )
+            self.verify_evaluated(report, compiled)
         self.checkpoint("after_dspy_evaluation_commit")
         self.guard("evaluation")
         self.verify_cursor(compiled.attempts + report["attempts"])
@@ -763,6 +807,9 @@ class Session:
         self.verify_evaluated(report, compiled)
         self.verify_current_usage(
             report["usage"], success=report["status"] == "evaluated"
+        )
+        self.verify_result_identity(
+            "dspy_evaluated", "report", report, report_bytes, sha
         )
 
     def evaluate(self) -> dict[str, Any]:

@@ -77,3 +77,6 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Serving dispatch authority](serving-dispatch-authority.md): fresh exact approval
   checks before actual load; unknown outcomes remain readback-only and no
   production serving or issuer qualification is claimed.
+
+- [DSPy result identity](dspy-result-identity.md): exact caller/checkpoint equality
+  after callbacks, rollback before commit and immutable recovery after commit.

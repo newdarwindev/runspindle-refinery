@@ -170,5 +170,11 @@
     "specification": "specs/serving-dispatch-authority.md",
     "production_authority": "unqualified",
     "live_serving": "not_run"
+  },
+  "dspy_result_identity": {
+    "classification": "original_bounded_lifecycle_checks_and_synthetic_tests",
+    "source_import": "none",
+    "specification": "specs/dspy-result-identity.md",
+    "framework_qualification": "not_run"
   }
 }

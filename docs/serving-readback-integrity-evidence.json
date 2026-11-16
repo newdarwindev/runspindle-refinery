@@ -1,0 +1,72 @@
+{
+  "classification": "bounded_synthetic_component_evidence",
+  "issue": 17,
+  "parent_issue": 6,
+  "base_commit": "673138c7c00aa216fa6956cbef0eb13e30fed8d1",
+  "python": "3.12.14",
+  "runtime": "refinery/serving.py",
+  "tests": "tests/test_serving_readback_integrity.py",
+  "sha256": {
+    "refinery/serving.py": "65fe30b4b6a0249cbeb2933d1b7082521f12f56a7f79c0630d58b469a518e552",
+    "tests/test_serving_readback_integrity.py": "d693275306de9bb0310e57182fa697988e40dc7a98feb5e84e765494c4f5d969"
+  },
+  "baseline_reproduction": {
+    "boolean_generation_readback": "active",
+    "actual_loader_active_rows": 0
+  },
+  "focused_normal": {
+    "tests": 5,
+    "seconds": 5.364,
+    "status": "passed"
+  },
+  "focused_optimized": {
+    "tests": 5,
+    "seconds": 5.366,
+    "status": "passed"
+  },
+  "full_normal": {
+    "status": "passed",
+    "tests": 401,
+    "seconds": 219.251,
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -m unittest discover -s tests -v"
+  },
+  "full_optimized": {
+    "status": "passed",
+    "tests": 401,
+    "seconds": 221.368,
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -O -m unittest discover -s tests -v"
+  },
+  "independent_source_review": "passed_no_blocker",
+  "independent_focused_tests": {
+    "tests": 5,
+    "seconds": 5.215,
+    "status": "passed"
+  },
+  "mutation_checks": {
+    "strict_readback_guard_removal": "detected",
+    "existing_durable_mutants": 4,
+    "existing_status": "all_detected"
+  },
+  "effects": {
+    "new_test_network_calls": 0,
+    "reconciliation_load_calls": 0,
+    "lost_ack_fresh_process_total_load_rows": 1,
+    "fresh_process_output": "answerone",
+    "provider_calls": "none; scripted fixture only"
+  },
+  "scaffold": "passed",
+  "repo_hygiene": "passed",
+  "diff_whitespace": "passed",
+  "pinned_static": {
+    "status": "blocked",
+    "reason": "No package metadata was found for ruff"
+  },
+  "tether_pin": "dependencies/tether-feedback.json",
+  "limitations": [
+    "Trusted adapter observation, not authenticated target or issuer protocol",
+    "No atomic external transaction or hostile-storage guarantee",
+    "No production storage, live serving, DSPy framework or provider qualification",
+    "No deployment, migration, access change, persistent job, backup or package installation",
+    "Remote CI not run; issues 17 and 6 remain open"
+  ]
+}

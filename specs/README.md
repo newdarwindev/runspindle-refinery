@@ -77,3 +77,6 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Serving dispatch authority](serving-dispatch-authority.md): fresh exact approval
   checks before actual load; unknown outcomes remain readback-only and no
   production serving or issuer qualification is claimed.
+
+- [Serving readback integrity](serving-readback-integrity.md): strict observed
+  identity and callback-safe reconciliation; no production target qualification.

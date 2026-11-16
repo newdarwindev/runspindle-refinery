@@ -190,6 +190,19 @@ class LocalServing:
         return {"output": value["responses"][text], "candidate_sha256": row[0]}
 
 
+def _readback_matches(observed, expected):
+    """Compare only exact wire-shaped primitives; never invoke foreign equality."""
+    return (
+        type(observed) is dict
+        and all(type(key) is str for key in observed)
+        and set(observed) == {"activation_id", "generation", "candidate_sha256"}
+        and type(observed["activation_id"]) is str
+        and type(observed["generation"]) is int
+        and type(observed["candidate_sha256"]) is str
+        and observed == expected
+    )
+
+
 def _score_counts(report: Report) -> tuple[int, int, int]:
     """Decode canonical exact-match ratios, not new evidence authentication.
 
@@ -519,38 +532,73 @@ class Registry:
         environment, generation, key, predecessor, state = self._intent(activation_id)
         if state in {"active", "failed"}:
             return state
+        intent = (environment, generation, key, predecessor, state)
+        ownership = {
+            "generation": generation,
+            "active": predecessor,
+            "pending": activation_id,
+        }
+        if self.state(environment) != ownership:
+            raise ValueError("activation ownership conflict")
+        candidate = self.store.get("candidate", key)
+        candidate_bytes = pack(candidate)
+        if digest(candidate_bytes) != key:
+            raise ValueError("candidate identity changed")
+        expected = {
+            "activation_id": activation_id,
+            "generation": generation,
+            "candidate_sha256": candidate["candidate_sha256"],
+        }
+        prior = self.store.db.execute(
+            "SELECT identity,generation FROM activations WHERE environment=? AND candidate=? AND state='active' AND generation<? ORDER BY generation DESC LIMIT 1",
+            (environment, predecessor, generation),
+        ).fetchone()
+        prior_candidate = self.store.get("candidate", predecessor) if predecessor else None
+        prior_bytes = pack(prior_candidate)
+        if predecessor and digest(prior_bytes) != predecessor:
+            raise ValueError("predecessor identity changed")
+        prior_expected = (
+            {
+                "activation_id": prior[0],
+                "generation": prior[1],
+                "candidate_sha256": prior_candidate["candidate_sha256"],
+            }
+            if prior and prior_candidate
+            else None
+        )
         try:
             observed = adapter.readback(environment)
         except Exception:
             observed = "unavailable"
-        expected = {
-            "activation_id": activation_id,
-            "generation": generation,
-            "candidate_sha256": self.store.get("candidate", key)["candidate_sha256"],
-        }
-        old_digest = (
-            self.store.get("candidate", predecessor)["candidate_sha256"]
-            if predecessor
-            else None
-        )
         prior_observed = (
             observed is None
             if predecessor is None
-            else (
-                type(observed) is dict
-                and observed.get("candidate_sha256") == old_digest
-            )
+            else prior_expected is not None
+            and _readback_matches(observed, prior_expected)
         )
         outcome = (
             "active"
-            if observed == expected
+            if _readback_matches(observed, expected)
             else "failed"
-            if rejected and prior_observed
+            if rejected is True and prior_observed
             else "unknown"
         )
         with self.store.transaction() as tx:
-            if self.state(environment)["pending"] != activation_id:
-                raise ValueError("activation ownership conflict")
+            # Readback is an external callback. It cannot change the intent whose
+            # observation is being committed, nor substitute immutable bindings.
+            if (
+                self._intent(activation_id) != intent
+                or self.state(environment) != ownership
+                or pack(self.store.get("candidate", key)) != candidate_bytes
+                or pack(self.store.get("candidate", predecessor) if predecessor else None)
+                != prior_bytes
+                or self.store.db.execute(
+                    "SELECT identity,generation FROM activations WHERE environment=? AND candidate=? AND state='active' AND generation<? ORDER BY generation DESC LIMIT 1",
+                    (environment, predecessor, generation),
+                ).fetchone()
+                != prior
+            ):
+                raise ValueError("activation ownership or binding changed during readback")
             tx.execute(
                 "UPDATE activations SET state=? WHERE identity=?",
                 (outcome, activation_id),

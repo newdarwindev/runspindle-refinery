@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "scope": "Refinery #5: scripted selection configuration and cursor binding only",
+  "evidence_class": "offline_component_scripted_selection_and_sqlite",
+  "checked_at_utc": "2026-11-16T09:08:31.180856+00:00",
+  "base_commit": "f7b68dbbd6dec8410c751c8d8ff2de8eabf3b7c3",
+  "base_tree": "04aa8ae6470bf2a878a9ad0a7fca30e7229bb6be",
+  "source_state": "tested working snapshot composed with exact current-main file bytes; hashes identify reviewed source, not future commit metadata",
+  "source_sha256": {
+    "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+    "refinery/durable_optimization.py": "ce538c2af3251763ecc728a3700757ce76c2c7570a1db3f2e48b3cd4842b7892",
+    "tests/test_selection_binding.py": "13cb986562b2d45f9b0df1fdd2bbc9246b554391dbd3bd650057bdcee0248b0a",
+    "specs/selection-provider-binding.md": "732e37338003cf0f9392922107db7c86912ab6658811c36518ebfd406c180f90"
+  },
+  "preserved_main_blobs": {
+    "docs/qualification-threshold-evidence.json": "5cf2572a58696c5e925ec134d97077f3ad05bcf2",
+    "refinery/serving.py": "206eb1f91d7c68aaef6e40f731ca6cac0d90ac11",
+    "specs/qualification-thresholds.md": "06f539814947365a07dee3d4d53045fbe7cb69ca",
+    "tests/test_qualification_thresholds.py": "5e1b233db29dee74f7c405e610ee270c4e0bbd61"
+  },
+  "runtime": {
+    "python": "3.12.16",
+    "sqlite": "3.53.1",
+    "system": "Linux",
+    "machine": "x86_64",
+    "qualified_runner_image": false
+  },
+  "checks": {
+    "related_normal": {
+      "status": "passed",
+      "tests": 83,
+      "skipped": 0,
+      "duration_seconds": 19.223,
+      "command": "PYTHONPATH=tests python3 -B -m unittest test_selection_binding test_optimization test_durable_optimization test_lineage test_evaluation test_evaluation_admission -q"
+    },
+    "related_optimized": {
+      "status": "passed",
+      "tests": 83,
+      "skipped": 0,
+      "duration_seconds": 19.343,
+      "command": "PYTHONPATH=tests python3 -B -O -m unittest test_selection_binding test_optimization test_durable_optimization test_lineage test_evaluation test_evaluation_admission -q"
+    },
+    "new_boundary_tests": {
+      "status": "passed",
+      "tests": 12,
+      "included_in_related_counts": true,
+      "covers": [
+        "use callback",
+        "reservation callback",
+        "known settlement callback",
+        "last completion",
+        "final checked snapshot",
+        "durable preclaim",
+        "postclaim",
+        "before commit",
+        "after commit",
+        "cached return",
+        "stable consumed prefix and cached cursor",
+        "timeout retry"
+      ]
+    },
+    "deliberate_mutation": {
+      "status": "detected",
+      "scope": "removed process-local guard produces selected result attributed to a different script than the observed provider",
+      "included_in_related_counts": true
+    },
+    "merged_threshold_composition": {
+      "status": "passed",
+      "tests_each_mode": 3,
+      "modes": [
+        "normal",
+        "optimized"
+      ],
+      "test_names": [
+        "test_exact_improvement_boundary_and_one_ppm_stricter_denials",
+        "test_negative_improvement_remains_rejected",
+        "test_float_comparison_mutation_fails_independent_boundary_oracle"
+      ],
+      "duration_seconds": {
+        "normal": 1.698,
+        "optimized": 1.679
+      }
+    },
+    "independent_review": {
+      "status": "approved",
+      "scope": "frozen four-file source and bounded guarantees",
+      "focused_normal_tests": 12,
+      "duration_seconds": 6.061
+    },
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 650,
+      "python_files": 58,
+      "yaml_files": 4,
+      "command": "python3 -B tools/static_quality.py",
+      "baseline_changed": false
+    },
+    "scaffold": {
+      "status": "passed",
+      "command": "python3 -B tools/check_scaffold.py",
+      "includes": [
+        "artifact integrity",
+        "reference bytes and syntax"
+      ],
+      "product_acceptance": "not_run"
+    },
+    "whitespace": {
+      "status": "passed",
+      "commands": [
+        "git diff --check",
+        "git diff --cached --check"
+      ]
+    },
+    "full_python_suite": {
+      "status": "not_run",
+      "reason": "authentic pinned Tether checkout unavailable",
+      "required_tether_commit": "670989839a0fccbcf2014d01609778ae6e4df424"
+    },
+    "aggregate": {
+      "status": "not_run",
+      "reason": "retained-suite dependency unavailable; direct checks are not an aggregate receipt"
+    },
+    "remote_ci": {
+      "status": "not_run"
+    },
+    "framework_provider_and_live_acceptance": {
+      "status": "not_run"
+    }
+  },
+  "quality_pins": {
+    "ruff": "0.14.5",
+    "mypy": "1.18.2",
+    "yamllint": "1.37.1",
+    "shellcheck-py": "0.11.0.1",
+    "mypy_extensions": "1.2.0",
+    "pathspec": "1.1.1",
+    "typing_extensions": "4.16.0",
+    "PyYAML": "6.0.3"
+  },
+  "local_receipt_sha256": {
+    "selection-normal.log": "dc5bba327d3d2893aabf5fa683a4ea2a07ce73ee687f824963c4a8e58ed2fc78",
+    "selection-optimized.log": "647a533d8eacea2b9b52517d24e54f44f8cd7f1327596afdcd866fbadede4964",
+    "selection-static.log": "67559fd0036d4e21841c27757fe79784919cfc6ed40843fad12a09e422923400",
+    "threshold-composition-normal.log": "f398a23b41e98a45b0e32660fae3d218bafffcc1edcbcd72c22394e1e4f11a95",
+    "threshold-composition-optimized.log": "cf3e393b9b0003e75b5db9fa1b44e6cea57b348875394fce1a2bd6edf0edba4f"
+  },
+  "boundaries": [
+    "Original ScriptedProvider and component SQLite with invented fixtures and synthetic authorities; no external provider or DSPy framework.",
+    "Provider consistency checks validate configuration, clock identity and cursor position, not hostile mutable-history authentication or concurrent-memory isolation.",
+    "An injected callback can itself make an extra scripted call; guards refuse to certify it as passing fully budgeted selection evidence.",
+    "Known settled usage and unknown reservations remain charged; no ledger refund/reset or automatic replay.",
+    "Before-commit mismatch rolls back result/claim completion before separately halting the ledger.",
+    "After-commit callback drift can reject the current return and halt the ledger but cannot erase an already valid historical committed result.",
+    "Existing report/schema, authority, dependency pins, quality baseline and workflows unchanged; merged threshold fix retained byte-for-byte.",
+    "Independent socket and serving-load spies remain unused. No live activation, production qualification, deployment, service, permission or credential operation.",
+    "No issue closure or merge-readiness claim."
+  ]
+}

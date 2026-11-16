@@ -62,12 +62,35 @@ def optimize(
     )
     ledger: Any = budget
     scripted: Any = provider
+    initial_clock = scripted.clock
+    initial_cursor = len(scripted.calls)
     attempts: list[ev.Attempt] = []
     scores: dict[str, int] = {}
     status, reason = "blocked", None
     selected: bytes | None = None
     selected_sha: str | None = None
     usage: dict[str, Any] | None = None
+
+    def check_provider() -> None:
+        reason = None
+        try:
+            _, _, current_script, current_config = _prepare(
+                dataset, split, candidates, provider, budget, per_call, max_attempts
+            )
+            if (
+                scripted.clock is not initial_clock
+                or current_script != script_sha
+                or current_config != config_sha
+            ):
+                raise ValueError("changed selection configuration")
+        except Exception:
+            reason = "adapter_configuration_changed"
+        if reason is None and len(scripted.calls) != initial_cursor + len(attempts):
+            reason = "provider_cursor_changed"
+        if reason is not None:
+            ledger.stop(reason)
+            raise ev.Halt(reason)
+
     try:
         if not train:
             raise ev.Halt("empty_training")
@@ -85,8 +108,10 @@ def optimize(
                         number,
                     )
                     ev.guard_use(ledger, check_use)
+                    check_provider()
                     ticket = ledger.reserve(per_call, request=request)
                     ev.guard_use(ledger, check_use)  # dispatch guard
+                    check_provider()
                     try:
                         reply = scripted.complete(request)
                     except Exception:
@@ -135,6 +160,7 @@ def optimize(
                         cost_microunits=reply.cost_microunits,
                         receipt=attempt,
                     )
+                    check_provider()
                     if reply.safety is not True:
                         ledger.stop(
                             "unknown_safety" if reply.safety is None else "unsafe"
@@ -149,12 +175,15 @@ def optimize(
                         ledger.stop("timeout")
                         raise ev.Halt("timeout")
             scores[sha] = score
+        check_provider()
         usage = ledger.checked_snapshot()
+        check_provider()
         selected_sha = min(scores, key=lambda sha: (-scores[sha], sha))
         selected = by_digest[selected_sha]
         status = "selected"
     except ev.Halt as error:
         reason = str(error)
+        usage = None
     return Selection(
         status,
         reason,
@@ -196,6 +225,19 @@ def _prepare(
         raise ValueError("duplicate candidate identity")
     ledger: Any = budget
     scripted: Any = provider
+    reservation: Any = per_call
+    if (
+        type(scripted.script) is not tuple
+        or len(scripted.script) > 4096
+        or any(type(reply) is not ev.Completion for reply in scripted.script)
+        or type(scripted.calls) is not list
+        or type(scripted.clock) is not ev.VirtualClock
+        or type(ledger.limits) is not ev.Limits
+    ):
+        raise ValueError("invalid scripted selection adapter")
+    cast(Callable[[], None], ledger.limits.__post_init__)()
+    cast(Callable[[], None], reservation.__post_init__)()
+    ev._integer(scripted.clock())
     if ledger.clock_ms is not scripted.clock:
         raise ValueError("clock binding changed")
     train, _ = validate_dataset(dataset, split)

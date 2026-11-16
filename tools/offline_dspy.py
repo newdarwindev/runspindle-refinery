@@ -24,7 +24,16 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def reject_bytecode(base: Path) -> None:
+    # -B/PYTHONDONTWRITEBYTECODE disables writes, not reads of cached code.
+    # Match the preparation contract before comparing the reviewed inventory.
+    for path in base.rglob("*"):
+        if path.name == "__pycache__" or path.suffix == ".pyc":
+            raise ValueError("bytecode is not a preparation input")
+
+
 def inventory(base):
+    reject_bytecode(base)
     rows = []
     for dist in sorted(base.glob("*.dist-info")):
         metadata = BytesParser().parsebytes((dist / "METADATA").read_bytes())

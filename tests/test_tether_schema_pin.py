@@ -69,6 +69,9 @@ check('tether.schema' in p.modules)
 check(p.modules['tether.admission'].open_store is p.modules['tether.schema'].open_store)
 check(p.modules['tether.journal'].open_store is p.modules['tether.schema'].open_store)
 check(p.modules['tether.feedback'].open_store is p.modules['tether.schema'].open_store)
+check(p.modules['tether.slack_feedback'].FeedbackStore is p.modules['tether.feedback'].FeedbackStore)
+check(p.modules['tether.slack_feedback'].SlackMessageVerifier is p.modules['tether.slack_ingress'].SlackMessageVerifier)
+check(p.modules['tether.slack_ingress']._json is p.modules['tether.slack_wire']._json)
 print(json.dumps({'modules': len(p.modules), 'schema': hashlib.sha256(p.sources['tether/schema.py']).hexdigest()}))
 """
         result = subprocess.run(
@@ -80,7 +83,7 @@ print(json.dumps({'modules': len(p.modules), 'schema': hashlib.sha256(p.sources[
         )
         actual = json.loads(result.stdout)
         pin = json.loads((ROOT / "dependencies/tether-feedback.json").read_text())
-        self.assertEqual(actual["modules"], 8)
+        self.assertEqual(actual["modules"], 11)
         self.assertEqual(actual["schema"], pin["files"]["tether/schema.py"])
 
     def test_schema_hash_or_inventory_change_denies_before_import(self) -> None:

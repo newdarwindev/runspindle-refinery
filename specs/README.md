@@ -69,3 +69,7 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Linux x86_64 DSPy preparation candidate](dspy-x64-preparation-candidate.md):
   explicit source-only profile; no ARM gate or canonical qualification change.
+
+- [Source-bound feedback invalidation](source-feedback-invalidation.md): explicit
+  deny-only task-source and signed-feedback observations, immutable v2 receipts
+  and fresh collection/use checks; no live migration or authority claim.

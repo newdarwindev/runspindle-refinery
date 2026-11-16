@@ -86,3 +86,7 @@ source-target mismatch, edit/delete/conflict exclusion, family rebinding, change
 feedback during approval, dependency mutation and a deliberately removed commit
 guard producing independently observed unauthorized persistence. These are local
 component assertions, not live-chat, actual-training or full-system acceptance.
+
+Current source-bound receipts and the newer external dependency pin are described
+in [source-bound feedback invalidation](source-feedback-invalidation.md). Earlier
+receipt/pin evidence above remains historical; no stored receipt is rewritten.

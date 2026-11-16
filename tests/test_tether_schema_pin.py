@@ -23,7 +23,7 @@ class TetherSchemaPinTests(unittest.TestCase):
         for filename, table in (
             ("admission.sqlite", "mirrors"),
             ("journal.sqlite", "provider_attempts"),
-            ("feedback.sqlite", "feedback_heads"),
+            ("feedback.sqlite", "feedback_heads_v2"),
         ):
             with self.subTest(family=filename):
                 case = fixtures.CollectionTests()
@@ -68,7 +68,7 @@ check(p.modules['tether'].__path__ == [])
 check('tether.schema' in p.modules)
 check(p.modules['tether.admission'].open_store is p.modules['tether.schema'].open_store)
 check(p.modules['tether.journal'].open_store is p.modules['tether.schema'].open_store)
-check(p.modules['tether.feedback'].open_store is p.modules['tether.schema'].open_store)
+check(p.modules['tether.feedback'].open_feedback_store is p.modules['tether.feedback_schema'].open_feedback_store)
 check(p.modules['tether.slack_feedback'].FeedbackStore is p.modules['tether.feedback'].FeedbackStore)
 check(p.modules['tether.slack_feedback'].SlackMessageVerifier is p.modules['tether.slack_ingress'].SlackMessageVerifier)
 check(p.modules['tether.slack_ingress']._json is p.modules['tether.slack_wire']._json)
@@ -83,7 +83,7 @@ print(json.dumps({'modules': len(p.modules), 'schema': hashlib.sha256(p.sources[
         )
         actual = json.loads(result.stdout)
         pin = json.loads((ROOT / "dependencies/tether-feedback.json").read_text())
-        self.assertEqual(actual["modules"], 11)
+        self.assertEqual(actual["modules"], 13)
         self.assertEqual(actual["schema"], pin["files"]["tether/schema.py"])
 
     def test_schema_hash_or_inventory_change_denies_before_import(self) -> None:

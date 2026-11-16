@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -100,19 +101,71 @@ def program(content):
     return value
 
 
+LOCAL_STATEMENTS = (
+    "CREATE TABLE active(environment TEXT PRIMARY KEY, activation TEXT, generation INTEGER, digest TEXT, content BLOB)",
+    "CREATE TABLE calls(id INTEGER PRIMARY KEY, action TEXT, activation TEXT, digest TEXT)",
+)
+
+
+def _local_shape(db):
+    return list(
+        db.execute(
+            "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
+        )
+    )
+
+
+def _validate_local_schema(db):
+    """Exact legacy layout, not a migration or hostile-SQLite-file validator."""
+    if (
+        db.execute("PRAGMA user_version").fetchone() != (0,)
+        or db.execute("SELECT count(*) FROM sqlite_temp_master").fetchone() != (0,)
+    ):
+        raise ValueError("incompatible local serving schema")
+    expected = sqlite3.connect(":memory:")
+    try:
+        for statement in LOCAL_STATEMENTS:
+            expected.execute(statement)
+        if _local_shape(db) != _local_shape(expected):
+            raise ValueError("incompatible local serving schema")
+    finally:
+        expected.close()
+
+
 class LocalServing:
     """Atomic local loader with its own database and a real byte-driven predict."""
 
     def __init__(self, path):
         self.db = sqlite3.connect(path, timeout=5, isolation_level=None)
-        self.db.execute("PRAGMA journal_mode=WAL")
-        self.db.execute("PRAGMA synchronous=FULL")
-        self.db.execute(
-            "CREATE TABLE IF NOT EXISTS active(environment TEXT PRIMARY KEY, activation TEXT, generation INTEGER, digest TEXT, content BLOB)"
-        )
-        self.db.execute(
-            "CREATE TABLE IF NOT EXISTS calls(id INTEGER PRIMARY KEY, action TEXT, activation TEXT, digest TEXT)"
-        )
+        try:
+            self.db.execute("BEGIN IMMEDIATE")
+            # Only an entirely empty v0 schema can initialize. Partial existing
+            # stores are never repaired and existing version zero is preserved.
+            if not _local_shape(self.db):
+                if self.db.execute("PRAGMA user_version").fetchone() != (0,):
+                    raise ValueError("incompatible local serving schema")
+                for statement in LOCAL_STATEMENTS:
+                    self.db.execute(statement)
+            _validate_local_schema(self.db)
+            self.db.commit()
+            self.db.execute("PRAGMA journal_mode=WAL")
+            self.db.execute("PRAGMA synchronous=FULL")
+        except BaseException:
+            self.db.rollback()
+            self.db.close()
+            raise
+
+    @contextmanager
+    def _transaction(self):
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            _validate_local_schema(self.db)
+            yield
+            _validate_local_schema(self.db)
+            self.db.commit()
+        except BaseException:
+            self.db.rollback()
+            raise
 
     def close(self):
         self.db.close()
@@ -133,8 +186,7 @@ class LocalServing:
         if digest(content) != candidate_sha256:
             raise ValueError("candidate bytes changed")
         program(content)  # parse/validate before replacing the prior bytes
-        self.db.execute("BEGIN IMMEDIATE")
-        try:
+        with self._transaction():
             self.db.execute(
                 "INSERT INTO calls(action,activation,digest) VALUES('load',?,?)",
                 (activation_id, candidate_sha256),
@@ -155,17 +207,14 @@ class LocalServing:
                     "INSERT OR REPLACE INTO active VALUES(?,?,?,?,?)",
                     (environment, activation_id, generation, candidate_sha256, content),
                 )
-            self.db.commit()
-        except BaseException:
-            self.db.rollback()
-            raise
         return True
 
     def readback(self, environment):
-        row = self.db.execute(
-            "SELECT activation,generation,digest,content FROM active WHERE environment=?",
-            (environment,),
-        ).fetchone()
+        with self._transaction():
+            row = self.db.execute(
+                "SELECT activation,generation,digest,content FROM active WHERE environment=?",
+                (environment,),
+            ).fetchone()
         if not row:
             return None
         if digest(row[3]) != row[2]:
@@ -179,9 +228,10 @@ class LocalServing:
 
     def predict(self, environment, text):
         # One read obtains both bytes and attribution; never consult registry intent.
-        row = self.db.execute(
-            "SELECT digest,content FROM active WHERE environment=?", (environment,)
-        ).fetchone()
+        with self._transaction():
+            row = self.db.execute(
+                "SELECT digest,content FROM active WHERE environment=?", (environment,)
+            ).fetchone()
         if not row or digest(row[1]) != row[0]:
             raise ValueError("no verified active candidate")
         value = program(row[1])

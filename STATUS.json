@@ -30,6 +30,10 @@
   "source_feedback_invalidation_evidence": "docs/source-feedback-invalidation-evidence.json",
   "serving_dispatch_authority": "fresh_injected_authority_checks_component_candidate",
   "serving_dispatch_authority_evidence": "docs/serving-dispatch-authority-evidence.json",
+  "serving_readback_integrity": {
+    "status": "strict_component_observation_candidate",
+    "evidence": "docs/serving-readback-integrity-evidence.json"
+  },
   "dspy_result_identity": "source_component_candidate",
   "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json"
 }

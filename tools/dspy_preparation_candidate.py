@@ -335,7 +335,17 @@ def check_recipe(
         for key, value in required.items()
     ):
         raise ValueError("unsupported preparation recipe")
-    uv = recipe["uv"]
+    check_uv(recipe["uv"], artifacts)
+    wheel_bytes = snapshot(wheels)
+    if recipe["wheels"] != {p: digest(data) for p, data in wheel_bytes.items()}:
+        raise ValueError("wheelhouse differs from recipe")
+    return wheel_identities(
+        wheel_bytes, (ROOT / "offline/requirements.lock").read_text()
+    )
+
+
+def check_uv(uv: dict[str, Any], artifacts: Path) -> None:
+    """Validate captured official ARM64 installer artifacts without execution."""
     if not isinstance(uv, dict) or set(uv) != {
         "version",
         "url",
@@ -397,12 +407,6 @@ def check_recipe(
                 binary = stream.read(MAX_BYTES + 1)
         if binary is None or digest(binary) != uv["binary_sha256"]:
             raise ValueError("binary differs from release archive")
-    wheel_bytes = snapshot(wheels)
-    if recipe["wheels"] != {p: digest(data) for p, data in wheel_bytes.items()}:
-        raise ValueError("wheelhouse differs from recipe")
-    return wheel_identities(
-        wheel_bytes, (ROOT / "offline/requirements.lock").read_text()
-    )
 
 
 def candidate(

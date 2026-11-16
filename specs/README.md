@@ -89,3 +89,7 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Local serving schema admission](local-serving-schema-admission.md): exact
   existing loader schema, no partial-store repair or production qualification.
+
+- [Python 3.13 ARM64 preparation candidate](dspy-arm313-preparation-candidate.md):
+  acquired pinned inputs and read-only compatibility/repeatability audit; native
+  preparations and actual framework qualification remain unrun.

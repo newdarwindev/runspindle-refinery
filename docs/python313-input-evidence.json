@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "classification": "acquired_official_inputs_and_cross_target_resolution_not_native_preparation",
+  "source_base": "5481580611856ebba6d46fd8a9abaff1ee24ff2b",
+  "recipe": "offline/python313/recipe.json",
+  "recipe_sha256": "801b3e44c60b89db099d57289be7d65dd37ed471eee17d7f4dcf78b049a4abff",
+  "image": {
+    "reference": "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+    "id": "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+    "architecture": "arm64",
+    "os": "linux",
+    "acquired": true,
+    "executed": false
+  },
+  "installer": {
+    "version": "0.13.8",
+    "url": "https://github.com/astral-sh/uv/releases/download/0.13.8/uv-aarch64-unknown-linux-gnu.tar.gz",
+    "archive_sha256": "74f2f5c6024d397481db228db8fc25eed420db192243f88438c118e7e013e585",
+    "checksum_sha256": "2327583c742a18e7c7b7c6713c6a2e2104afc6ca483fa9b2f0fb105f44bb34ca",
+    "binary_sha256": "71a9af4238e9e139a3c185e0a010edd293e9ced3fc158bb544725b3d28d58b29",
+    "archive_checksum_and_official_release_asset_digests_match": true,
+    "elf_architecture": "AArch64",
+    "archive_executable_mode": "0755",
+    "executed": false
+  },
+  "wheels": {
+    "count": 76,
+    "bytes": 102226060,
+    "source": "official PyPI metadata and files.pythonhosted.org artifacts",
+    "hashes": "all match the existing requirements.lock and the separate candidate recipe",
+    "record_coverage_tags_and_requires_python": "passed against actual wheel bytes"
+  },
+  "cross_target_resolution": {
+    "tool": "pip 26.1.2",
+    "status": "dry_run_passed",
+    "install_count": 76,
+    "target": "CPython 3.13 ARM64 manylinux <=2.28",
+    "network": "no-index; local wheelhouse only",
+    "constraints_ignored": false,
+    "dependencies_ignored": false,
+    "installed": false,
+    "limitation": "Host marker environment remains Python 3.14; native uv resolution remains unrun",
+    "report_sha256": "5b491bf5a59c9a4c26f7fe46bf52292fa9e61dbf03f76722302a0c4afdabdeaa"
+  },
+  "native_arm64_preparations_completed": 0,
+  "installed_tree_comparison": "not_run",
+  "actual_dspy_framework_qualification": "not_run",
+  "canonical_manifests_modified": false,
+  "issue_1_closed": false,
+  "remaining": [
+    "Connected admitted native ARM64 host",
+    "Two independently observed installations using the pinned recipe",
+    "Full installed byte/mode comparison and review",
+    "Separate approval and actual DSPy qualification before canonical update"
+  ]
+}

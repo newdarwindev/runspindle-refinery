@@ -12,6 +12,7 @@ import re
 import stat
 import tarfile
 import zipfile
+from collections.abc import Callable
 from email.parser import BytesParser
 from pathlib import Path
 from typing import Any
@@ -354,7 +355,9 @@ def expand_tag(value: str) -> set[str]:
     }
 
 
-def check_wheel_tags(wheels: dict[str, bytes]) -> None:
+def check_wheel_tags(
+    wheels: dict[str, bytes], compatible: Callable[[str], bool] = compatible_tag
+) -> None:
     for filename, data in wheels.items():
         parts = filename[:-4].split("-")
         if len(parts) not in {5, 6} or not filename.endswith(".whl"):
@@ -377,7 +380,7 @@ def check_wheel_tags(wheels: dict[str, bytes]) -> None:
                 tags.update(expanded)
                 if len(tags) > MAX_FILES:
                     raise ValueError("wheel tag expansion limit")
-            if tags != filename_tags or not any(compatible_tag(tag) for tag in tags):
+            if tags != filename_tags or not any(compatible(tag) for tag in tags):
                 raise ValueError("incompatible or inconsistent wheel tags")
             metas = [
                 x

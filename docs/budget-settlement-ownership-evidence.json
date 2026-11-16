@@ -1,0 +1,91 @@
+{
+  "classification": "synthetic_component_shared_ledger_integrity",
+  "base_commit": "3b14229b32cd0abef65937f3a9d9a9474a2ca937",
+  "issue": 16,
+  "parent_issue": 5,
+  "python": "3.12.14",
+  "sha256": {
+    "refinery/durable_evaluation.py": "94384b10fff49836e2641b3772fcdde120c21fd9cc463b40116e18605a662011",
+    "tests/test_budget_settlement_ownership.py": "6747d7fc71901f8ad21b5ddb2abba8414bd159f45e1393f456b515c0c4f2be9b",
+    "tools/check_durable_mutations.py": "3193a23b37a19a394298fda99d7a7f054a206633503caa8bd0993b9d83e29f8e"
+  },
+  "baseline_reproduction": {
+    "a_reserved": {
+      "tokens": 10,
+      "cost": 10,
+      "ticket": 1
+    },
+    "b_foreign_settlement": "accepted_zero_usage",
+    "a_attempt_after": "unknown_with_null_receipt",
+    "pending_after": 0,
+    "b_full_capacity_reservation_ticket": 2
+  },
+  "focused_normal": {
+    "tests": 12,
+    "seconds": 0.661,
+    "status": "passed"
+  },
+  "focused_optimized": {
+    "tests": 12,
+    "seconds": 0.658,
+    "status": "passed"
+  },
+  "full_normal": {
+    "tests": 419,
+    "seconds": 232.746,
+    "status": "passed",
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -m unittest discover -s tests -v"
+  },
+  "full_optimized": {
+    "tests": 419,
+    "seconds": 231.763,
+    "status": "passed",
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -O -m unittest discover -s tests -v"
+  },
+  "new_removed_owner_check": "detected",
+  "existing_mutation_adjustment": "budget_reset fault initializes empty ownership map so unchanged negative checks the behavioral reset rather than AttributeError",
+  "capacity": {
+    "pending_proofs": 4096,
+    "payload_under_1MiB": true,
+    "quota_schema_changes": false
+  },
+  "effects": {
+    "wrong_owner_ledger_and_attempt_dump": "unchanged",
+    "fresh_process_foreign_denial": "unchanged_then_owner_settles",
+    "provider_calls": 0,
+    "network_calls": 0
+  },
+  "pinned_static": {
+    "status": "blocked",
+    "reason": "No package metadata was found for ruff"
+  },
+  "tether_pin": "dependencies/tether-feedback.json",
+  "limitations": [
+    "Trusted ledger integrity and caller-supplied experiment labels, not authenticated identity",
+    "Ownerless is explicitly shared; legacy pending without proof remains charged",
+    "Concurrent old-code writers unsupported; can erase proof map",
+    "No schema migration, immutable history, provider billing or production storage qualification",
+    "No live DSPy/provider, deployment, access change, paid services, jobs, backup or installation",
+    "Remote CI not run"
+  ],
+  "independent_focused_normal": {
+    "tests": 12,
+    "seconds": 0.702,
+    "status": "passed"
+  },
+  "independent_focused_optimized": {
+    "tests": 12,
+    "seconds": 0.652,
+    "status": "passed"
+  },
+  "existing_durable_mutants": {
+    "count": 4,
+    "status": "all_detected"
+  },
+  "checks": {
+    "scaffold": "passed",
+    "repo_hygiene": "passed",
+    "diff_whitespace": "passed"
+  },
+  "issue_scope": "Issue16 remains open; parent status unchanged and broader completion not established"
+}

@@ -84,5 +84,8 @@ incompatible component stores and rolls back invalid transaction changes.
 - [DSPy result identity](dspy-result-identity.md): exact caller/checkpoint equality
   after callbacks, rollback before commit and immutable recovery after commit.
 
+- [Budget settlement ownership](budget-settlement-ownership.md): exact pending
+  ledger/experiment attribution, no cross-owner refund or production claim.
+
 - [Local serving schema admission](local-serving-schema-admission.md): exact
   existing loader schema, no partial-store repair or production qualification.

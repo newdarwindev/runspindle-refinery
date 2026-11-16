@@ -36,6 +36,10 @@
   },
   "dspy_result_identity": "source_component_candidate",
   "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json",
+  "budget_settlement_ownership": {
+    "status": "transactional_pending_owner_component_candidate",
+    "evidence": "docs/budget-settlement-ownership-evidence.json"
+  },
   "local_serving_schema_admission": {
     "status": "strict_legacy_layout_component_candidate",
     "evidence": "docs/local-serving-schema-evidence.json"

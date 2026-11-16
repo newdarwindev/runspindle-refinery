@@ -11,7 +11,7 @@ import math
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Iterator, Protocol
 
 from .evaluation import Report, _integer
 from .lineage import MAX_RECORDS, _bytes, _hash, _token, digest
@@ -27,7 +27,7 @@ class Policy:
     max_latency_ms: int
     format: str = "synthetic.map.v1"
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         _token(self.environment)
         for name in (
             "min_quality_ppm",
@@ -52,7 +52,7 @@ class Approval:
     actor: str
     evidence: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         for value in (
             self.candidate_sha256,
             self.evaluation_sha256,
@@ -69,17 +69,17 @@ TYPES.update({"Policy": Policy, "Approval": Approval})
 class ServingAdapter(Protocol):
     def load(
         self,
-        activation_id,
-        environment,
-        generation,
-        candidate_sha256,
-        content,
-        predecessor_sha256,
-    ): ...
-    def readback(self, environment): ...
+        activation_id: str,
+        environment: str,
+        generation: int,
+        candidate_sha256: str,
+        content: bytes,
+        predecessor_sha256: str | None,
+    ) -> bool: ...
+    def readback(self, environment: str) -> Any: ...
 
 
-def program(content):
+def program(content: bytes) -> Any:
     _bytes(content)
     value = json.loads(content)
     if (
@@ -107,7 +107,7 @@ LOCAL_STATEMENTS = (
 )
 
 
-def _local_shape(db):
+def _local_shape(db: sqlite3.Connection) -> Any:
     return list(
         db.execute(
             "SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name"
@@ -115,12 +115,11 @@ def _local_shape(db):
     )
 
 
-def _validate_local_schema(db):
+def _validate_local_schema(db: sqlite3.Connection) -> None:
     """Exact legacy layout, not a migration or hostile-SQLite-file validator."""
-    if (
-        db.execute("PRAGMA user_version").fetchone() != (0,)
-        or db.execute("SELECT count(*) FROM sqlite_temp_master").fetchone() != (0,)
-    ):
+    if db.execute("PRAGMA user_version").fetchone() != (0,) or db.execute(
+        "SELECT count(*) FROM sqlite_temp_master"
+    ).fetchone() != (0,):
         raise ValueError("incompatible local serving schema")
     expected = sqlite3.connect(":memory:")
     try:
@@ -135,7 +134,7 @@ def _validate_local_schema(db):
 class LocalServing:
     """Atomic local loader with its own database and a real byte-driven predict."""
 
-    def __init__(self, path):
+    def __init__(self, path: Any) -> None:
         self.db = sqlite3.connect(path, timeout=5, isolation_level=None)
         try:
             self.db.execute("BEGIN IMMEDIATE")
@@ -156,7 +155,7 @@ class LocalServing:
             raise
 
     @contextmanager
-    def _transaction(self):
+    def _transaction(self) -> Iterator[None]:
         self.db.execute("BEGIN IMMEDIATE")
         try:
             _validate_local_schema(self.db)
@@ -167,18 +166,18 @@ class LocalServing:
             self.db.rollback()
             raise
 
-    def close(self):
+    def close(self) -> None:
         self.db.close()
 
     def load(
         self,
-        activation_id,
-        environment,
-        generation,
-        candidate_sha256,
-        content,
-        predecessor_sha256,
-    ):
+        activation_id: str,
+        environment: str,
+        generation: int,
+        candidate_sha256: str,
+        content: bytes,
+        predecessor_sha256: str | None,
+    ) -> bool:
         _token(activation_id)
         _token(environment)
         _integer(generation, positive=True)
@@ -209,7 +208,7 @@ class LocalServing:
                 )
         return True
 
-    def readback(self, environment):
+    def readback(self, environment: str) -> Any:
         with self._transaction():
             row = self.db.execute(
                 "SELECT activation,generation,digest,content FROM active WHERE environment=?",
@@ -226,7 +225,7 @@ class LocalServing:
             "candidate_sha256": row[2],
         }
 
-    def predict(self, environment, text):
+    def predict(self, environment: str, text: str) -> Any:
         # One read obtains both bytes and attribution; never consult registry intent.
         with self._transaction():
             row = self.db.execute(
@@ -240,7 +239,7 @@ class LocalServing:
         return {"output": value["responses"][text], "candidate_sha256": row[0]}
 
 
-def _readback_matches(observed, expected):
+def _readback_matches(observed: Any, expected: Any) -> bool:
     """Compare only exact wire-shaped primitives; never invoke foreign equality."""
     return (
         type(observed) is dict
@@ -364,7 +363,7 @@ class Registry:
             self.store.put(tx, "candidate", key, candidate)
         return key
 
-    def state(self, environment):
+    def state(self, environment: str) -> Any:
         _token(environment)
         row = self.store.db.execute(
             "SELECT generation,active,pending FROM environments WHERE identity=?",
@@ -444,7 +443,7 @@ class Registry:
             )
         return activation_id
 
-    def _intent(self, activation_id):
+    def _intent(self, activation_id: str) -> Any:
         _token(activation_id)
         row = self.store.db.execute(
             "SELECT environment,generation,candidate,predecessor,state FROM activations WHERE identity=?",
@@ -454,7 +453,7 @@ class Registry:
             raise ValueError("unknown activation")
         return row
 
-    def _authorize_load(self, activation_id, expected):
+    def _authorize_load(self, activation_id: str, expected: Any) -> Any:
         """Fresh approval at dispatch, not perpetual authority from stored intent.
 
         The verifier is a trusted injected authority. Read immutable bindings and
@@ -524,7 +523,8 @@ class Registry:
             or self.state(environment) != ownership
             or self.store.db.execute(
                 "SELECT approval FROM activations WHERE identity=?", (activation_id,)
-            ).fetchone() != (approval_key,)
+            ).fetchone()
+            != (approval_key,)
             or pack(self.store.get("approval", approval_key)) != approval_bytes
             or pack(self.store.get("candidate", key)) != candidate_bytes
         ):
@@ -603,7 +603,9 @@ class Registry:
             "SELECT identity,generation FROM activations WHERE environment=? AND candidate=? AND state='active' AND generation<? ORDER BY generation DESC LIMIT 1",
             (environment, predecessor, generation),
         ).fetchone()
-        prior_candidate = self.store.get("candidate", predecessor) if predecessor else None
+        prior_candidate = (
+            self.store.get("candidate", predecessor) if predecessor else None
+        )
         prior_bytes = pack(prior_candidate)
         if predecessor and digest(prior_bytes) != predecessor:
             raise ValueError("predecessor identity changed")
@@ -640,7 +642,9 @@ class Registry:
                 self._intent(activation_id) != intent
                 or self.state(environment) != ownership
                 or pack(self.store.get("candidate", key)) != candidate_bytes
-                or pack(self.store.get("candidate", predecessor) if predecessor else None)
+                or pack(
+                    self.store.get("candidate", predecessor) if predecessor else None
+                )
                 != prior_bytes
                 or self.store.db.execute(
                     "SELECT identity,generation FROM activations WHERE environment=? AND candidate=? AND state='active' AND generation<? ORDER BY generation DESC LIMIT 1",
@@ -648,7 +652,9 @@ class Registry:
                 ).fetchone()
                 != prior
             ):
-                raise ValueError("activation ownership or binding changed during readback")
+                raise ValueError(
+                    "activation ownership or binding changed during readback"
+                )
             tx.execute(
                 "UPDATE activations SET state=? WHERE identity=?",
                 (outcome, activation_id),

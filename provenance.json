@@ -197,5 +197,13 @@
     "specification": "specs/local-serving-schema-admission.md",
     "schema_migration": "none",
     "production_storage": "unqualified"
+  },
+  "issue1_acceptance": {
+    "classification": "original synthetic tests, behavioral mutation and type/format integration",
+    "mapping": "specs/issue1-acceptance.md",
+    "source_import": "none",
+    "quality_baseline": "unchanged",
+    "pinned_DSPy_final_head": "blocked_missing_prepared_dependency_tree",
+    "independent_review": "pending"
   }
 }

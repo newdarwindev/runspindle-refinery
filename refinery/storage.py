@@ -53,7 +53,7 @@ def version(value):
         raise ValueError("unsupported maintained evidence version")
 
 
-def _encode(value):
+def _encode(value: Any) -> Any:
     if is_dataclass(value) and type(value).__name__ in TYPES:
         return {
             "type": type(value).__name__,
@@ -70,7 +70,7 @@ def _encode(value):
     raise ValueError("unsupported stored type")
 
 
-def _decode(value, depth=0):
+def _decode(value: Any, depth: int = 0) -> Any:
     if depth > 32:
         raise ValueError("stored nesting limit")
     if type(value) is not dict:
@@ -78,7 +78,7 @@ def _decode(value, depth=0):
             return value
         raise ValueError("invalid stored value")
 
-    def walk(x):
+    def walk(x: Any) -> Any:
         return _decode(x, depth + 1)
 
     if set(value) == {"bytes"}:
@@ -95,7 +95,7 @@ def _decode(value, depth=0):
     raise ValueError("unsupported stored schema")
 
 
-def pack(value):
+def pack(value: Any) -> bytes:
     data = json.dumps(
         _encode(value), sort_keys=True, separators=(",", ":"), allow_nan=False
     ).encode()
@@ -104,7 +104,7 @@ def pack(value):
     return data
 
 
-def unpack(data):
+def unpack(data: bytes) -> Any:
     if type(data) is not bytes or len(data) > MAX_PAYLOAD:
         raise ValueError("stored payload limit")
     value = _decode(json.loads(data))
@@ -142,7 +142,7 @@ STATEMENTS = (
 
 
 class Store:
-    def __init__(self, path):
+    def __init__(self, path: Any) -> None:
         self._admitted = False
         self.path = Path(path)
         self.db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
@@ -251,7 +251,7 @@ class Store:
         tx.execute("INSERT INTO objects VALUES(?,?,?,?)", (kind, identity, sha, data))
         return sha
 
-    def get(self, kind, identity):
+    def get(self, kind: str, identity: str) -> Any:
         with nullcontext() if self.db.in_transaction else self.transaction():
             self._validate(self.db)
             row = self.db.execute(

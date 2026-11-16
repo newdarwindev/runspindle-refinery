@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 import threading
 from contextlib import nullcontext
 from typing import Any, Callable, cast
@@ -42,7 +43,7 @@ def _state(budget):
     }
 
 
-def _restore(value, clock):
+def _restore(value: Any, clock: Callable[[], int]) -> Budget:
     budget = Budget.__new__(Budget)
     budget.limits, budget.clock_ms = value["limits"], clock
     budget._start, budget._last = value["start"], value["last"]
@@ -114,7 +115,7 @@ class SQLiteBudget(Budget):
                 value = _state(Budget(limits, clock_ms=clock_ms))
                 tx.execute("INSERT INTO budgets VALUES(?,?)", (identity, pack(value)))
 
-    def _ownership_proof(self, ticket, maximum, request):
+    def _ownership_proof(self, ticket: int, maximum: Any, request: Any) -> str:
         return digest(
             pack(
                 (
@@ -128,7 +129,15 @@ class SQLiteBudget(Budget):
             )
         )
 
-    def _settlement_owner(self, tx, budget, ticket, receipt, tokens, cost):
+    def _settlement_owner(
+        self,
+        tx: sqlite3.Connection,
+        budget: Budget,
+        ticket: int,
+        receipt: Any,
+        tokens: Any,
+        cost: Any,
+    ) -> None:
         """Require exact ledger/owner proof before changing a reservation.
 
         Legacy pending without proof stays charged; ticket numbers alone never
@@ -154,7 +163,7 @@ class SQLiteBudget(Budget):
         ):
             raise ValueError("reservation attempt conflict")
 
-    def _apply(self, method, *args, **kwargs):
+    def _apply(self, method: str, *args: Any, **kwargs: Any) -> Any:
         failure = None
         result = None
         owner = (self.identity, self.experiment)
@@ -198,21 +207,25 @@ class SQLiteBudget(Budget):
                 or pack((args, kwargs)) != arguments
                 or tx.execute(
                     "SELECT payload FROM budgets WHERE identity=?", (owner[0],)
-                ).fetchone() != row
+                ).fetchone()
+                != row
                 or (
                     attempt_before is not None
                     and tx.execute(
                         "SELECT request,outcome,receipt FROM attempts WHERE experiment=? AND ticket=?",
                         (owner[1], args[0]),
-                    ).fetchone() != attempt_before
+                    ).fetchone()
+                    != attempt_before
                 )
             ):
                 raise ValueError("budget binding changed during operation")
             if method == "reserve" and failure is None:
                 budget._owners[str(result)] = self._ownership_proof(
-                    result,
+                    cast(int, result),
                     args[0],
-                    pack(kwargs.get("request")) if self.experiment is not None else None,
+                    pack(kwargs.get("request"))
+                    if self.experiment is not None
+                    else None,
                 )
             if method == "settle" and args[0] not in budget._pending:
                 del budget._owners[str(args[0])]
@@ -252,7 +265,9 @@ class SQLiteBudget(Budget):
     def reserve(self, maximum: Reservation, *, request=None):
         return self._apply("reserve", maximum, request=request)
 
-    def settle(self, ticket, *, tokens, cost_microunits, receipt=None):
+    def settle(
+        self, ticket: int, *, tokens: Any, cost_microunits: Any, receipt: Any = None
+    ) -> Any:
         _integer(ticket, positive=True)
         return self._apply(
             "settle",
@@ -262,7 +277,7 @@ class SQLiteBudget(Budget):
             receipt=receipt,
         )
 
-    def cancel(self):
+    def cancel(self) -> Any:
         return self._apply("cancel")
 
     def stop(self, reason):
@@ -272,7 +287,7 @@ class SQLiteBudget(Budget):
     def check(self):
         return self._apply("check")
 
-    def snapshot(self):
+    def snapshot(self) -> Any:
         return self._apply("snapshot")
 
     def checked_snapshot(self):

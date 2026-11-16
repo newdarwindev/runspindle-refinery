@@ -210,9 +210,10 @@ class RetainedFeedbackUse:
                 # Resolver callbacks for later selections may fence earlier
                 # sources. Observe every fence again without invoking callbacks.
                 for row in selected:
-                    if self.source_guard.reread(row["source_observation"]) != row[
-                        "source_observation"
-                    ]:
+                    if (
+                        self.source_guard.reread(row["source_observation"])
+                        != row["source_observation"]
+                    ):
                         raise ValueError("source no longer eligible")
 
         check_sources()

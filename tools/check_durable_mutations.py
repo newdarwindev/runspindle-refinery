@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Isolated behavioral mutations must fail assertions, not imports or syntax."""
+
 from pathlib import Path
 import json
 import os
@@ -10,6 +11,12 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MUTATIONS = {
+    "partial_registry_commit": (
+        "storage.py",
+        '        tx.execute("INSERT INTO objects VALUES(?,?,?,?)", (kind, identity, sha, data))',
+        '        tx.execute("INSERT INTO objects VALUES(?,?,?,?)", (kind, identity, sha, data))\n        if kind == "approval": tx.commit()',
+        "test_issue1_acceptance.IssueOneAcceptanceTests.test_registry_process_death_during_write_is_atomic",
+    ),
     "feedback_rebinding": (
         "storage.py",
         "observations = lin._bounded(feedback + prior_conflicts, lin.Feedback)",

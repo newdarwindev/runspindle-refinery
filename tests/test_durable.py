@@ -92,7 +92,7 @@ def setup(store, *, suffix="", content=None, clock=None, script=None):
 
 
 def child(code, directory, expected=0):
-    prefix = "import sys, socket; sys.path.insert(0,'tests'); socket.create_connection=lambda *a,**k: (_ for _ in ()).throw(AssertionError('network forbidden')); "
+    prefix = "import sys, socket; sys.path.insert(0,'tests'); socket.socket=socket.create_connection=socket.getaddrinfo=lambda *a,**k: (_ for _ in ()).throw(AssertionError('network forbidden')); "
     result = subprocess.run(
         [sys.executable, "-c", prefix + code, str(directory)],
         capture_output=True,

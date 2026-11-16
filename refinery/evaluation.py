@@ -76,6 +76,8 @@ class Budget:
     no unknown usage is refunded. This is memory-only, not a billing system.
     """
 
+    _owners: dict[str, str]
+
     def __init__(self, limits: Limits, *, clock_ms: Callable[[], int]):
         if type(limits) is not Limits:
             raise ValueError("invalid limits")
@@ -86,7 +88,7 @@ class Budget:
         self._pending = {}
         self._next = 0
         self.calls = self.tokens = self.cost_microunits = 0
-        self.reason = None
+        self.reason: str | None = None
         self._time_unknown = False
 
     def _read_clock(self):
@@ -114,7 +116,7 @@ class Budget:
         with self._lock:
             self.reason = self.reason or "cancelled"
 
-    def stop(self, reason):
+    def stop(self, reason: str) -> None:
         with self._lock:
             self.reason = self.reason or reason
 
@@ -196,7 +198,7 @@ class Budget:
 
 
 class VirtualClock:
-    def __init__(self):
+    def __init__(self) -> None:
         self.now = 0
 
     def __call__(self):

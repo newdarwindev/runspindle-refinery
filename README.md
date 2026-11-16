@@ -36,3 +36,5 @@ is implied.
 Read [the component-specific technical intent](specs/desired-intent.md) for its
 interfaces, privacy boundaries, failure cases and acceptance obligations. Current
 implementation and evidence limits above remain unchanged.
+
+The [issue #1 acceptance map](specs/issue1-acceptance.md) identifies each offline criterion, its existing executable assertions, and the separate pinned DSPy prerequisite.

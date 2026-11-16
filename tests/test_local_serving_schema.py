@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, cast
 from unittest.mock import patch
 
 from refinery import serving
@@ -45,7 +45,9 @@ class LocalServingSchemaTests(unittest.TestCase):
         db.execute("PRAGMA user_version=1")
         with self.assertRaisesRegex(ValueError, "incompatible local serving schema"):
             serving.LocalServing(self.path)
-        self.assertEqual(db.execute("SELECT count(*) FROM sqlite_master").fetchone(), (0,))
+        self.assertEqual(
+            db.execute("SELECT count(*) FROM sqlite_master").fetchone(), (0,)
+        )
         self.assertEqual(db.execute("PRAGMA user_version").fetchone(), (1,))
 
     def test_partial_store_rejected_without_repair_or_connection_leak(self) -> None:
@@ -58,10 +60,12 @@ class LocalServingSchemaTests(unittest.TestCase):
         def capture(path: Any, *args: Any, **kwargs: Any) -> sqlite3.Connection:
             connection = connect(path, *args, **kwargs)
             opened.append(connection)
-            return connection
+            return cast(sqlite3.Connection, connection)
 
         with patch.object(sqlite3, "connect", capture):
-            with self.assertRaisesRegex(ValueError, "incompatible local serving schema"):
+            with self.assertRaisesRegex(
+                ValueError, "incompatible local serving schema"
+            ):
                 serving.LocalServing(self.path)
         self.assertEqual(tuple(db.iterdump()), before)
         self.assertEqual(db.execute("PRAGMA journal_mode").fetchone(), ("delete",))
@@ -69,7 +73,9 @@ class LocalServingSchemaTests(unittest.TestCase):
             with self.assertRaises(sqlite3.ProgrammingError):
                 connection.execute("SELECT 1")
 
-    def test_unknown_layouts_and_versions_rejected_without_logical_changes(self) -> None:
+    def test_unknown_layouts_and_versions_rejected_without_logical_changes(
+        self,
+    ) -> None:
         changes = (
             "DROP TABLE active",
             "DROP TABLE calls",
@@ -109,7 +115,9 @@ class LocalServingSchemaTests(unittest.TestCase):
                 )
                 db.execute(serving.LOCAL_STATEMENTS[1])
                 before = tuple(db.iterdump())
-                with self.assertRaisesRegex(ValueError, "incompatible local serving schema"):
+                with self.assertRaisesRegex(
+                    ValueError, "incompatible local serving schema"
+                ):
                     adapter = serving.LocalServing(path)
                     self.addCleanup(adapter.close)
                 self.assertEqual(tuple(db.iterdump()), before)
@@ -123,13 +131,14 @@ class LocalServingSchemaTests(unittest.TestCase):
         db = self.connect()
         db.execute("CREATE VIEW extra AS SELECT * FROM active")
         before = tuple(db.iterdump())
-        for call in (
+        calls: tuple[Callable[[], object], ...] = (
             lambda: adapter.load(
                 "second", "local", 2, digest(CONTENT), CONTENT, digest(CONTENT)
             ),
             lambda: adapter.readback("local"),
             lambda: adapter.predict("local", "hello"),
-        ):
+        )
+        for call in calls:
             with self.assertRaises(ValueError):
                 call()
             self.assertEqual(tuple(db.iterdump()), before)
@@ -141,11 +150,12 @@ class LocalServingSchemaTests(unittest.TestCase):
         adapter.db.execute(
             "CREATE TEMP TABLE active(environment TEXT, activation TEXT, generation INTEGER, digest TEXT, content BLOB)"
         )
-        for call in (
+        calls: tuple[Callable[[], object], ...] = (
             lambda: adapter.load("first", "local", 1, digest(CONTENT), CONTENT, None),
             lambda: adapter.readback("local"),
             lambda: adapter.predict("local", "hello"),
-        ):
+        )
+        for call in calls:
             with self.assertRaises(ValueError):
                 call()
         for table in ("main.active", "temp.active", "main.calls"):
@@ -192,7 +202,9 @@ with patch.object(socket, 'socket', side_effect=AssertionError('network forbidde
    load.assert_not_called(); network.assert_not_called()
  finally: adapter.close()
 """
-        with patch.object(socket, "socket", side_effect=AssertionError("network forbidden")):
+        with patch.object(
+            socket, "socket", side_effect=AssertionError("network forbidden")
+        ):
             result = subprocess.run(
                 [sys.executable, "-O", "-c", code, str(self.path)],
                 cwd=ROOT,
@@ -216,7 +228,9 @@ with patch.object(socket, 'socket', side_effect=AssertionError('network forbidde
                 "test_missing_uniqueness_and_changed_constraints_deny_admission"
             ).run(result)
         self.assertFalse(result.errors, repr(result.errors))
-        self.assertTrue(result.failures, "missing uniqueness escaped negative regression")
+        self.assertTrue(
+            result.failures, "missing uniqueness escaped negative regression"
+        )
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 from refinery import serving
@@ -52,7 +52,7 @@ class ReadbackIntegrityTests(unittest.TestCase):
                 VERSION, "activation", ReadOnly(), rejected=rejected
             )
             network.assert_not_called()
-        return result
+        return cast(str, result)
 
     def test_foreign_equality_and_boolean_generation_never_activate(self) -> None:
         registry, adapter, expected = self.pending()
@@ -74,7 +74,9 @@ class ReadbackIntegrityTests(unittest.TestCase):
             with self.subTest(value=type(value).__name__):
                 self.assertEqual(self.observe(registry, value), "unknown")
                 self.assertIsNone(registry.state("local")["active"])
-        self.assertEqual(adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0)
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
+        )
         self.assertIsNone(adapter.readback("local"))
 
     def test_readback_callback_mutation_cannot_commit_stale_observation(self) -> None:
@@ -95,8 +97,12 @@ class ReadbackIntegrityTests(unittest.TestCase):
                     registry.reconcile(VERSION, "activation", Mutating())
                 self.assertIsNone(registry.state("local")["active"])
                 self.store.db.execute("UPDATE environments SET generation=1")
-                self.store.db.execute("UPDATE activations SET generation=1,state='intent'")
-        self.assertEqual(adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0)
+                self.store.db.execute(
+                    "UPDATE activations SET generation=1,state='intent'"
+                )
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
+        )
 
     def test_rejection_requires_exact_previous_activation_not_only_digest(self) -> None:
         registry, first, grant = self.candidate()
@@ -118,7 +124,9 @@ class ReadbackIntegrityTests(unittest.TestCase):
         self.assertEqual(self.observe(registry, prior, rejected=True), "failed")
         self.assertEqual(registry.state("local")["active"], first)
         self.assertEqual(adapter.predict("local", "hello")["output"], "answerone")
-        self.assertEqual(adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 1)
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 1
+        )
 
     def test_lost_ack_fresh_process_reconciles_exact_bytes_without_reload(self) -> None:
         registry, adapter, _ = self.pending()
@@ -169,14 +177,17 @@ with Store(root/'refinery.sqlite') as store:
 
     def test_removed_strict_readback_guard_is_detected(self) -> None:
         with patch.object(
-            serving, "_readback_matches", lambda observed, expected: observed == expected
+            serving,
+            "_readback_matches",
+            lambda observed, expected: observed == expected,
         ):
             result = unittest.TestResult()
             ReadbackIntegrityTests(
                 "test_foreign_equality_and_boolean_generation_never_activate"
             ).run(result)
         self.assertTrue(
-            result.errors or result.failures, "loose equality escaped negative regression"
+            result.errors or result.failures,
+            "loose equality escaped negative regression",
         )
 
 

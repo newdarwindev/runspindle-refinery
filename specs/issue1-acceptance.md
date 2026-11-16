@@ -19,7 +19,7 @@ account or production authority is needed. Missing dependencies fail the suite.
 Run the existing aggregate command, without a second lifecycle harness:
 
 ```sh
-python3 tools/validate.py --output .verification/issue1-final.json
+python3 tools/validate.py --output .verification/issue1-final
 ```
 
 This executes structure, artifact/reference integrity, repository hygiene,

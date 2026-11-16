@@ -22,6 +22,19 @@ class IssueOneAcceptanceTests(unittest.TestCase):
     store: Any
     directory: Path
 
+    def test_child_guard_denies_socket_and_dns_after_safe_imports(self) -> None:
+        loaded = fixtures.child("import ssl; print('imports-complete')", self.directory)
+        self.assertEqual(loaded.stdout.strip(), "imports-complete")
+        for operation in (
+            "socket.socket()",
+            "socket.getaddrinfo('synthetic.invalid', 443)",
+        ):
+            with self.subTest(operation=operation):
+                result = fixtures.child(
+                    "import socket; " + operation, self.directory, 1
+                )
+                self.assertIn("AssertionError: network forbidden", result.stderr)
+
     def test_registry_process_death_during_write_is_atomic(self) -> None:
         registry, key, approval = self.candidate()
         before = tuple(self.store.db.iterdump())

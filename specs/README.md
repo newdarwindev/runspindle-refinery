@@ -73,3 +73,7 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Source-bound feedback invalidation](source-feedback-invalidation.md): explicit
   deny-only task-source and signed-feedback observations, immutable v2 receipts
   and fresh collection/use checks; no live migration or authority claim.
+
+- [Serving dispatch authority](serving-dispatch-authority.md): fresh exact approval
+  checks before actual load; unknown outcomes remain readback-only and no
+  production serving or issuer qualification is claimed.

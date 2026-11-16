@@ -27,5 +27,7 @@
   "feedback_collection_evidence": "docs/feedback-collection-evidence.json",
   "retained_feedback_collection": "pinned_component_bridge_synthetic_authorities_only",
   "source_feedback_invalidation": "source_bound_component_candidate",
-  "source_feedback_invalidation_evidence": "docs/source-feedback-invalidation-evidence.json"
+  "source_feedback_invalidation_evidence": "docs/source-feedback-invalidation-evidence.json",
+  "serving_dispatch_authority": "fresh_injected_authority_checks_component_candidate",
+  "serving_dispatch_authority_evidence": "docs/serving-dispatch-authority-evidence.json"
 }

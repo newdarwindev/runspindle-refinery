@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "scope": "partial Refinery #17/#6; fresh injected serving authority at dispatch",
+  "source_base": "41d39957d5d959522cc975f7ac4004cdafe15bbd",
+  "python": "3.12.14",
+  "source_sha256": {
+    "refinery/serving.py": "441bb3e129cdc7305c33f3fb0868c7647fb9f07ef6402c233f82817c83707aa6",
+    "tests/test_serving_dispatch_authority.py": "37f981431913a463dc75bf1c7a67c6d24747fc667d33587135ade5e5ea6f90f6",
+    "tests/test_durable.py": "3616d6c8964fc28548b794951f669651c78fa5043c32e6ac990f1576c3091a6a",
+    "tools/check_durable_mutations.py": "cb412c2d15f1bd2ce0c9e841dd9b3e081357600d95c0ca742265b9be54700ad5"
+  },
+  "observed": {
+    "focused_normal": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focused_optimized": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0
+    },
+    "existing_durable_tests": {
+      "passed": 17,
+      "failed": 0
+    },
+    "durable_mutations": {
+      "detected": 4,
+      "not_detected": 0
+    },
+    "new_dispatch_guard_mutation": "detected by independent regression",
+    "full_suite": {
+      "normal": {
+        "passed": 396,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 207.819
+      },
+      "optimized": {
+        "passed": 396,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 220.926
+      }
+    },
+    "scaffold_reference_artifact": "passed",
+    "repository_hygiene": "passed including proposed PR body",
+    "syntax_whitespace": "passed",
+    "static_quality": "blocked: No package metadata was found for ruff",
+    "independent_review": "no blocker found; 12 focused tests independently passed normal and optimized"
+  },
+  "unrun": [
+    "remote CI",
+    "production approval issuer authentication",
+    "production serving adapter and target isolation",
+    "cross-database/external atomic revocation",
+    "live provider/model serving",
+    "deployment or activation outside disposable synthetic fixtures"
+  ],
+  "behavior_limits": [
+    "Readback/reconciliation can update observed registry state but never reload unknown outcomes.",
+    "Fresh callback decisions are injected authority, not independently authenticated live approval evidence.",
+    "Revocation does not unload a previously loaded candidate.",
+    "No stored schema, credential, access, migration, service, persistent job or workflow change."
+  ],
+  "commands": [
+    "python3 -m unittest discover -s tests -p test_serving_dispatch_authority.py -v",
+    "python3 -O -m unittest discover -s tests -p test_serving_dispatch_authority.py -v",
+    "python3 tools/check_durable_mutations.py",
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -m unittest discover -s tests",
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -O -m unittest discover -s tests",
+    "python3 tools/check_scaffold.py",
+    "python3 tools/static_quality.py"
+  ],
+  "provenance": "original checks and synthetic fixtures; no imported source or private data"
+}

@@ -80,3 +80,6 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Serving readback integrity](serving-readback-integrity.md): strict observed
   identity and callback-safe reconciliation; no production target qualification.
+
+- [DSPy result identity](dspy-result-identity.md): exact caller/checkpoint equality
+  after callbacks, rollback before commit and immutable recovery after commit.

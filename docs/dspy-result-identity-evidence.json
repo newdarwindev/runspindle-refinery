@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "scope": "Partial Refinery #16: exact DSPy lifecycle result identity across commit callbacks",
+  "source_base": "673138c7c00aa216fa6956cbef0eb13e30fed8d1",
+  "python": "3.12.14",
+  "source_sha256": {
+    "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+    "tests/test_dspy_result_identity.py": "2e20f7c9fbbbab2db1ecbd7ba4a1f5ad400b1fa51a1da0405025e9eddae4f4c3"
+  },
+  "observed": {
+    "focused_normal": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 7.764
+    },
+    "focused_optimized": {
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 8.684
+    },
+    "existing_durable_dspy": {
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 30.195
+    },
+    "identity_guard_removal_mutation": "detected by independent negative regression",
+    "fresh_process_recovery": "precommit uncertain phases denied without replay; postcommit returns original bytes with zero provider calls and no framework import",
+    "full_suite": {
+      "normal": {
+        "passed": 402,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 225.218
+      },
+      "optimized": {
+        "passed": 402,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 225.347
+      },
+      "source_scope": "Final runtime and test semantics. Final test-only formatting followed by focused reruns in both modes; no behavioral source changes during these full runs."
+    },
+    "scaffold_reference_artifact": "passed",
+    "repository_hygiene": "passed including proposed PR body",
+    "syntax_whitespace": "passed",
+    "static_quality": "blocked: No package metadata was found for ruff",
+    "independent_review": "independent runtime review found no blocker; six focused tests independently passed; review-requested test-only valid-shape coverage added and final focused tests passed both modes",
+    "framework_availability": "dspy module not installed; no import/installation or framework execution attempted"
+  },
+  "unrun": [
+    "Real DSPy BootstrapFewShot framework execution",
+    "pinned framework restart qualification",
+    "exact-head remote CI",
+    "live provider/model evaluation",
+    "production use/approval authorities",
+    "deployment or serving activation"
+  ],
+  "behavior_limits": [
+    "Source-only fixture results do not show DSPy gains or framework qualification.",
+    "Postcommit mutation denial does not erase the historical committed record.",
+    "Previously consumed usage remains retained; uncertain compilation/evaluation cannot replay automatically.",
+    "Existing trusted-callback and component-owned-store boundaries remain; no hostile-process or cross-database atomic revocation guarantee.",
+    "No storage schema, dependency, workflow, service, credential, migration, backup or permission changes."
+  ],
+  "commands": [
+    "python3 -m unittest discover -s tests -p test_dspy_result_identity.py -v",
+    "python3 -O -m unittest discover -s tests -p test_dspy_result_identity.py -v",
+    "python3 -m unittest discover -s tests -p test_durable_dspy.py",
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -m unittest discover -s tests",
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -O -m unittest discover -s tests",
+    "python3 tools/check_scaffold.py",
+    "python3 tools/static_quality.py"
+  ],
+  "provenance": "original invariant checks and synthetic fixtures; no imported source or private data"
+}

@@ -33,5 +33,7 @@
   "serving_readback_integrity": {
     "status": "strict_component_observation_candidate",
     "evidence": "docs/serving-readback-integrity-evidence.json"
-  }
+  },
+  "dspy_result_identity": "source_component_candidate",
+  "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json"
 }

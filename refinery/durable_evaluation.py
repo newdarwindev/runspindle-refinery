@@ -10,6 +10,7 @@ from .evaluation import (
     VERSION as EVALUATION_VERSION,
 )
 from .evaluation import (
+    Attempt,
     Budget,
     Experiment,
     Halt,
@@ -21,7 +22,7 @@ from .evaluation import (
     validate_provider,
 )
 from .feedback_use import RetainedFeedbackUse, use_guard
-from .lineage import _token, digest
+from .lineage import _hash, _token, digest
 from .storage import VERSION, Store, pack, unpack, version
 
 
@@ -31,6 +32,7 @@ def _state(budget):
         "start": budget._start,
         "last": budget._last,
         "pending": {str(k): v for k, v in budget._pending.items()},
+        "owners": getattr(budget, "_owners", {}),
         "next": budget._next,
         "calls": budget.calls,
         "tokens": budget.tokens,
@@ -45,6 +47,19 @@ def _restore(value, clock):
     budget.limits, budget.clock_ms = value["limits"], clock
     budget._start, budget._last = value["start"], value["last"]
     budget._pending = {int(k): v for k, v in value["pending"].items()}
+    budget._owners = value.get("owners", {})
+    if type(budget._owners) is not dict:
+        raise ValueError("invalid reservation ownership")
+    for ticket, proof in budget._owners.items():
+        if (
+            type(ticket) is not str
+            or not ticket.isascii()
+            or not ticket.isdecimal()
+            or str(int(ticket)) != ticket
+            or int(ticket) not in budget._pending
+        ):
+            raise ValueError("invalid reservation ownership")
+        _hash(proof)
     budget._next = value["next"]
     budget.calls, budget.tokens, budget.cost_microunits = (
         value["calls"],
@@ -74,6 +89,8 @@ class SQLiteBudget(Budget):
         checkpoint=lambda _: None,
     ):
         _token(identity)
+        if experiment is not None:
+            _token(experiment)
         self.store, self.identity, self.limits = store, identity, limits
         self.clock_ms, self.experiment, self.checkpoint = (
             clock_ms,
@@ -97,14 +114,73 @@ class SQLiteBudget(Budget):
                 value = _state(Budget(limits, clock_ms=clock_ms))
                 tx.execute("INSERT INTO budgets VALUES(?,?)", (identity, pack(value)))
 
+    def _ownership_proof(self, ticket, maximum, request):
+        return digest(
+            pack(
+                (
+                    "budget_reservation_owner.v1",
+                    self.identity,
+                    ticket,
+                    self.experiment,
+                    maximum,
+                    request,
+                )
+            )
+        )
+
+    def _settlement_owner(self, tx, budget, ticket, receipt, tokens, cost):
+        """Require exact ledger/owner proof before changing a reservation.
+
+        Legacy pending without proof stays charged; ticket numbers alone never
+        identify an owner. Ownerless reservations explicitly bind owner None.
+        """
+        row = None
+        if self.experiment is not None:
+            row = tx.execute(
+                "SELECT request,outcome FROM attempts WHERE experiment=? AND ticket=?",
+                (self.experiment, ticket),
+            ).fetchone()
+        request = row[0] if row else None
+        expected = self._ownership_proof(ticket, budget._pending.get(ticket), request)
+        if budget._owners.get(str(ticket)) != expected:
+            raise ValueError("reservation ownership conflict")
+        if self.experiment is not None and (
+            row is None
+            or row[1] != "unknown"
+            or type(receipt) is not Attempt
+            or pack(receipt.request) != request
+            or receipt.tokens != tokens
+            or receipt.cost_microunits != cost
+        ):
+            raise ValueError("reservation attempt conflict")
+
     def _apply(self, method, *args, **kwargs):
         failure = None
         result = None
-        with self.store.transaction() as tx:
+        owner = (self.identity, self.experiment)
+        arguments = pack((args, kwargs))
+        store, clock = self.store, self.clock_ms
+        limits = pack(self.limits)
+        with store.transaction() as tx:
             row = tx.execute(
                 "SELECT payload FROM budgets WHERE identity=?", (self.identity,)
             ).fetchone()
             budget = _restore(unpack(row[0]), self.clock_ms)
+            attempt_before = None
+            if method == "settle":
+                self._settlement_owner(
+                    tx,
+                    budget,
+                    args[0],
+                    kwargs.get("receipt"),
+                    kwargs.get("tokens"),
+                    kwargs.get("cost_microunits"),
+                )
+                if self.experiment is not None:
+                    attempt_before = tx.execute(
+                        "SELECT request,outcome,receipt FROM attempts WHERE experiment=? AND ticket=?",
+                        (self.experiment, args[0]),
+                    ).fetchone()
             try:
                 if method == "reserve" and budget.calls >= 4096:
                     budget.stop("attempt_limit")
@@ -112,6 +188,34 @@ class SQLiteBudget(Budget):
                 result = getattr(budget, method)(*args, **kwargs)
             except Halt as exc:
                 failure = exc
+            # Clock callbacks must not redirect or overwrite a newer ledger,
+            # mutate settlement evidence, or replace the retained attempt.
+            if (
+                (self.identity, self.experiment) != owner
+                or self.store is not store
+                or self.clock_ms is not clock
+                or pack(self.limits) != limits
+                or pack((args, kwargs)) != arguments
+                or tx.execute(
+                    "SELECT payload FROM budgets WHERE identity=?", (owner[0],)
+                ).fetchone() != row
+                or (
+                    attempt_before is not None
+                    and tx.execute(
+                        "SELECT request,outcome,receipt FROM attempts WHERE experiment=? AND ticket=?",
+                        (owner[1], args[0]),
+                    ).fetchone() != attempt_before
+                )
+            ):
+                raise ValueError("budget binding changed during operation")
+            if method == "reserve" and failure is None:
+                budget._owners[str(result)] = self._ownership_proof(
+                    result,
+                    args[0],
+                    pack(kwargs.get("request")) if self.experiment is not None else None,
+                )
+            if method == "settle" and args[0] not in budget._pending:
+                del budget._owners[str(args[0])]
             tx.execute(
                 "UPDATE budgets SET payload=? WHERE identity=?",
                 (pack(_state(budget)), self.identity),

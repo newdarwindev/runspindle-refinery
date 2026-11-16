@@ -19,7 +19,7 @@ MUTATIONS = {
     "budget_reset": (
         "durable_evaluation.py",
         "budget = _restore(unpack(row[0]), self.clock_ms)",
-        "budget = Budget(self.limits, clock_ms=self.clock_ms)",
+        "budget = Budget(self.limits, clock_ms=self.clock_ms); budget._owners = {}",
         "test_durable.DurableTests.test_multi_connection_budget_concurrency_and_no_reset",
     ),
     "approval_bypass": (

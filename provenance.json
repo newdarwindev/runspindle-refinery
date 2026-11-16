@@ -183,5 +183,12 @@
     "source_import": "none",
     "specification": "specs/dspy-result-identity.md",
     "framework_qualification": "not_run"
+  },
+  "budget_settlement_ownership": {
+    "classification": "original_bounded_ledger_checks_and_synthetic_tests",
+    "source_import": "none",
+    "specification": "specs/budget-settlement-ownership.md",
+    "schema_migration": "none",
+    "production_provider": "not_run"
   }
 }

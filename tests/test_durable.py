@@ -482,7 +482,7 @@ class ServingTests(DurableBase):
         reg, key, approval = self.candidate()
         reg.begin(VERSION, "activation", key, approval, expected_generation=0)
         child(
-            "from refinery.storage import Store,VERSION; from refinery.serving import Registry,LocalServing; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); a=LocalServing(sys.argv[1]+'/serving.sqlite'); Registry(s).load(VERSION,'activation',a,checkpoint=lambda point:os._exit(94) if point=='before_candidate_load' else None)",
+            "from refinery.storage import Store,VERSION; from refinery.serving import Registry,LocalServing; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); a=LocalServing(sys.argv[1]+'/serving.sqlite'); Registry(s,verify_approval=lambda grant: 'reviewer' if grant.actor=='reviewer' and grant.evidence=='independent-proof' else None).load(VERSION,'activation',a,checkpoint=lambda point:os._exit(94) if point=='before_candidate_load' else None)",
             self.directory,
             94,
         )
@@ -594,7 +594,7 @@ class ServingTests(DurableBase):
         reg, key, approval = self.candidate()
         reg.begin(VERSION, "activation", key, approval, expected_generation=0)
         child(
-            "from refinery.storage import Store,VERSION; from refinery.serving import Registry,LocalServing; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); a=LocalServing(sys.argv[1]+'/serving.sqlite'); Registry(s).load(VERSION,'activation',a,checkpoint=lambda point:os._exit(93) if point=='after_candidate_load' else None)",
+            "from refinery.storage import Store,VERSION; from refinery.serving import Registry,LocalServing; import os; s=Store(sys.argv[1]+'/refinery.sqlite'); a=LocalServing(sys.argv[1]+'/serving.sqlite'); Registry(s,verify_approval=lambda grant: 'reviewer' if grant.actor=='reviewer' and grant.evidence=='independent-proof' else None).load(VERSION,'activation',a,checkpoint=lambda point:os._exit(93) if point=='after_candidate_load' else None)",
             self.directory,
             93,
         )

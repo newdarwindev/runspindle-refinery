@@ -349,7 +349,7 @@ class Registry:
             actor = self.verify_approval(approval) if self.verify_approval else None
         except Exception:
             actor = None
-        if actor != approval.actor:
+        if type(actor) is not str or actor != approval.actor:
             raise ValueError("approval denied")
         environment = approval.environment
         with self.store.transaction() as tx:
@@ -391,6 +391,83 @@ class Registry:
             raise ValueError("unknown activation")
         return row
 
+    def _authorize_load(self, activation_id, expected):
+        """Fresh approval at dispatch, not perpetual authority from stored intent.
+
+        The verifier is a trusted injected authority. Read immutable bindings and
+        mutable ownership again after its callback, before returning exact bytes.
+        This is not an atomic transaction with an external serving target.
+        """
+        environment, generation, key, predecessor, _ = expected
+        ownership = {
+            "generation": generation,
+            "active": predecessor,
+            "pending": activation_id,
+        }
+        if (
+            self._intent(activation_id) != expected
+            or self.state(environment) != ownership
+        ):
+            raise ValueError("activation ownership changed")
+        row = self.store.db.execute(
+            "SELECT approval FROM activations WHERE identity=?", (activation_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError("activation approval unavailable")
+        approval_key = row[0]
+        approval = self.store.get("approval", approval_key)
+        candidate = self.store.get("candidate", key)
+        approval_bytes, candidate_bytes = pack(approval), pack(candidate)
+        if type(approval) is not Approval:
+            raise ValueError("activation approval type")
+        approval.__post_init__()
+        if (
+            digest(approval_bytes) != approval_key
+            or digest(candidate_bytes) != key
+            or digest(candidate["content"]) != candidate["candidate_sha256"]
+            or (
+                approval.candidate_sha256,
+                approval.evaluation_sha256,
+                approval.policy_sha256,
+                approval.environment,
+            )
+            != (
+                candidate["candidate_sha256"],
+                candidate["evaluation_sha256"],
+                candidate["policy_sha256"],
+                candidate["environment"],
+            )
+            or approval.environment != environment
+        ):
+            raise ValueError("activation approval binding changed")
+        old_digest = (
+            self.store.get("candidate", predecessor)["candidate_sha256"]
+            if predecessor
+            else None
+        )
+        expected_actor = approval.actor
+        try:
+            actor = self.verify_approval(approval) if self.verify_approval else None
+        except Exception:
+            actor = None
+        if (
+            type(actor) is not str
+            or actor != expected_actor
+            or pack(approval) != approval_bytes
+        ):
+            raise ValueError("activation approval denied")
+        if (
+            self._intent(activation_id) != expected
+            or self.state(environment) != ownership
+            or self.store.db.execute(
+                "SELECT approval FROM activations WHERE identity=?", (activation_id,)
+            ).fetchone() != (approval_key,)
+            or pack(self.store.get("approval", approval_key)) != approval_bytes
+            or pack(self.store.get("candidate", key)) != candidate_bytes
+        ):
+            raise ValueError("activation binding changed during approval")
+        return candidate, old_digest
+
     def load(
         self,
         api_version,
@@ -403,6 +480,9 @@ class Registry:
         environment, generation, key, predecessor, state = self._intent(activation_id)
         if state != "intent":
             return self.reconcile(api_version, activation_id, adapter)
+        self._authorize_load(
+            activation_id, (environment, generation, key, predecessor, state)
+        )
         # Claim dispatch durably. A second caller must read back; never reload unknown.
         with self.store.transaction() as tx:
             changed = tx.execute(
@@ -412,11 +492,8 @@ class Registry:
         if not changed:
             return self.reconcile(api_version, activation_id, adapter)
         checkpoint("before_candidate_load")
-        candidate = self.store.get("candidate", key)
-        old_digest = (
-            self.store.get("candidate", predecessor)["candidate_sha256"]
-            if predecessor
-            else None
+        candidate, old_digest = self._authorize_load(
+            activation_id, (environment, generation, key, predecessor, "unknown")
         )
         try:
             accepted = adapter.load(

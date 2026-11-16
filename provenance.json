@@ -163,5 +163,12 @@
     "specification": "specs/source-feedback-invalidation.md",
     "live_migration": "not_run",
     "live_authority": "not_qualified"
+  },
+  "serving_dispatch_authority": {
+    "classification": "original_bounded_registry_checks_and_synthetic_tests",
+    "source_import": "none",
+    "specification": "specs/serving-dispatch-authority.md",
+    "production_authority": "unqualified",
+    "live_serving": "not_run"
   }
 }

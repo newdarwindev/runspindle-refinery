@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "scope": "Refinery #6: exact qualification threshold arithmetic only",
+  "evidence_class": "offline_component_scripted_evaluation_and_sqlite",
+  "checked_at_utc": "2026-11-16T08:45:44.229312+00:00",
+  "base_commit": "994ccfafadc2e88fab99cd828154456eebd5dd3a",
+  "base_tree": "5c257b6397d557395975fa532aa8edf06b5e8bd8",
+  "source_state": "tested working tree over exact base; source hashes identify the final implementation",
+  "source_sha256": {
+    "refinery/serving.py": "0d6ec0cd7157b7601e8238c1e939ff4b62a918af13540dfad49eb0d5b5f8efa9",
+    "tests/test_qualification_thresholds.py": "4e63be5e79c351f4dbb766f006521fcaabe543673d9c16c5685ea5df7d98d7a5",
+    "specs/qualification-thresholds.md": "eab8b5f1b846e989bb82007e778501c1adbe7494f5b6368a8bb45abc7ce2fd21"
+  },
+  "runtime": {
+    "python": "3.12.16",
+    "sqlite": "3.53.1",
+    "system": "Linux",
+    "machine": "x86_64",
+    "qualified_runner_image": false
+  },
+  "checks": {
+    "focused_normal": {
+      "status": "passed",
+      "tests": 10,
+      "skipped": 0,
+      "duration_seconds": 74.115,
+      "command": "python3 -B -m unittest discover -s tests -p test_qualification_thresholds.py -v"
+    },
+    "focused_optimized": {
+      "status": "passed",
+      "tests": 10,
+      "skipped": 0,
+      "duration_seconds": 74.112,
+      "command": "python3 -B -O -m unittest discover -s tests -p test_qualification_thresholds.py -v"
+    },
+    "existing_lineage_evaluation": {
+      "status": "passed",
+      "tests_each_mode": 42,
+      "skipped": 0,
+      "modes": [
+        "normal",
+        "optimized"
+      ],
+      "command": "PYTHONPATH=tests python3 -B [-O] -m unittest test_lineage test_evaluation -q"
+    },
+    "deliberate_mutation": {
+      "status": "detected",
+      "scope": "restored floating comparisons fail the independent exact-boundary acceptance assertion; included in focused counts"
+    },
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 650,
+      "python_files": 57,
+      "yaml_files": 4,
+      "command": "python3 -B tools/static_quality.py",
+      "baseline_changed": false
+    },
+    "scaffold": {
+      "status": "passed",
+      "command": "python3 -B tools/check_scaffold.py",
+      "includes": [
+        "artifact integrity",
+        "reference bytes and syntax"
+      ],
+      "product_acceptance": "not_run"
+    },
+    "whitespace": {
+      "status": "passed",
+      "command": "git diff --check"
+    },
+    "full_python_suite": {
+      "status": "not_run",
+      "reason": "authentic pinned Tether checkout unavailable",
+      "required_tether_commit": "670989839a0fccbcf2014d01609778ae6e4df424"
+    },
+    "aggregate": {
+      "status": "not_run",
+      "reason": "retained-suite dependency unavailable; direct checks are not an aggregate receipt"
+    },
+    "remote_ci": {
+      "status": "not_run"
+    },
+    "framework_provider_and_live_acceptance": {
+      "status": "not_run"
+    }
+  },
+  "quality_pins": {
+    "ruff": "0.14.5",
+    "mypy": "1.18.2",
+    "yamllint": "1.37.1",
+    "shellcheck-py": "0.11.0.1",
+    "mypy_extensions": "1.2.0",
+    "pathspec": "1.1.1",
+    "typing_extensions": "4.16.0",
+    "PyYAML": "6.0.3"
+  },
+  "local_receipt_sha256": {
+    "threshold-normal.log": "8412e1ad7684a0eaebe5acf9cced46d4c65b21c2e486b97a4c1380801cf26d99",
+    "threshold-optimized.log": "8b32da185057a460fdc7000ff72fe12c2cb2235c075771bee78b541c28307ce4",
+    "lineage-evaluation-normal.log": "1716252db2cb7d1db8d08895c078161f213999a06919258940dba4db0246bca8",
+    "lineage-evaluation-optimized.log": "1716252db2cb7d1db8d08895c078161f213999a06919258940dba4db0246bca8",
+    "static-quality.log": "746718a85f3bc96b406fb90e804455cb4b8b5676dd870efd1569ecbadbf1be48"
+  },
+  "boundaries": [
+    "Existing immutable Report schema, encoded bytes and digests remain unchanged.",
+    "Counts are decoded from exact canonical float ratios and retained unique heldout identities; they are not independently authenticated or reconstructed observations.",
+    "No epsilon, permissive rounding or changed thresholds.",
+    "Actual ScriptedProvider and component SQLite are used with invented fixtures and synthetic feedback authorities.",
+    "Independent spies forbid network, serving load and approval callbacks; denied qualification preserves SQL rows.",
+    "No DSPy/framework, external provider, production serving, deployment, service, permission or credential operation.",
+    "Existing dependency pins, quality baseline, workflows and concurrent pull requests are unchanged.",
+    "No issue closure or merge-readiness claim."
+  ]
+}

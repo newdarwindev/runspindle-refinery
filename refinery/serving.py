@@ -7,13 +7,14 @@ loaded bytes. It is not a provider, workflow executor or production service.
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 from dataclasses import dataclass
 from typing import Protocol
 
 from .evaluation import Report, _integer
-from .lineage import digest, _token, _hash, _bytes
-from .storage import Store, TYPES, pack, version
+from .lineage import MAX_RECORDS, _bytes, _hash, _token, digest
+from .storage import TYPES, Store, pack, version
 
 
 @dataclass(frozen=True)
@@ -189,6 +190,43 @@ class LocalServing:
         return {"output": value["responses"][text], "candidate_sha256": row[0]}
 
 
+def _score_counts(report: Report) -> tuple[int, int, int]:
+    """Decode canonical exact-match ratios, not new evidence authentication.
+
+    Reports retain their existing float fields and immutable encoded bytes.
+    Only an exact k/N emitted by the evaluator is accepted; no tolerance or
+    rounding changes eligibility. N counts held-out identities, never retries.
+    """
+    cases = report.heldout_cases
+    if type(cases) is not tuple or not 1 <= len(cases) <= MAX_RECORDS:
+        raise ValueError("invalid heldout denominator")
+    seen: set[tuple[str, str]] = set()
+    for case in cases:
+        if (
+            type(case) is not tuple
+            or len(case) != 2
+            or any(type(value) is not str for value in case)
+        ):
+            raise ValueError("invalid heldout identity")
+        for value in case:
+            _token(value)
+        if case in seen:
+            raise ValueError("duplicate heldout identity")
+        seen.add(case)
+    denominator = len(cases)
+    counts: list[int] = []
+    for score in (report.baseline_score, report.candidate_score):
+        if type(score) is not float or not math.isfinite(score) or not 0 <= score <= 1:
+            raise ValueError("invalid exact-match score")
+        for correct in range(denominator + 1):
+            if correct / denominator == score:
+                counts.append(correct)
+                break
+        else:
+            raise ValueError("noncanonical exact-match score")
+    return counts[0], counts[1], denominator
+
+
 class Registry:
     def __init__(self, store: Store, *, verify_approval=None):
         self.store, self.verify_approval = store, verify_approval
@@ -215,11 +253,15 @@ class Registry:
             or report.candidate_score is None
             or not report.heldout_cases
             or not report.attempts
-            or report.candidate_score * 1_000_000 < policy.min_quality_ppm
-            or (report.candidate_score - report.baseline_score) * 1_000_000
-            < policy.min_improvement_ppm
             or usage.get("unresolved_calls") != 0
             or usage.get("reason") is not None
+        ):
+            raise ValueError("evaluation policy gate blocked")
+        baseline, candidate_count, denominator = _score_counts(report)
+        if (
+            candidate_count * 1_000_000 < policy.min_quality_ppm * denominator
+            or (candidate_count - baseline) * 1_000_000
+            < policy.min_improvement_ppm * denominator
         ):
             raise ValueError("evaluation policy gate blocked")
         for field, ceiling in (
@@ -425,7 +467,9 @@ class Registry:
         outcome = (
             "active"
             if observed == expected
-            else "failed" if rejected and prior_observed else "unknown"
+            else "failed"
+            if rejected and prior_observed
+            else "unknown"
         )
         with self.store.transaction() as tx:
             if self.state(environment)["pending"] != activation_id:

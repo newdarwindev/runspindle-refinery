@@ -66,3 +66,6 @@ incompatible component stores and rolls back invalid transaction changes.
   execution/restart qualification remains separate and unrun.
 - [DSPy preparation candidates](dspy-preparation-candidate.md): source-only explicit
   recipe and local artifact auditor; canonical pins and execution gate unchanged.
+
+- [Linux x86_64 DSPy preparation candidate](dspy-x64-preparation-candidate.md):
+  explicit source-only profile; no ARM gate or canonical qualification change.

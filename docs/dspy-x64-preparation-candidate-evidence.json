@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "classification": "source_only_synthetic_component_validation",
+  "base_commit": "994ccfafadc2e88fab99cd828154456eebd5dd3a",
+  "reviewed_source_commit": "fb81c3062d40d400f73f506f571901705dfeaa06",
+  "source_sha256": {
+    "tools/dspy_x64_preparation_candidate.py": "a06af7e733960f38d379487bd390f56b0d1364c55634fa238302369bb9235536",
+    "tests/test_dspy_x64_preparation_candidate.py": "e36f85c497d15f7f60fd2bd8c51dd8107c5fbb3b00dea0da256c8b8fe4922c74"
+  },
+  "runtime": "3.12.14",
+  "checks": {
+    "focused_x64_unittest": {
+      "passed": 29
+    },
+    "optimized_focused_x64_unittest": {
+      "passed": 29
+    },
+    "unchanged_arm_unittest": {
+      "passed": 20
+    },
+    "full_offline_validation_inventory": "passed_on_frozen_reviewed_source",
+    "static_quality": {
+      "status": "passed",
+      "new_diagnostics": 0,
+      "existing_debt": 652
+    },
+    "scaffold": "passed",
+    "repository_hygiene": "passed",
+    "diff_whitespace": "passed",
+    "tether_test_dependency_commit": "670989839a0fccbcf2014d01609778ae6e4df424"
+  },
+  "independent_review": {
+    "status": "approved",
+    "scope": "source and synthetic negative tests only",
+    "fixes": [
+      "preserve full permission bits including setuid/setgid/sticky",
+      "bound x64 wheel member paths and depth"
+    ]
+  },
+  "candidate_output": "UNREVIEWED_CANDIDATE_NOT_EXECUTION_AUTHORITY",
+  "canonical_dependency_manifest": "unchanged",
+  "arm_auditor_and_execution_gates": "unchanged",
+  "framework_qualification": "not_run",
+  "actual_prepared_tree_audit": "not_run",
+  "publisher_authentication": "not_established_by_source_auditor",
+  "issue_16": "remains_open"
+}

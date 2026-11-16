@@ -190,5 +190,12 @@
     "specification": "specs/budget-settlement-ownership.md",
     "schema_migration": "none",
     "production_provider": "not_run"
+  },
+  "local_serving_schema_admission": {
+    "classification": "original_bounded_schema_checks_and_synthetic_tests",
+    "source_import": "none",
+    "specification": "specs/local-serving-schema-admission.md",
+    "schema_migration": "none",
+    "production_storage": "unqualified"
   }
 }

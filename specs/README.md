@@ -86,3 +86,6 @@ incompatible component stores and rolls back invalid transaction changes.
 
 - [Budget settlement ownership](budget-settlement-ownership.md): exact pending
   ledger/experiment attribution, no cross-owner refund or production claim.
+
+- [Local serving schema admission](local-serving-schema-admission.md): exact
+  existing loader schema, no partial-store repair or production qualification.

@@ -276,7 +276,6 @@ import sys, socket
 from pathlib import Path
 from unittest.mock import patch
 
-from tests.test_signed_feedback_collection import SignedCollectionFixture
 sys.path.insert(0, str(Path.cwd() / 'tests'))
 from test_source_feedback import SourceFixture
 h = SourceFixture(Path(sys.argv[1]), False)
@@ -312,7 +311,6 @@ import sys, socket
 from pathlib import Path
 from unittest.mock import patch
 
-from tests.test_signed_feedback_collection import SignedCollectionFixture
 network = patch.object(socket, 'socket', side_effect=AssertionError('network forbidden'))
 sockets = network.start()
 sys.path.insert(0, str(Path.cwd() / 'tests'))

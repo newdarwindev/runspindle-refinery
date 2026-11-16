@@ -52,6 +52,70 @@ def archive(contents: dict[str, bytes], links: dict[str, str] | None = None) -> 
     return stream.getvalue()
 
 
+class WheelTagTests(unittest.TestCase):
+    def wheel(self, filename: str, tags: list[str]) -> dict[str, bytes]:
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as wheel:
+            wheel.writestr(
+                "example-1.0.dist-info/METADATA", "Name: example\nVersion: 1.0\n"
+            )
+            wheel.writestr(
+                "example-1.0.dist-info/WHEEL",
+                "Wheel-Version: 1.0\n" + "".join(f"Tag: {tag}\n" for tag in tags),
+            )
+        return {filename: buffer.getvalue()}
+
+    def test_equivalent_compressed_and_expanded_metadata(self) -> None:
+        platforms = "manylinux_2_17_x86_64.manylinux2014_x86_64"
+        filename = f"example-1.0-cp314-cp314-{platforms}.whl"
+        for tags in (
+            [f"cp314-cp314-{platforms}"],
+            [f"cp314-cp314-{part}" for part in platforms.split(".")],
+        ):
+            with self.subTest(tags=tags):
+                prep.check_wheel_tags(self.wheel(filename, tags))
+
+    def test_compression_preserves_exact_set_and_compatibility(self) -> None:
+        filename = (
+            "example-1.0-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+        )
+        for tags in (
+            ["cp314-cp314-manylinux2014_x86_64"],
+            ["cp314-cp314-manylinux2014_x86_64.linux_aarch64"],
+            [
+                "cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64",
+                "cp314-cp314-manylinux2014_x86_64",
+            ],
+            [],
+        ):
+            with self.subTest(tags=tags), self.assertRaises(ValueError):
+                prep.check_wheel_tags(self.wheel(filename, tags))
+        with self.assertRaisesRegex(ValueError, "incompatible"):
+            prep.check_wheel_tags(
+                self.wheel(
+                    "example-1.0-cp314-cp314-linux_aarch64.whl",
+                    ["cp314-cp314-linux_aarch64"],
+                )
+            )
+
+    def test_malformed_and_oversized_compression(self) -> None:
+        for value in (
+            "py3-none-any.",
+            "py3-none-.any",
+            "py3-none-any..linux_x86_64",
+            "py3-none-any.any",
+            "py3-none-any-extra",
+            "py3-none-ANY",
+        ):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                prep.expand_tag(value)
+        with (
+            patch.object(prep, "MAX_FILES", 3),
+            self.assertRaisesRegex(ValueError, "limit"),
+        ):
+            prep.expand_tag("py2.py3-none-any.linux_x86_64")
+
+
 class X64CandidateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -118,13 +182,14 @@ class X64CandidateTests(unittest.TestCase):
             entries = prep.archive_entries(
                 self.artifacts[source], links=folder == "runtime"
             )
-            for path, (kind, _, data) in entries.items():
+            for path, (kind, mode, data) in entries.items():
                 output = self.root / folder / path
                 output.parent.mkdir(parents=True, exist_ok=True)
                 if kind == "link":
                     output.symlink_to(data.decode())
                 else:
                     output.write_bytes(data)
+                    output.chmod(mode)
         for name, value in {
             "LOCK_SHA256": common.digest(lock_bytes),
             "UV_SHA256": common.digest(self.artifacts["uv.tar.gz"]),

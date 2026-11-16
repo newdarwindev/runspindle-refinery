@@ -1,0 +1,80 @@
+{
+  "classification": "synthetic_component_schema_admission",
+  "base_commit": "3b14229b32cd0abef65937f3a9d9a9474a2ca937",
+  "issue": 17,
+  "parent_issue": 6,
+  "python": "3.12.14",
+  "sha256": {
+    "refinery/serving.py": "4ad9a3a734c3eeb0a2a473e11580e231536aca96cfe0bbc37361c868f6ecc9be",
+    "tests/test_local_serving_schema.py": "c9d2999676b2aeb2f209ad06864aa6c41210d96a8d2120c01ac98251e4776ea3"
+  },
+  "baseline_reproduction": {
+    "partial_store": "missing calls silently recreated",
+    "missing_primary_key": "second load true, duplicate environment rows, stale first readback/output"
+  },
+  "focused_normal": {
+    "status": "passed",
+    "tests": 9,
+    "seconds": 0.379
+  },
+  "focused_optimized": {
+    "status": "passed",
+    "tests": 9,
+    "seconds": 0.415
+  },
+  "full_normal": {
+    "status": "passed",
+    "tests": 416,
+    "seconds": 244.374,
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -m unittest discover -s tests -v"
+  },
+  "full_optimized": {
+    "status": "passed",
+    "tests": 416,
+    "seconds": 243.051,
+    "command": "RUNSPINDLE_TETHER_SOURCE=<exact-pinned-source> python3 -O -m unittest discover -s tests -v"
+  },
+  "mutation_removed_validator": "detected",
+  "effects": {
+    "invalid_store_logical_schema_and_records": "unchanged",
+    "invalid_constructor_connections": "closed",
+    "temp_shadow_rows_and_load_calls": 0,
+    "fresh_process_legacy_version": 0,
+    "fresh_process_retained_call_rows": 1,
+    "fresh_process_reload_calls": 0,
+    "fresh_process_network_calls": 0
+  },
+  "pinned_static": {
+    "status": "blocked",
+    "reason": "No package metadata was found for ruff"
+  },
+  "tether_pin": "dependencies/tether-feedback.json",
+  "limitations": [
+    "No migration or repair; exact existing DDL admitted only",
+    "Read operations acquire BEGIN IMMEDIATE serialization lock",
+    "Not hostile SQLite/file/connection or physical-journal immutability assurance",
+    "Not payload retention/bounds or authenticated target/issuer qualification",
+    "No live serving, provider, deployment, access change, persistent job, backup or installation",
+    "Remote CI not run"
+  ],
+  "independent_runtime_review": "passed_no_blocker",
+  "independent_focused_normal": {
+    "tests": 9,
+    "seconds": 0.387,
+    "status": "passed"
+  },
+  "independent_focused_optimized": {
+    "tests": 9,
+    "seconds": 0.473,
+    "status": "passed"
+  },
+  "existing_durable_mutants": {
+    "count": 4,
+    "status": "all_detected"
+  },
+  "checks": {
+    "scaffold": "passed",
+    "repo_hygiene": "passed",
+    "diff_whitespace": "passed"
+  }
+}

@@ -35,5 +35,9 @@
     "evidence": "docs/serving-readback-integrity-evidence.json"
   },
   "dspy_result_identity": "source_component_candidate",
-  "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json"
+  "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json",
+  "local_serving_schema_admission": {
+    "status": "strict_legacy_layout_component_candidate",
+    "evidence": "docs/local-serving-schema-evidence.json"
+  }
 }

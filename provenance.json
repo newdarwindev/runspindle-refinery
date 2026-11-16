@@ -155,5 +155,13 @@
     "canonical_pins": "unchanged",
     "framework_qualification": "not_run",
     "source_origin_authentication": "not_performed_by_auditor"
+  },
+  "source_feedback_invalidation": {
+    "classification": "original_bridge_and_synthetic_tests",
+    "tether_revision": "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
+    "source_copy": "none; exact external source snapshot only",
+    "specification": "specs/source-feedback-invalidation.md",
+    "live_migration": "not_run",
+    "live_authority": "not_qualified"
   }
 }

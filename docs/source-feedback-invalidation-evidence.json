@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "scope": "partial Refinery #15 and parent #4; synthetic component integration only",
+  "source_base": "ac326de7d0d14032518e082e1eaeeea0c7ce254d",
+  "tether_source": "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
+  "python": "3.12.14",
+  "source_sha256": {
+    "refinery/source_feedback.py": "f9ff4938d32bae14b42e892064568d7090fdd02fcbc8b0db0ede7248bf181f5f",
+    "refinery/feedback_collection.py": "d762bcb13aca43b83624af6870118cd47bbc821636ee98d31cdca00c70c1c849",
+    "refinery/feedback_use.py": "a562371b5cea0e2d14ba996d1c22f5abfbd98c705667a515ce87c5c981818f41",
+    "refinery/tether_dependency.py": "ca1f625accae43b828f14f27dced9fc696ec4aaad2f8edc829338493dded6e3b",
+    "tests/test_source_feedback.py": "554babddda6467a523ecc948a8d50309066e762480ef7f7956d56abf8d246a70",
+    "tests/test_signed_feedback_collection.py": "ae444b08f60d6babe76730ec214ea7ac6ad6b73446a5f9a2bc47381fdfa7862e",
+    "tests/test_tether_schema_pin.py": "a89db42c610558e12b99595662d489925b8bef2b3d05a80e6265ba5845de85f4",
+    "dependencies/tether-feedback.json": "513468062cb48a644010c9fba42e6e9c3c27af457b454b2c2babd82e6663167b",
+    ".github/workflows/validation.yml": "95883b4c36ffc7228cea60a38615561a35e5189a9820215be9deb3d0c5f7320b"
+  },
+  "observed": {
+    "source_feedback_tests_normal": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "source_feedback_tests_optimized": {
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0
+    },
+    "earlier_full_suite": {
+      "passed": 380,
+      "failed": 0,
+      "note": "before final review regression additions; not final exact-tree aggregate"
+    },
+    "final_full_suite": {
+      "normal": {
+        "passed": 384,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 211.429
+      },
+      "optimized": {
+        "passed": 384,
+        "failed": 0,
+        "skipped": 0,
+        "seconds": 196.95
+      }
+    },
+    "scaffold": "passed",
+    "repository_hygiene": "passed, including explicit proposed PR body",
+    "syntax_and_whitespace": "passed",
+    "static_quality": "blocked: No package metadata was found for ruff; no baseline changes",
+    "independent_source_review": "two findings fixed; reviewer independently reran 12 then-current tests normal and optimized; no further blocker"
+  },
+  "limitations": [
+    "Opt-in source-bound v2 receipts; historical unbound v1 remains a separate component seam. Known bound identities cannot downgrade in the same store.",
+    "Trusted host source/material resolvers, consent authorities and selected observation store; actual authority integration unqualified.",
+    "Only original task revision 1 supported.",
+    "Separate database observations are not atomic with dispatch or commit.",
+    "No live migration, provider, real DSPy training, deployment, service, backup, permission change, remote CI or live acceptance run.",
+    "Two-distinct-source callback ordering reviewed in source, not separately executed."
+  ],
+  "commands": [
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -m unittest discover -s tests -p test_source_feedback.py -v",
+    "RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -O -m unittest discover -s tests -p test_source_feedback.py -v",
+    "python3 tools/check_scaffold.py",
+    "python3 tools/check_repo_hygiene.py",
+    "python3 tools/static_quality.py"
+  ],
+  "provenance": "Original bridge and synthetic tests. Tether implementation not copied; source snapshot checked by commit and all imported module hashes."
+}

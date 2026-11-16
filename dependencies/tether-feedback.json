@@ -1,17 +1,19 @@
 {
   "repository": "newdarwindev/runspindle-tether",
-  "commit": "040b71f2213a34f34e6b6a40124ed1164b93ce30",
+  "commit": "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
   "files": {
     "tether/__init__.py": "8c7f563517f58350d1bd45b95b8ea03f5cadbdd98df399c9f9b17b176075d11e",
     "tether/admission.py": "13c4ca51c00e745a5be068183e1f44999c43cf24afb8e4d18fdc41062acfc036",
-    "tether/feedback.py": "58a6f2d5466588b38996b91bf836338eae60639bacf1530b8a48cbbd44fdf3e9",
+    "tether/feedback.py": "017f1d2c463282ef4fbd845c0aafe921ea10ea525e4b1cb5adb5331f6512baff",
     "tether/journal.py": "c98eeac8d818d6f51eac13bb378dfa9fb93cb1424281479f3224a9ba096ad426",
-    "tether/native_testing.py": "499613371e979d82f4c927ce0f41ec970a66c85c177d72a2e2b6775a9df70d04",
-    "tether/sanitization.py": "2077bcd548db09bcb80140d1c5453af437eed94659cec9924d7206f492912987",
+    "tether/native_testing.py": "d92efe289d54fe66c5157ccb2d2ea2fd3bf15a2470e8ff35ffe154a1f07ca755",
+    "tether/sanitization.py": "7c0b5e6fae5eb0e00e43667a447213d8268007588cd42d5fb56e6449a2eb064d",
     "tether/schema.py": "ebd7544018096f02394c637d70dd1570baab66ea844232a1963c8318d0a3d3a1",
-    "tether/slack_feedback.py": "23e21a3129d357b57cf5ee469c1710fac3daf61d45b335c253f81d4677360b1d",
-    "tether/slack_ingress.py": "96e247c66a0a84ad97e5b23258d310827f80c049fd5e0a655c89c1e5b394ffd4",
+    "tether/slack_feedback.py": "2a1592bbb3e5c88fa33945d122bc6679123e48a2d20c2f9328ddaf6dace434cf",
+    "tether/slack_ingress.py": "846582ffca135c5e3d39538b592269d55c87000b483d02231c05d94e6becb791",
     "tether/slack_wire.py": "3ad814a732c96db223ada95f41e9954919cdbdf8775bdc744e11816c9facb5ad",
-    "tether/testing.py": "2b84de229c6aff62ec48b52c6decb8dd369e20bade2b0b3d16003ed14ff046c9"
+    "tether/testing.py": "2b84de229c6aff62ec48b52c6decb8dd369e20bade2b0b3d16003ed14ff046c9",
+    "tether/feedback_schema.py": "d26f76629f4b0cd1e2bcabc589cb215817f209f1279b563b091aa86472e7f03f",
+    "tether/source_observation.py": "8b96b00233057e37b378cf27a6977c9345bf25c20c994321bd562e44369e6421"
   }
 }

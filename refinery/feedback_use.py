@@ -10,6 +10,7 @@ from typing import Any, Callable
 from . import lineage as lin
 from .evaluation import Halt
 from .feedback_collection import Material, SelectedFeedback
+from .source_feedback import SourceFeedbackGuard, require_no_guarded_identity
 from .storage import Store, pack
 from .tether_dependency import TetherDependency
 
@@ -36,6 +37,7 @@ class RetainedFeedbackUse:
     tether_store: Any
     verify_material: Callable[[dict[str, Any], Material], bool] | None = None
     approve_use: Callable[[UseRequest], bool] | None = None
+    source_guard: SourceFeedbackGuard | None = None
 
     def verify(self, store: Store, request: UseRequest) -> None:
         """Recheck the exact receipt, material and current permission, fail closed."""
@@ -62,12 +64,24 @@ class RetainedFeedbackUse:
                 "training_ref",
                 "scope",
             }
-            or receipt["version"] != "retained_feedback_collection.v1"
+            or receipt["version"]
+            not in (
+                "retained_feedback_collection.v1",
+                "retained_feedback_collection.v2",
+            )
             or receipt["scope"] != "exact_batch_only_not_execution_authority"
             or receipt["dependency_commit"] != self.dependency.pin["commit"]
             or receipt["batch_sha256"] != request.batch_sha256
         ):
             raise ValueError("collection association changed")
+        guarded = receipt["version"] == "retained_feedback_collection.v2"
+        if guarded and (
+            type(self.source_guard) is not SourceFeedbackGuard
+            or self.source_guard.dependency is not self.dependency
+        ):
+            raise ValueError("source use guard required")
+        if not guarded and self.source_guard is not None:
+            raise ValueError("historical receipt has no source binding")
         for field in ("collection_ref", "training_ref"):
             lin._token(receipt[field])
         sources, outputs, feedback, rules, seed = snapshot["batch"]
@@ -92,7 +106,7 @@ class RetainedFeedbackUse:
                 "head_revision",
                 "material_ref",
                 "target",
-            }:
+            } | ({"source_observation"} if guarded else set()):
                 raise ValueError("invalid selection receipt")
             selection = SelectedFeedback(**row["selection"])
             if (
@@ -179,6 +193,29 @@ class RetainedFeedbackUse:
                 raise ValueError("feedback batch mismatch")
             actors[lin.digest(encode(expected))] = expected.actor_id
             materials.append((target, Material(source, output, row["material_ref"])))
+
+        def check_sources() -> None:
+            if not guarded:
+                require_no_guarded_identity(db, set(originals))
+            if guarded:
+                if self.source_guard is None:
+                    raise ValueError("source use guard unavailable")
+                for row, (target, material) in zip(selected, materials):
+                    observation = self.source_guard.observe(target, material)
+                    if (
+                        observation != row["source_observation"]
+                        or observation["state"] != "unknown"
+                    ):
+                        raise ValueError("source no longer eligible")
+                # Resolver callbacks for later selections may fence earlier
+                # sources. Observe every fence again without invoking callbacks.
+                for row in selected:
+                    if self.source_guard.reread(row["source_observation"]) != row[
+                        "source_observation"
+                    ]:
+                        raise ValueError("source no longer eligible")
+
+        check_sources()
         expected_dataset = lin.build_dataset(
             sources,
             outputs,
@@ -200,6 +237,7 @@ class RetainedFeedbackUse:
             raise ValueError("use authority denied")
         # All callbacks precede this last observation, including callbacks that
         # mutate the other SQLite store while returning an affirmative decision.
+        check_sources()
         self.dependency.check(self.tether_store)
         if any(
             canonical(self.tether_store.evidence(*key)) != raw

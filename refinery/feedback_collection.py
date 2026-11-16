@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from .lineage import Feedback, GoldRule, OutputRevision, SourceRevision, _token, digest
+from .source_feedback import SourceFeedbackGuard, require_no_guarded_identity
 from .storage import VERSION, Store, pack
 from .tether_dependency import TetherDependency
 
@@ -38,6 +39,7 @@ def collect(
     verify_material: Callable[[dict[str, Any], Material], bool] | None = None,
     approve_collection: Callable[[str, str], bool] | None = None,
     approve_training: Callable[[str, str], bool] | None = None,
+    source_guard: SourceFeedbackGuard | None = None,
 ) -> str:
     """Both approvals bind exact lineage batch; unchanged evidence checked at commit.
 
@@ -57,6 +59,11 @@ def collect(
     if type(selections) is not tuple or not 1 <= len(selections) <= 100:
         raise ValueError("bounded explicit selection required")
     dependency.check(tether_store)
+    if source_guard is not None and (
+        type(source_guard) is not SourceFeedbackGuard
+        or source_guard.dependency is not dependency
+    ):
+        raise ValueError("unverified source guard")
     db: Any = store
     resolve: Any = resolve_material
     verify: Any = verify_material
@@ -71,6 +78,7 @@ def collect(
     actors: dict[str, str] = {}
     seen = set()
     materials: list[tuple[dict[str, Any], Material]] = []
+    source_observations: list[dict[str, Any]] = []
     for selected in selections:
         if (
             type(selected) is not SelectedFeedback
@@ -132,6 +140,11 @@ def collect(
             evidence["state"] == "active"
             and evidence["head_revision"] == selected.revision
         )
+        source_observation = None
+        if source_guard is not None:
+            source_observation = source_guard.observe(target, material)
+            source_observations.append(source_observation)
+            active = active and source_observation["state"] == "unknown"
         observed = Feedback(
             digest(
                 encode(
@@ -167,11 +180,15 @@ def collect(
                 "target": target,
             }
         )
+        if source_guard is not None:
+            receipts[-1]["source_observation"] = source_observation
     batch = (tuple(sources), tuple(outputs), tuple(feedback), rules, seed)
     batch_sha = digest(encode(batch))
 
     receipt = {
-        "version": "retained_feedback_collection.v1",
+        "version": "retained_feedback_collection.v2"
+        if source_guard is not None
+        else "retained_feedback_collection.v1",
         "batch_sha256": batch_sha,
         "dependency_commit": dependency.pin["commit"],
         "selected": tuple(receipts),
@@ -194,6 +211,21 @@ def collect(
 
     def check_evidence() -> None:
         dependency.check(tether_store)
+        if source_guard is None:
+            require_no_guarded_identity(db, set(originals))
+        if source_guard is not None and any(
+            source_guard.observe(target, material) != observation
+            for (target, material), observation in zip(materials, source_observations)
+        ):
+            raise ValueError("source changed during collection")
+        # Resolve every source before the final callback-free observations. A
+        # later resolver can mutate an earlier source or the feedback ledger.
+        dependency.check(tether_store)
+        if source_guard is not None and any(
+            source_guard.reread(observation) != observation
+            for observation in source_observations
+        ):
+            raise ValueError("source changed during collection")
         if any(
             canonical(tether_store.evidence(*key)) != raw
             for key, raw in originals.items()

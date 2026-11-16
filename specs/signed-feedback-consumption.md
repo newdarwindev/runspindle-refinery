@@ -84,3 +84,7 @@ local interpreter; isolated runner image qualification remains separate. Tempora
 SQLite stores are removed by unittest cleanup; subprocess fixture stores close in
 finally blocks. Source pins and separate passed/failed/not-run outcomes are in
 `docs/signed-feedback-consumption-evidence.json` when available.
+
+The later [source-bound invalidation bridge](source-feedback-invalidation.md)
+updates the exact dependency pin and adds explicit negative-observation coverage.
+This earlier create-only evidence is retained as historical qualification.

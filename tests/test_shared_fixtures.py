@@ -18,7 +18,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / 'fixtures'
 BUNDLE = FIXTURES / 'shared-v1'
-SOURCE_COMMIT = 'e8cd5779968fede213443db13a591c992cd0e183'
+SOURCE_COMMIT = 'e283957d80aebc48fb0bd3b6e2a600850ff6dc97'
 KINDS = {'feedback.observed', 'candidate.observed'}
 
 
@@ -44,7 +44,7 @@ def verify_pin(directory=FIXTURES):
         raise ValueError('wrong consumer subset')
     if manifest['component'] != 'refinery' or manifest['schema'] != pin['schema'] or manifest['origin_manifest_sha256'] != pin['origin_manifest_sha256']:
         raise ValueError('origin binding mismatch')
-    expected = {'artifact.txt', 'contract.json', 'fixturekit.py', 'golden.json', 'vectors.json'}
+    expected = {'artifact.txt', 'contract.json', 'fixturekit.py', 'golden.json', 'vectors.json', 'faults.json'}
     if set(manifest['files']) != expected:
         raise ValueError('manifest inventory mismatch')
     actual = {p.relative_to(bundle).as_posix() for p in bundle.rglob('*') if p.is_file() and '__pycache__' not in p.parts}

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
+from refinery import tether_dependency
 from refinery.feedback_collection import Material, SelectedFeedback, collect
 from refinery.feedback_use import RetainedFeedbackUse, UseRequest
 from refinery.lineage import GoldRule, OutputRevision, SourceRevision, digest
@@ -442,14 +443,14 @@ finally:
 
     def test_verified_loader_rejects_modified_signed_adapter(self) -> None:
         self.h.ingest()
-        original = Path.read_bytes
+        original = tether_dependency.bounded_file
         adapter = self.h.dep.root / "tether/slack_feedback.py"
 
         def altered(path: Path) -> bytes:
             return b"modified adapter" if path == adapter else original(path)
 
         with (
-            patch.object(Path, "read_bytes", altered),
+            patch.object(tether_dependency, "bounded_file", altered),
             self.assertRaisesRegex(ValueError, "source changed"),
         ):
             self.h.collect()

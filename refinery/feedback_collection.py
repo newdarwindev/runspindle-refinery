@@ -1,6 +1,7 @@
 """Explicit retained-feedback selection into existing durable lineage, no training."""
 
 from dataclasses import dataclass
+from threading import Event
 from typing import Any, Callable
 
 from .lineage import Feedback, GoldRule, OutputRevision, SourceRevision, _token, digest
@@ -41,12 +42,21 @@ def collect(
     approve_training: Callable[[str, str], bool] | None = None,
     source_guard: SourceFeedbackGuard | None = None,
     prior_snapshot_sha256: str | None = None,
+    cancel: Event | None = None,
 ) -> str:
     """Both approvals bind exact lineage batch; unchanged evidence checked at commit.
 
     This persists a dataset only. It never executes training/evaluation, grants
     future permission or retroactively authorizes old immutable snapshots.
     """
+    if cancel is not None and type(cancel) is not Event:
+        raise ValueError("invalid collection cancellation token")
+
+    def check_cancel() -> None:
+        if cancel is not None and Event.is_set(cancel) is True:
+            raise ValueError("collection cancelled")
+
+    check_cancel()
     if any(
         callback is None
         for callback in (
@@ -59,7 +69,9 @@ def collect(
         raise ValueError("explicit collection adapters unavailable")
     if type(selections) is not tuple or not 1 <= len(selections) <= 100:
         raise ValueError("bounded explicit selection required")
+    check_cancel()
     dependency.check(tether_store)
+    check_cancel()
     if source_guard is not None and (
         type(source_guard) is not SourceFeedbackGuard
         or source_guard.dependency is not dependency
@@ -99,6 +111,7 @@ def collect(
     materials: list[tuple[dict[str, Any], Material]] = []
     source_observations: list[dict[str, Any]] = []
     for selected in selections:
+        check_cancel()
         if (
             type(selected) is not SelectedFeedback
             or type(selected.revision) is not int
@@ -121,6 +134,7 @@ def collect(
         ]
         if len(matches) != 1:
             raise ValueError("selected immutable event unavailable")
+        check_cancel()
         retained = matches[0]
         event = retained["event"]
         if event["kind"] == "delete":
@@ -133,6 +147,7 @@ def collect(
             )
         except Exception:
             raise ValueError("source material verification unavailable") from None
+        check_cancel()
         if not allowed:
             raise ValueError("source material denied")
         if (
@@ -164,6 +179,7 @@ def collect(
             source_observation = source_guard.observe(target, material)
             source_observations.append(source_observation)
             active = active and source_observation["state"] == "unknown"
+        check_cancel()
         observed = Feedback(
             digest(
                 encode(
@@ -228,6 +244,7 @@ def collect(
         expected_snapshot = dict(prior, collection_evidence=receipt_sha)
 
     def permissions() -> None:
+        check_cancel()
         try:
             allowed = (
                 collection(batch_sha, collection_ref) is True
@@ -235,11 +252,14 @@ def collect(
             )
         except Exception:
             allowed = False
+        check_cancel()
         if not allowed:
             raise ValueError("collection or training consent denied")
 
     def check_evidence() -> None:
+        check_cancel()
         dependency.check(tether_store)
+        check_cancel()
         if source_guard is None:
             require_no_guarded_identity(db, set(originals))
         if source_guard is not None and any(
@@ -260,6 +280,7 @@ def collect(
             for key, raw in originals.items()
         ):
             raise ValueError("feedback changed during collection")
+        check_cancel()
 
     def recheck() -> None:
         check_evidence()
@@ -280,6 +301,7 @@ def collect(
 
     def checkpoint(point: str) -> None:
         if point == "before_feedback_commit":
+            check_cancel()
             recheck()
             if prior is not None:
                 if (
@@ -301,6 +323,7 @@ def collect(
                 }
                 db.put(db.db, "feedback_revalidation", digest(encode(link)), link)
             db.put(db.db, "feedback_collection", receipt_sha, receipt)
+            check_cancel()
 
     def permit_batch(sha: str, ref: str) -> bool:
         if sha != batch_sha or ref != receipt_sha:

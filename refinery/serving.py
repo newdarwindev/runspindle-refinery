@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Any, Iterator, Protocol
 
 from .evaluation import Report, _integer
-from .lineage import MAX_RECORDS, _bytes, _hash, _token, digest
+from .lineage import MAX_BYTES, MAX_RECORDS, _bytes, _hash, _token, digest
 from .storage import TYPES, Store, pack, version
 
 
@@ -169,6 +169,33 @@ class LocalServing:
     def close(self) -> None:
         self.db.close()
 
+    def _active_row(self, environment: str) -> Any:
+        """Read bounded exact persisted identity/bytes inside the caller's transaction.
+
+        The SQL projection never materializes an oversized or non-BLOB program.
+        Invalid retained state blocks observation and replacement, not repairs it.
+        """
+        _token(environment)
+        row = self.db.execute(
+            "SELECT CASE WHEN typeof(activation)='text' "
+            "AND length(CAST(activation AS BLOB)) BETWEEN 1 AND 128 THEN activation END AS activation, "
+            "CASE WHEN typeof(generation)='integer' THEN generation END, "
+            "CASE WHEN typeof(digest)='text' AND length(CAST(digest AS BLOB))=64 THEN digest END, "
+            "CASE WHEN typeof(content)='blob' AND length(content) BETWEEN 1 AND ? "
+            "THEN content ELSE NULL END FROM active WHERE environment=?",
+            (MAX_BYTES, environment),
+        ).fetchone()
+        if row is None:
+            return None
+        _token(row[0])
+        _integer(row[1], positive=True)
+        _hash(row[2])
+        _bytes(row[3])
+        if digest(row[3]) != row[2]:
+            raise ValueError("serving bytes corrupt")
+        program(row[3])
+        return row
+
     def load(
         self,
         activation_id: str,
@@ -190,10 +217,7 @@ class LocalServing:
                 "INSERT INTO calls(action,activation,digest) VALUES('load',?,?)",
                 (activation_id, candidate_sha256),
             )
-            old = self.db.execute(
-                "SELECT activation,generation,digest,content FROM active WHERE environment=?",
-                (environment,),
-            ).fetchone()
+            old = self._active_row(environment)
             if old and old[:3] == (activation_id, generation, candidate_sha256):
                 if old[3] != content:
                     raise ValueError("changed idempotent activation bytes")
@@ -210,15 +234,9 @@ class LocalServing:
 
     def readback(self, environment: str) -> Any:
         with self._transaction():
-            row = self.db.execute(
-                "SELECT activation,generation,digest,content FROM active WHERE environment=?",
-                (environment,),
-            ).fetchone()
-        if not row:
+            row = self._active_row(environment)
+        if row is None:
             return None
-        if digest(row[3]) != row[2]:
-            raise ValueError("serving bytes corrupt")
-        program(row[3])
         return {
             "activation_id": row[0],
             "generation": row[1],
@@ -228,15 +246,13 @@ class LocalServing:
     def predict(self, environment: str, text: str) -> Any:
         # One read obtains both bytes and attribution; never consult registry intent.
         with self._transaction():
-            row = self.db.execute(
-                "SELECT digest,content FROM active WHERE environment=?", (environment,)
-            ).fetchone()
-        if not row or digest(row[1]) != row[0]:
+            row = self._active_row(environment)
+        if row is None:
             raise ValueError("no verified active candidate")
-        value = program(row[1])
+        value = program(row[3])
         if text not in value["responses"]:
             raise ValueError("unsupported synthetic input")
-        return {"output": value["responses"][text], "candidate_sha256": row[0]}
+        return {"output": value["responses"][text], "candidate_sha256": row[2]}
 
 
 def _readback_matches(observed: Any, expected: Any) -> bool:

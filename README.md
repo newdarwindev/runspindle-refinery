@@ -1,8 +1,46 @@
-# runspindle-refinery
+# REFINERY — MEASURED IMPROVEMENT WITH TRACEABLE EVIDENCE
 
-Python DSPy experiments, feedback lineage and approved candidate serving.
+Improve a defined operation, not an unbounded agent.
 
-**Status: partial process-local lineage candidate; no deployed or production-ready implementation.**
+**Status: Durable offline feedback/evaluation components; actual-framework and live serving qualification remain incomplete.**
+
+Normal text describes implemented boundaries; *italic text marks upcoming work or qualification*. Neither is permission to activate services or use live accounts.
+
+## REFINERY CONNECTS FEEDBACK TO A QUALIFIED CANDIDATE
+
+**REFINERY** implements dataset lineage, retained-feedback controls, evaluation budgets, immutable candidate identity and serving-admission boundaries. An example stays attached to the exact source and output it evaluates; a score is evidence for review, never automatic authority to deploy.
+
+DSPy supplies optimization machinery. **REFINERY** supplies the operation signature, permitted examples, locked partitions, cumulative budget and exact candidate identity around it. The implemented [BootstrapFewShot adapter](specs/dspy-bootstrap-optimizer.md) calls the framework compiler for a bounded program with a scripted provider. That source implementation is not completed framework qualification or evidence of live model-quality gains.
+
+**DURABLE EVIDENCE** uses SQLite for offline records and budget reservations. [Retained-feedback use](specs/retained-feedback-use.md) checks current permission separately from collection. [Explicit revalidation](specs/feedback-revalidation.md) can create a current-pin receipt only after fresh source checks and collection/training consent; old receipts remain immutable and do not inherit new permission. [Serving readback integrity](specs/serving-readback-integrity.md) keeps evaluated bytes distinct from claimed outcomes.
+
+**CANDIDATE SELECTION** preserves dataset, split, provider and content identity. It does not turn a cached result into authority, a teacher answer into verified gold, or an uncertain budget reservation into free spending.
+
+*Upcoming qualification includes the required pinned DSPy runtime, representative real-data evaluation, actual provider cost/quality measurement and approved production serving. Collection, training use, evaluation and deployment remain separate decisions; there is no automatic production improvement claim.*
+
+## ENGINEERING MAP
+
+| Responsibility | Contract and evidence |
+| --- | --- |
+| Offline criteria | [Issue #1 acceptance map](specs/issue1-acceptance.md) |
+| Framework boundary | [BootstrapFewShot](specs/dspy-bootstrap-optimizer.md) · [Preparation candidate](specs/dspy-preparation-candidate.md) |
+| Feedback continuity | [Revalidation contract](specs/feedback-revalidation.md) · [Evidence](docs/feedback-revalidation-evidence.json) |
+| Data and budget durability | [Durable offline model](specs/durable-offline.md) · [Budget ownership](specs/budget-settlement-ownership.md) |
+| Candidate use | [Serving authority](specs/serving-dispatch-authority.md) · [Readback integrity](specs/serving-readback-integrity.md) |
+
+## VISUAL STORY AND PRODUCT CONTEXT
+
+[![Conceptual observations and improvement; not a runtime screenshot](https://newdarwindev.github.io/runspindle_for_bloomberg/gallery/24.webp)](https://newdarwindev.github.io/runspindle_for_bloomberg/assets/Runspindle_Gallery_Index.html#page-24)
+
+**Conceptual illustration, not implementation evidence:** “Observations and improvement,” gallery page 24. The asset remains hosted by the [Runspindle for Bloomberg source library](https://github.com/newdarwindev/runspindle_for_bloomberg/blob/a109172363736d4312d303e292f8c0d3a857e394/ASSETS.md); it is linked here, not copied or relicensed. The gallery uses fictional businesses and synthetic values. No Bloomberg affiliation, endorsement, live integration or measured savings is implied.
+
+- [Open the exact slide in the 37-page gallery](https://newdarwindev.github.io/runspindle_for_bloomberg/assets/Runspindle_Revised_Gallery.pdf#page=24) · [Original 29-page UI gallery](https://newdarwindev.github.io/runspindle_for_bloomberg/assets/Runspindle-UI-gallery.pdf).
+- [Product concept: 16-page brief](https://github.com/newdarwindev/runspindle_for_bloomberg/blob/a109172363736d4312d303e292f8c0d3a857e394/assets/runspindle_bloomberg_product.pdf) · [40 proposed workflow scenarios](https://github.com/newdarwindev/runspindle_for_bloomberg/blob/a109172363736d4312d303e292f8c0d3a857e394/assets/runspindle_bloomberg_workflows.csv).
+- [Research proposal: maintained workflows under explicit authority](https://github.com/newdarwindev/runspindle_for_bloomberg/blob/a109172363736d4312d303e292f8c0d3a857e394/assets/runspindle-paper.pdf) · [Full-cost model, not measured savings](https://github.com/newdarwindev/runspindle_for_bloomberg/blob/a109172363736d4312d303e292f8c0d3a857e394/economics/README.md).
+
+These materials explain the product thesis: useful work should leave a checkable record. Their conceptual scenes do not supersede this repository's implementation evidence or acceptance gates.
+
+## DEVELOPMENT AND ACCEPTANCE
 
 This repository is one boundary of [Runspindle](https://github.com/newdarwindev/runspindle). Repository boundaries do not require one microservice each.
 
@@ -25,16 +63,7 @@ The [pinned shared fixture consumer](docs/SHARED_FIXTURES.md) tests refinery fee
 
 Run `python3 tools/validate.py` for all implemented structural, language, fixture, artifact and mutation checks in this repository. The same entrypoint runs on trusted `main` and `ci/*` pushes and manual qualification using disposable Strix x64 guests. Logs include the checkout SHA, image/tool identities, command results and applicable artifact checksums. Unimplemented builds and product acceptance remain explicit in `STATUS.json`; blocked acceptance workflows retain their failing conclusions. ARM64 and native macOS qualification remain pending.
 
-## Desired technical direction
 
-Measured workflow improvement: this component contributes to turning authorized one-off work into
-repeatable, maintained cross-application workflows. Scoped access, managed
-sessions, explicit human exceptions and evaluated DSPy candidates are intended
-to compose into that capability; no automatic improvement or live integration
-is implied.
+The [issue #1 acceptance map](specs/issue1-acceptance.md) identifies offline criteria and the separate pinned DSPy prerequisite.
 
-Read [the component-specific technical intent](specs/desired-intent.md) for its
-interfaces, privacy boundaries, failure cases and acceptance obligations. Current
-implementation and evidence limits above remain unchanged.
-
-The [issue #1 acceptance map](specs/issue1-acceptance.md) identifies each offline criterion, its existing executable assertions, and the separate pinned DSPy prerequisite.
+Read [the component-specific technical intent](specs/desired-intent.md) for interfaces, privacy boundaries and acceptance obligations.

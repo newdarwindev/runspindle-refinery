@@ -252,6 +252,53 @@ print(len(calls))
                         invoke(self.path)
                     spy.assert_not_called()
 
+    def test_cached_result_requires_content_addressed_identity(self) -> None:
+        original, _, _, _ = invoke(self.path)
+        # Internally valid payload/digest is insufficient if the object identity
+        # named by the completion row is not the digest of those exact bytes.
+        with storage.Store(self.path) as store:
+            with store.transaction() as tx:
+                store.put(tx, "selection", "0" * 64, original)
+                tx.execute("UPDATE experiments SET report=?", ("0" * 64,))
+            before = tuple(store.db.iterdump())
+        with patch.object(
+            ev.ScriptedProvider, "complete", side_effect=AssertionError("dispatch")
+        ) as spy:
+            with self.assertRaisesRegex(ValueError, "selection result identity"):
+                invoke(self.path)
+            spy.assert_not_called()
+        with storage.Store(self.path) as store:
+            self.assertEqual(tuple(store.db.iterdump()), before)
+        fresh = self.child("never")
+        self.assertNotEqual(fresh.returncode, 0)
+        self.assertIn("selection result identity changed", fresh.stderr)
+
+    def test_cached_result_identity_guard_mutation_is_detected(self) -> None:
+        original, _, _, _ = invoke(self.path)
+        with storage.Store(self.path) as store:
+            with store.transaction() as tx:
+                store.put(tx, "selection", "0" * 64, original)
+                tx.execute("UPDATE experiments SET report=?", ("0" * 64,))
+        source = (ROOT / "refinery/durable_optimization.py").read_text()
+        anchor = "if digest(encode(result)) != row[2]:"
+        self.assertEqual(source.count(anchor), 1)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "mutant.py"
+            path.write_text(source.replace(anchor, "if False:"))
+            spec = importlib.util.spec_from_file_location(
+                "refinery.mutant_identity", path
+            )
+            if spec is None or spec.loader is None:
+                self.fail("missing mutation loader")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            with patch(__name__ + ".run", module.run):
+                recovered, calls, _, _ = invoke(self.path)
+            self.assertEqual(recovered, original)
+            self.assertEqual(calls, [])
+            # The broken guard returns evidence under a false content identity.
+            self.assertNotEqual(digest(storage.pack(recovered)), "0" * 64)
+
     def test_new_claim_rejects_consumed_provider_without_writes(self) -> None:
         with storage.Store(self.path) as store:
             snapshot, _, _ = fixture(store)

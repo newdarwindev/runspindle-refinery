@@ -123,6 +123,8 @@ def run(
                 raise ValueError("immutable selection conflict")
             if row[1] == "complete":
                 result = db.get("selection", row[2])
+                if digest(encode(result)) != row[2]:
+                    raise ValueError("selection result identity changed")
                 check_result_binding(result)
                 if result.status == "selected":
                     if (

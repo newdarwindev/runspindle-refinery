@@ -37,7 +37,7 @@ MUTATIONS = {
     ),
     "serving_attribution": (
         "serving.py",
-        'return {"output": value["responses"][text], "candidate_sha256": row[0]}',
+        'return {"output": value["responses"][text], "candidate_sha256": row[2]}',
         'return {"output": value["responses"][text], "candidate_sha256": "0" * 64}',
         "test_durable.ServingTests.test_load_readback_actual_output_and_failed_load_preserves_prior",
     ),

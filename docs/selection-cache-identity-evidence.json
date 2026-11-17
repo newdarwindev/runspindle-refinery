@@ -1,0 +1,41 @@
+{
+  "classification": "synthetic_component_cache_integrity",
+  "base_commit": "5f5e5f47acf4bffcb58b67ad981876f0b61624d4",
+  "issues": [
+    16,
+    5
+  ],
+  "python": "3.12.14",
+  "source_sha256": {
+    "refinery/durable_optimization.py": "79129f220bc5ca6d4c400852f98d226d9c4df982cb9eca1644f0b90f88dcfe4e",
+    "tests/test_durable_optimization.py": "5de1d2e0013b8c9c65fe9643a4372072d15c6e40b2afe24ebd161a762a19c3f5"
+  },
+  "invariant": "A cached selection must hash to the exact immutable identity referenced by its completed run, in addition to matching configuration and payload checksum.",
+  "focused": {
+    "normal": 10,
+    "optimized": 10,
+    "status": "passed",
+    "independent_review": "no_blocking_findings; both focused modes independently passed"
+  },
+  "aggregate": {
+    "command": "RUNSPINDLE_TETHER_SOURCE=<prepared exact dependency pin> PATH=<requirements-quality prepared environment>:$PATH python3 tools/validate.py",
+    "status": "passed",
+    "tests_run": 444,
+    "tests_skipped": 0,
+    "static_new_diagnostics": 0,
+    "static_existing_debt": 522,
+    "source_boundary": "stable dirty worktree at base; implementation and test hashes above identify tested bytes; evidence document added afterward"
+  },
+  "initial_unprepared_run": "failed: absent Tether source and default interpreter missing Ruff; repeated with explicit prepared inputs",
+  "observations": [
+    "false content identity rejected without provider dispatch or database changes",
+    "fresh process rejects the same false identity",
+    "removing guard returns result under a false identity, detecting the invariant violation",
+    "valid completed cache recovery remains byte-identical with zero calls"
+  ],
+  "limitations": [
+    "No authentication of storage or defense against coherent rewriting of result and content identity",
+    "No DSPy optimizer, live provider, production or parent-issue completion claim",
+    "Full optimized aggregate not run; focused optimized passed"
+  ]
+}

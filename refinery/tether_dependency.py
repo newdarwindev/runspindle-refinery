@@ -5,9 +5,9 @@ import json
 import os
 import selectors
 import stat
-import time
 import subprocess
 import sys
+import time
 from pathlib import Path
 from threading import Lock
 from types import ModuleType

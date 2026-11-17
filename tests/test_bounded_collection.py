@@ -1,6 +1,7 @@
 """Real retained stores and owned subprocess limits; no live providers or installs."""
 
 import contextlib
+import importlib
 import json
 import os
 import socket
@@ -14,10 +15,12 @@ from threading import Event, Lock, Thread
 from typing import Any
 from unittest.mock import patch
 
-import test_feedback_collection as fixtures
 from refinery import tether_dependency as dependency
 from refinery.feedback_collection import SelectedFeedback, collect
 from refinery.lineage import digest
+
+# Preserve unittest discovery's verified dependency singleton.
+fixtures = importlib.import_module("test_feedback_collection")
 
 
 class CancellationTests(unittest.TestCase):

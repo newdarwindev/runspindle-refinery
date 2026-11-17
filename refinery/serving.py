@@ -44,6 +44,19 @@ class Policy:
 
 
 @dataclass(frozen=True)
+class SamplePolicy(Policy):
+    """Separate stored type; legacy Policy bytes and approvals stay unchanged."""
+
+    min_heldout_cases: int = 1
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        _integer(self.min_heldout_cases, positive=True)
+        if self.min_heldout_cases > MAX_RECORDS:
+            raise ValueError("unsupported heldout sample bound")
+
+
+@dataclass(frozen=True)
 class Approval:
     candidate_sha256: str
     evaluation_sha256: str
@@ -63,7 +76,7 @@ class Approval:
             _token(value)
 
 
-TYPES.update({"Policy": Policy, "Approval": Approval})
+TYPES.update({"Policy": Policy, "SamplePolicy": SamplePolicy, "Approval": Approval})
 
 
 class ServingAdapter(Protocol):
@@ -311,7 +324,9 @@ class Registry:
 
     def qualify(self, api_version, experiment_id, policy: Policy):
         version(api_version)
-        policy.__post_init__()
+        if type(policy) not in (Policy, SamplePolicy):
+            raise ValueError("unsupported serving policy type")
+        type(policy).__post_init__(policy)
         experiment = self.store.get("experiment", experiment_id)
         row = self.store.db.execute(
             "SELECT state,report FROM experiments WHERE identity=?", (experiment_id,)
@@ -336,6 +351,8 @@ class Registry:
         ):
             raise ValueError("evaluation policy gate blocked")
         baseline, candidate_count, denominator = _score_counts(report)
+        if isinstance(policy, SamplePolicy) and denominator < policy.min_heldout_cases:
+            raise ValueError("insufficient heldout sample count")
         if (
             candidate_count * 1_000_000 < policy.min_quality_ppm * denominator
             or (candidate_count - baseline) * 1_000_000

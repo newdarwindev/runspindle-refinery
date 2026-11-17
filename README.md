@@ -18,6 +18,22 @@ DSPy supplies optimization machinery. **REFINERY** supplies the operation signat
 
 *Upcoming qualification includes the required pinned DSPy runtime, representative real-data evaluation, actual provider cost/quality measurement and approved production serving. Collection, training use, evaluation and deployment remain separate decisions; there is no automatic production improvement claim.*
 
+## FROM A CORRECTION TO AN EVALUATED CANDIDATE
+
+The improvement loop must preserve what the person corrected and what they authorized. The following scenarios distinguish current evidence handling from *upcoming operation-specific/live qualification*.
+
+### CORRECT THE PACK SIZE WITHOUT TRAINING ON THE WRONG ANSWER
+
+A bakery operator corrects a pack-size assumption in the morning preparation result. **REFINERY** has [retained-feedback collection](specs/retained-feedback-collection.md) and [fresh use checks](specs/retained-feedback-use.md) to bind eligible material to exact source/output identity, consent and a locked split. A correction is not blanket endorsement of the original answer or permission to retain an entire session.
+
+*The complete bakery workflow will interpret the task-specific correction, verify the revised quantities, keep conflicting or ambiguous feedback out of gold examples, and compare a new candidate on held-out preparation cases before any serving approval.* The outcome sought is a demonstrably better recurring preparation operation, not automatic deployment after a reaction. [Pack-size concept, slide 17](https://newdarwindev.github.io/runspindle_for_bloomberg/assets/Runspindle_Revised_Gallery.pdf#page=17) · [Optimizer boundary](specs/dspy-bootstrap-optimizer.md).
+
+### KEEP FEEDBACK HISTORY HONEST THROUGH AN UPGRADE
+
+A maintainer upgrades the pinned Tether source while retaining an earlier dataset receipt. **REFINERY'S EXPLICIT REVALIDATION**, merged in [PR #50](https://github.com/newdarwindev/runspindle-refinery/pull/50), leaves the old receipt immutable and denied by the current-pin use gate. For the one supported transition, fresh source observations and collection/training consent may create a new receipt linked to the old one only when the exact batch, fences, selections and split match.
+
+The implemented outcome is attributable continuity, not rewritten history or inherited permission. Changed, deleted, forged or incomplete material fails closed; subsequent experiment use still needs fresh approval. [Upgrade contract](specs/feedback-revalidation.md) · [Old/new-process evidence](docs/feedback-revalidation-evidence.json). *Additional dependency transitions and live feedback/provider qualification require their own verification; this path does not generalize them automatically.*
+
 ## ENGINEERING MAP
 
 | Responsibility | Contract and evidence |

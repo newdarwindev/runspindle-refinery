@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from refinery import storage
+from refinery import storage, tether_dependency
 from refinery.feedback_collection import Material, SelectedFeedback, collect
 from refinery.lineage import GoldRule, OutputRevision, SourceRevision, digest
 from refinery.tether_dependency import TetherDependency
@@ -315,12 +315,15 @@ class CollectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TetherDependency(self.root / "missing")
         path = self.dep.root / "tether/feedback.py"
-        read = Path.read_bytes
+        read = tether_dependency.bounded_file
 
         def altered(p: Path) -> bytes:
             return b"changed" if p == path else read(p)
 
-        with patch.object(Path, "read_bytes", altered), self.assertRaises(ValueError):
+        with (
+            patch.object(tether_dependency, "bounded_file", altered),
+            self.assertRaises(ValueError),
+        ):
             self.collect()
         with (
             patch.dict(sys.modules, {"tether.feedback": object()}),

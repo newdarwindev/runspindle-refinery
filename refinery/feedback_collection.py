@@ -40,6 +40,7 @@ def collect(
     approve_collection: Callable[[str, str], bool] | None = None,
     approve_training: Callable[[str, str], bool] | None = None,
     source_guard: SourceFeedbackGuard | None = None,
+    prior_snapshot_sha256: str | None = None,
 ) -> str:
     """Both approvals bind exact lineage batch; unchanged evidence checked at commit.
 
@@ -65,6 +66,24 @@ def collect(
     ):
         raise ValueError("unverified source guard")
     db: Any = store
+    prior: Any = None
+    prior_receipt: Any = None
+    prior_bytes = prior_receipt_bytes = None
+    if prior_snapshot_sha256 is not None:
+        # Explicit revalidation, never a receipt rewrite or inherited consent.
+        db.lineage(prior_snapshot_sha256)
+        prior = db.get("lineage", prior_snapshot_sha256)
+        prior_bytes = pack(prior)
+        prior_receipt = db.get("feedback_collection", prior["collection_evidence"])
+        prior_receipt_bytes = pack(prior_receipt)
+        if (
+            digest(prior_bytes) != prior_snapshot_sha256
+            or digest(prior_receipt_bytes) != prior["collection_evidence"]
+            or prior_receipt.get("dependency_commit")
+            != "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d"
+            or dependency.pin["commit"] != "ae5ac216b45ca413283e4200c0a4a61054998b58"
+        ):
+            raise ValueError("unsupported feedback revalidation transition")
     resolve: Any = resolve_material
     verify: Any = verify_material
     collection: Any = approve_collection
@@ -197,6 +216,16 @@ def collect(
         "scope": "exact_batch_only_not_execution_authority",
     }
     receipt_sha = digest(encode(receipt))
+    expected_snapshot = None
+    if prior is not None:
+        # Only provenance and fresh approval references may change. Selection,
+        # source fences, dataset exclusions and locked partitions cannot drift.
+        historical = dict(prior_receipt)
+        for field in ("dependency_commit", "collection_ref", "training_ref"):
+            historical[field] = receipt[field]
+        if historical != receipt or encode(prior["batch"]) != encode(batch):
+            raise ValueError("feedback revalidation content changed")
+        expected_snapshot = dict(prior, collection_evidence=receipt_sha)
 
     def permissions() -> None:
         try:
@@ -252,6 +281,25 @@ def collect(
     def checkpoint(point: str) -> None:
         if point == "before_feedback_commit":
             recheck()
+            if prior is not None:
+                if (
+                    pack(db.get("lineage", prior_snapshot_sha256)) != prior_bytes
+                    or pack(db.get("feedback_collection", prior["collection_evidence"]))
+                    != prior_receipt_bytes
+                ):
+                    raise ValueError("historical feedback changed during revalidation")
+                expected_sha = digest(encode(expected_snapshot))
+                if encode(db.get("lineage", expected_sha)) != encode(expected_snapshot):
+                    raise ValueError("feedback revalidation dataset changed")
+                link = {
+                    "version": "feedback_revalidation.v1",
+                    "prior_snapshot_sha256": prior_snapshot_sha256,
+                    "snapshot_sha256": expected_sha,
+                    "prior_receipt_sha256": prior["collection_evidence"],
+                    "receipt_sha256": receipt_sha,
+                    "scope": "fresh_collection_only_not_use_or_execution_authority",
+                }
+                db.put(db.db, "feedback_revalidation", digest(encode(link)), link)
             db.put(db.db, "feedback_collection", receipt_sha, receipt)
 
     def permit_batch(sha: str, ref: str) -> bool:
@@ -269,5 +317,8 @@ def collect(
             verify_collection=permit_batch,
             verify_actor=lambda f: actors.get(digest(encode(f))),
             checkpoint=checkpoint,
+            expected_snapshot_sha256=digest(encode(expected_snapshot))
+            if expected_snapshot is not None
+            else None,
         )
     )

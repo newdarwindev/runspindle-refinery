@@ -9,7 +9,7 @@ from types import ModuleType
 from typing import Any
 
 PIN = Path(__file__).resolve().parents[1] / "dependencies/tether-feedback.json"
-COMMIT = "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d"
+COMMIT = "ae5ac216b45ca413283e4200c0a4a61054998b58"
 ORDER = (
     "__init__",
     "sanitization",

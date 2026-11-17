@@ -275,8 +275,11 @@ class Store:
         verify_collection=None,
         verify_actor=None,
         checkpoint=lambda _: None,
+        expected_snapshot_sha256=None,
     ):
         version(api_version)
+        if expected_snapshot_sha256 is not None:
+            lin._hash(expected_snapshot_sha256)
         # Bound generators before allocating, and bind consent to the exact batch.
         sources = lin._bounded(sources, lin.SourceRevision)
         outputs = lin._bounded(outputs, lin.OutputRevision)
@@ -319,6 +322,11 @@ class Store:
                 "batch_sha256": batch_sha,
             }
             identity = lin.digest(pack(snapshot))
+            if (
+                expected_snapshot_sha256 is not None
+                and identity != expected_snapshot_sha256
+            ):
+                raise ValueError("feedback revalidation dataset changed")
             for source in sources:
                 family_keys = ["source:" + source.source_id]
                 family_keys += [

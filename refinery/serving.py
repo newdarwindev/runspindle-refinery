@@ -11,7 +11,7 @@ import math
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Iterator, Protocol
+from typing import Any, Callable, Iterator, Protocol, cast
 
 from .evaluation import Report, _integer
 from .lineage import MAX_BYTES, MAX_RECORDS, _bytes, _hash, _token, digest
@@ -407,6 +407,102 @@ class Registry:
             if row
             else {"generation": 0, "active": None, "pending": None}
         )
+
+    def observe(
+        self, api_version: str, environment: str, adapter: ServingAdapter
+    ) -> dict[str, Any]:
+        """Observe current loader state without changing historical activation outcomes.
+
+        The trusted readback is not an authority grant or an atomic cross-store
+        guarantee. Registry changes during that callback reject the observation.
+        """
+        cast(Callable[[str], None], version)(api_version)
+        _token(environment)
+
+        def binding() -> tuple[Any, Any, Any, Any]:
+            state = self.state(environment)
+            _integer(state["generation"])
+            expected, candidate_bytes = None, None
+            if state["active"] is not None:
+                key = state["active"]
+                _hash(key)
+                candidate = self.store.get("candidate", key)
+                candidate_bytes = pack(candidate)
+                if (
+                    digest(candidate_bytes) != key
+                    or candidate["environment"] != environment
+                    or digest(candidate["content"]) != candidate["candidate_sha256"]
+                ):
+                    raise ValueError("active candidate identity changed")
+                program(candidate["content"])
+                active = self.store.db.execute(
+                    "SELECT identity,generation FROM activations WHERE environment=? "
+                    "AND candidate=? AND state='active' ORDER BY generation DESC LIMIT 1",
+                    (environment, key),
+                ).fetchone()
+                if active is None:
+                    raise ValueError("active activation unavailable")
+                _token(active[0])
+                _integer(active[1], positive=True)
+                if active[1] > state["generation"]:
+                    raise ValueError("active generation changed")
+                expected = {
+                    "activation_id": active[0],
+                    "generation": active[1],
+                    "candidate_sha256": candidate["candidate_sha256"],
+                }
+            pending = None
+            if state["pending"] is not None:
+                pending = self._intent(state["pending"])
+                if (
+                    pending[:2] != (environment, state["generation"])
+                    or pending[3] != state["active"]
+                    or pending[4] not in {"intent", "unknown"}
+                ):
+                    raise ValueError("pending activation identity changed")
+            return state, expected, candidate_bytes, pending
+
+        with self.store.transaction():
+            captured = binding()
+        state, expected, _, _ = captured
+        available = True
+        try:
+            observed = adapter.readback(environment)
+            if observed is not None:
+                if not _readback_matches(observed, observed):
+                    raise ValueError("invalid readback shape")
+                _token(observed["activation_id"])
+                _integer(observed["generation"], positive=True)
+                _hash(observed["candidate_sha256"])
+                observed = dict(observed)
+        except Exception:
+            available, observed = False, None
+        with self.store.transaction():
+            if binding() != captured:
+                raise ValueError("registry changed during observation")
+        status = (
+            "unavailable"
+            if not available
+            else "pending"
+            if state["pending"] is not None
+            else "empty"
+            if expected is None and observed is None
+            else "current"
+            if expected is not None and _readback_matches(observed, expected)
+            else "drift"
+        )
+        return {
+            "version": "runspindle.serving-observation.v1",
+            "environment": environment,
+            "generation": state["generation"],
+            "active_candidate": state["active"],
+            "pending_activation": state["pending"],
+            "candidate_sha256": expected["candidate_sha256"] if expected else None,
+            "observed_candidate_sha256": observed["candidate_sha256"]
+            if observed
+            else None,
+            "status": status,
+        }
 
     def begin(
         self,

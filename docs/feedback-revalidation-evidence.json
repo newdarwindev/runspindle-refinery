@@ -1,0 +1,105 @@
+{
+  "classification": "isolated_component_feedback_revalidation",
+  "issues": [
+    15,
+    4
+  ],
+  "base_commit": "f8a3f4199994f65ee42bbf2d9cfcae0494dae03d",
+  "python": "3.12.14",
+  "source_sha256": {
+    "dependencies/tether-feedback.json": "480116946e7d1aeaf95aeb4f666dc3aeb58dc12bdbab0fe94287b0e7a5325b86",
+    "refinery/feedback_collection.py": "f396b2949e1796b86249c041b9554f689f372d093fec7d06ede1b59ae6ad3264",
+    "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+    "refinery/tether_dependency.py": "870e8229bd8dc6131190842183eef7cbf7a86c93635fb724c3c50bb6671a3f8a",
+    "tests/test_feedback_revalidation.py": "afc15a028e00abaeafa5d07b0ee43466e02dd6c9c434ec5e70f6ac29181c42ed",
+    "tests/test_signed_feedback_collection.py": "d758c578c974abf59ae18d0e3a0a81b82635a28a5885326a71a55fea66353d0f",
+    "tools/qualify_feedback_revalidation.py": "fbf0f388da86032e71fe7e13dc306e72b8a3bc55410883f6fda9d4a6671b9681"
+  },
+  "aggregate": {
+    "status": "passed",
+    "checks": [
+      {
+        "id": "reproducible-inputs",
+        "status": "passed"
+      },
+      {
+        "id": "scaffold",
+        "status": "passed"
+      },
+      {
+        "id": "static-quality",
+        "status": "passed"
+      },
+      {
+        "id": "repository-hygiene",
+        "status": "passed"
+      },
+      {
+        "id": "check-artifacts",
+        "status": "passed"
+      },
+      {
+        "id": "check-paper",
+        "status": "passed"
+      },
+      {
+        "id": "check-references",
+        "status": "passed"
+      },
+      {
+        "id": "python-tests",
+        "status": "passed",
+        "tests_run": 454,
+        "tests_skipped": 0
+      },
+      {
+        "id": "distributable-build",
+        "status": "not_applicable"
+      },
+      {
+        "id": "evaluation-mutations",
+        "status": "passed"
+      },
+      {
+        "id": "durable-mutations",
+        "status": "passed"
+      }
+    ],
+    "source_boundary": "stable dirty worktree at base, all executable and dependency bytes identified above; evidence document added afterward"
+  },
+  "focused": {
+    "tests": 10,
+    "normal": "passed",
+    "optimized": "passed",
+    "independent_review": "passed after correcting repeat-after-conflict actual-snapshot binding"
+  },
+  "old_to_new_qualification": {
+    "command": "python3 tools/qualify_feedback_revalidation.py --previous-refinery <clean-f8a3f41> --previous-tether <clean-c3fbfb9> --current-tether <clean-ae5ac21>",
+    "previous_refinery": "f8a3f4199994f65ee42bbf2d9cfcae0494dae03d",
+    "previous_tether": "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
+    "current_tether": "ae5ac216b45ca413283e4200c0a4a61054998b58",
+    "status": "passed",
+    "fresh_process_repeat": "passed",
+    "provider_effects": 0,
+    "temporary_state_cleanup": true,
+    "previous_snapshot": "a9639f92ffb92a9249b0e2a7c58bf44ca4f3ff382c2f76ce0d6947ef65d185b4",
+    "current_snapshot": "efe775578ca3914b66faf080b06dd976fc6420ddf95d43c7d185c15071df3e60"
+  },
+  "failure_observations": [
+    "old provenance stays immutable and unusable under new pin",
+    "fresh collection/training/material denial leaves store unchanged",
+    "changed feedback, seed, receipt scope and source fences deny revalidation",
+    "cancellation or historical mutation inside commit rolls back",
+    "repeat after conflicting feedback denies before writes even if expected snapshot already exists",
+    "removing actual-proposal guard reproduces changed dataset and incorrect continuity link"
+  ],
+  "interrupted_run": "unknown after cloud restart; fresh aggregate above supersedes, no pass inferred",
+  "limitations": [
+    "Synthetic identities, material and consent authorities only; no live Slack/native or provider qualification",
+    "Explicit caller opt-in, no automatic migration or old-consent inheritance",
+    "Only the reviewed c3fbfb9 to ae5ac21 transition is supported",
+    "Does not authenticate hostile storage or defend against coherent rewriting",
+    "Full optimized aggregate not run; focused optimized passed",
+    "No composition H10 or parent-issue completion claim"
+  ]
+}

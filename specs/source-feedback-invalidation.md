@@ -1,6 +1,6 @@
 # Source-bound feedback invalidation
 
-Partial Refinery #15 / parent #4. This is an explicit component bridge over pinned
+Partial Refinery #15 / parent #4. The original evidence described here used pinned
 Tether `c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d`, including its merged #31
 source-observation store and its separate feedback-message invalidation store.
 No live Slack, source/consent authority, training, deployment or migration is
@@ -76,3 +76,8 @@ lineage/families and a deliberate removed-fence mutation. Independent Admission
 dumps, provider ledgers and socket observations assert no execution/network effects.
 Scripted training denial records zero calls and zero claims. No real optimizer,
 provider, live account, paid effect, service, backup or permission change occurs.
+
+The original evidence above used the historical pin. Current dependency and the
+explicit, fresh-consent path for retaining old snapshot provenance are documented
+in [feedback revalidation](feedback-revalidation.md). Older receipt identities
+are never silently rewritten or granted current use authority.

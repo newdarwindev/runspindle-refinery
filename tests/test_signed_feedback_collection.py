@@ -271,7 +271,7 @@ class SignedCollectionTests(unittest.TestCase):
         value = self.h.store.get("lineage", first)
         receipt = self.h.store.get("feedback_collection", value["collection_evidence"])
         self.assertEqual(
-            receipt["dependency_commit"], "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d"
+            receipt["dependency_commit"], "ae5ac216b45ca413283e4200c0a4a61054998b58"
         )
         self.assertEqual(
             receipt["selected"][0]["selection"]["event_sha256"],

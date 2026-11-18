@@ -1,0 +1,31 @@
+{
+  "active_canonical_json_sha256": "2f439085e18c57e109144d40bb8eab300597d88de6127fad13afc218590fdc1f",
+  "active_manifest": "offline/dependencies.json",
+  "candidate_manifest": "offline/linux-native-candidate/dependencies.json",
+  "files": {
+    "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+    "offline/historical/dependencies-before-linux-native-20261118.json": "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+    "offline/linux-native-candidate/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+    "offline/linux-native-candidate/receipt.json": "0ee90352012ee7a4eaa03f35805e12b13612d30ea2124bbb7f471ddbe81e641f",
+    "offline/linux-native-candidate/recipe.json": "ec195d38febe24319855a21ff3cf73161d468293e9ca759770c4a8f2b21d3c4d",
+    "offline/linux-native-candidate/wheelhouse.json": "e03bfd8bdb51f14ba0d10529f63b2f87d6e6c97f864c20da08c47e004c771696",
+    "offline/python-LICENSE": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
+    "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+    "offline/tokenizers-LICENSE": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+    "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e"
+  },
+  "historical_manifest": "offline/historical/dependencies-before-linux-native-20261118.json",
+  "historical_receipts": "unchanged; earlier results bind preserved historical manifest, not this new adoption",
+  "image": "python@sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93",
+  "promotion": "not_authorized",
+  "provenance": "new reviewed Linux-native closure, not recovery of original installer identity",
+  "providers": "not_authorized",
+  "python": "Python 3.14.0",
+  "qualification": "not_run",
+  "reproducibility": "same retained sealed read-only UDF required; artifact not distributed; UDF reconstruction not verified",
+  "retained_wheelhouse_artifact_sha256": "241dc8e276f8c3f3e5395f9b853edcd13e690439f1a50bde5f036e1937a69671",
+  "schema": "runspindle.reviewed-dependency-adoption.v1",
+  "scope": "isolated_offline_predict_and_optimizer_qualification_only",
+  "source_base": "052737d203b33eb0dc8a8fa811147ebbb2f0f0a2",
+  "target": "linux/arm64"
+}

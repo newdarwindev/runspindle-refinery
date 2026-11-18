@@ -1,0 +1,281 @@
+{
+  "base_unchanged": true,
+  "candidate_manifest_sha256": "c5b544140cea3fc03dce784765e76bcdcfa3ae621fe68e1a2724e466edd8515e",
+  "classification": "actual_durable_compile_and_fresh_process_recovery_with_postprocessing_failure",
+  "cleanup": "guest exited; original launchers require positive container absence; host base unchanged",
+  "comparison_excludes_only": [
+    "compile.pid",
+    "recover.pid"
+  ],
+  "guest_receipt_sha256": "0fee6ff6bf995989a04a2c6b186c0fe6dafaf5d866a6baea2e1a03eb36b750f6",
+  "guest_wrapper_default_framework_field": "not_run is a stale initialization value; two successful launcher steps prove execution",
+  "guest_wrapper_error": "ModuleNotFoundError: No module named 'tools'",
+  "guest_wrapper_status": "failed",
+  "host_exit": 0,
+  "host_receipt_sha256": "2bd8787bdd4d08f34e33e11ccb90ad8be32f6b03a584d63867833959428d8a01",
+  "isolation": "no NIC; network-none containers; original120s outer/50s child/900s guest limits",
+  "launcher_exit_codes": [
+    0,
+    0
+  ],
+  "launcher_reports": [
+    {
+      "adoption_sha256": "e7e7f997c79024dbfde658e3825a4786743e1b249005112cb6598c87ed2e79ae",
+      "compile": {
+        "framework": {
+          "attempts_sha256": "1284053748c738ad134c63d6aee34b9d2d301684309e9dae8a15731719d593d0",
+          "candidate_sha256": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "changed_task_successes": 2,
+          "compile_entries": 1,
+          "configuration_sha256": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "initial_task_failures": 2,
+          "network_attempts": 0,
+          "new_dispatches": 5,
+          "observations_match_receipts": true,
+          "reason": null,
+          "reflection_output_matches_selected": true,
+          "reflection_predict_entries": 1,
+          "runtime_identity": "1e7ec5ee52d53878c7a980d477348412cf09eb51b8cf69b3d40b44fc5ed0318d",
+          "selected_changed_instruction": true,
+          "stages": [
+            "optimization",
+            "optimization",
+            "reflection",
+            "optimization",
+            "optimization"
+          ],
+          "status": "compiled",
+          "train_only": true,
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          }
+        },
+        "identity": {
+          "attempts": "57cd65f8a66b9aa27ec24657acdfabb86d74b450371885c0a05e873da45d2ab5",
+          "binding": "be402d536ad6b2d1c22a5f39a17fae22eaa351034cf9bcde0f39ae5ea819b8f2",
+          "candidate": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "clock_ms": 0,
+          "configuration": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "result": "f600d736fd24ac8216f4f3ef4a9483967a5857a7797f5e93051c94617ad4b32a",
+          "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          },
+          "witnesses": "24a8e5c829b0b929509907407e8b6257ccf0ac9833ec578ab93f02c582fd478f"
+        },
+        "network_attempts": 0,
+        "persisted": "1be7f51abc4e46072a6a6664914e0198509874b65ab5e4ca995728a9b67b3014",
+        "phase": "compile",
+        "pid": 7,
+        "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00"
+      },
+      "recover": {
+        "framework_imports": 0,
+        "identity": {
+          "attempts": "57cd65f8a66b9aa27ec24657acdfabb86d74b450371885c0a05e873da45d2ab5",
+          "binding": "be402d536ad6b2d1c22a5f39a17fae22eaa351034cf9bcde0f39ae5ea819b8f2",
+          "candidate": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "clock_ms": 0,
+          "configuration": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "result": "f600d736fd24ac8216f4f3ef4a9483967a5857a7797f5e93051c94617ad4b32a",
+          "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          },
+          "witnesses": "24a8e5c829b0b929509907407e8b6257ccf0ac9833ec578ab93f02c582fd478f"
+        },
+        "network_attempts": 0,
+        "new_dispatches": 0,
+        "persisted": "1be7f51abc4e46072a6a6664914e0198509874b65ab5e4ca995728a9b67b3014",
+        "phase": "recover",
+        "pid": 14
+      },
+      "schema": "runspindle.gepa313-durable.v1",
+      "scope": "actual compile and fresh-process checkpoint recovery only; no heldout evaluation",
+      "sources": {
+        "refinery/__init__.py": "2a372055baae947e8aaca1df614eefd95755a18654d9db8ca93b73fb86008c61",
+        "refinery/dspy_local.py": "64dfca3fb0419641fa88ee60b87c3f545c3e7d70492f4f5d758e59db1353cb06",
+        "refinery/dspy_optimizer.py": "243c12b888c4111c497642dbc190fb5e2fe5af2abc2167ea6c907d2d2ca6b1e6",
+        "refinery/durable_dspy.py": "ae58fb3053a2b5e5d91c0f3561bbc07ea053e00ee9f10886e8afc9128c300123",
+        "refinery/durable_evaluation.py": "8b43113f498011647d0aa16f8173f0f36fecb26fd5af2ae7b64cef6da23fb2c5",
+        "refinery/durable_optimization.py": "79129f220bc5ca6d4c400852f98d226d9c4df982cb9eca1644f0b90f88dcfe4e",
+        "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+        "refinery/feedback_collection.py": "111fb5d29bda7e51a854ddf2b66a48be4996fab407ac9d7c729e2d2de72b288e",
+        "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+        "refinery/gepa_codec.py": "b55ac8d2deeac5d2852e0fa592b0df35ab26b0a1a7e4f7e7ba609e3706e7c2e4",
+        "refinery/gepa_evidence.py": "fc53abe80ef1238dcc99bcde6b550107d65125c6e9d0e771301ef5eb3674ee93",
+        "refinery/gepa_optimizer.py": "abb02a8c5a4c11a1663aed9d40fb1e54b813a0f4be3e23042d422c8fb1333d4f",
+        "refinery/gepa_runtime.py": "5e91f45746a48b04ed5368376d897f88497e164d02deb7d465cb46876f064476",
+        "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+        "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+        "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+        "refinery/schema.py": "e7f4dff84a79c9af4995f1f5dd0a54238baf618490d414e4cf0cfbddee23d138",
+        "refinery/serving.py": "c94110587390a5dc6dad9bbb89ae271bb2f652c8280ee98b451a69e012d279c2",
+        "refinery/source_feedback.py": "f9ff4938d32bae14b42e892064568d7090fdd02fcbc8b0db0ede7248bf181f5f",
+        "refinery/storage.py": "13c62d821fb4e0b3d1beb706b93346fd50440f357ddc7df16a03e3e28e0e491e",
+        "refinery/tether_dependency.py": "6d48f52fb819785be35b5fc12135ed22aeec3a8f6cbc1ad357d630871cd8d15f",
+        "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+        "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+        "tools/offline_gepa.py": "1eade7851c4807a8f6a20a43311494687297a07542d999885b96b7a519c3621c",
+        "tools/test_gepa_durable.py": "df64c314f8c20ebc519a43ce699be2882fcd74ca670b5624c48fc290430794d3",
+        "tools/test_gepa_reflection.py": "e44644a73b4ecdb8e5cc4a75289a26fc7e2ce7f09902485c420f426a60746591"
+      },
+      "status": "passed"
+    },
+    {
+      "adoption_sha256": "e7e7f997c79024dbfde658e3825a4786743e1b249005112cb6598c87ed2e79ae",
+      "compile": {
+        "framework": {
+          "attempts_sha256": "1284053748c738ad134c63d6aee34b9d2d301684309e9dae8a15731719d593d0",
+          "candidate_sha256": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "changed_task_successes": 2,
+          "compile_entries": 1,
+          "configuration_sha256": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "initial_task_failures": 2,
+          "network_attempts": 0,
+          "new_dispatches": 5,
+          "observations_match_receipts": true,
+          "reason": null,
+          "reflection_output_matches_selected": true,
+          "reflection_predict_entries": 1,
+          "runtime_identity": "1e7ec5ee52d53878c7a980d477348412cf09eb51b8cf69b3d40b44fc5ed0318d",
+          "selected_changed_instruction": true,
+          "stages": [
+            "optimization",
+            "optimization",
+            "reflection",
+            "optimization",
+            "optimization"
+          ],
+          "status": "compiled",
+          "train_only": true,
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          }
+        },
+        "identity": {
+          "attempts": "57cd65f8a66b9aa27ec24657acdfabb86d74b450371885c0a05e873da45d2ab5",
+          "binding": "be402d536ad6b2d1c22a5f39a17fae22eaa351034cf9bcde0f39ae5ea819b8f2",
+          "candidate": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "clock_ms": 0,
+          "configuration": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "result": "f600d736fd24ac8216f4f3ef4a9483967a5857a7797f5e93051c94617ad4b32a",
+          "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          },
+          "witnesses": "24a8e5c829b0b929509907407e8b6257ccf0ac9833ec578ab93f02c582fd478f"
+        },
+        "network_attempts": 0,
+        "persisted": "1be7f51abc4e46072a6a6664914e0198509874b65ab5e4ca995728a9b67b3014",
+        "phase": "compile",
+        "pid": 7,
+        "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00"
+      },
+      "recover": {
+        "framework_imports": 0,
+        "identity": {
+          "attempts": "57cd65f8a66b9aa27ec24657acdfabb86d74b450371885c0a05e873da45d2ab5",
+          "binding": "be402d536ad6b2d1c22a5f39a17fae22eaa351034cf9bcde0f39ae5ea819b8f2",
+          "candidate": "26d3abdd98bc7995bd8e98bbfcddba859eb864172297e65764a0009bb851734e",
+          "clock_ms": 0,
+          "configuration": "aef17ada9a8be46ff59984a7d643239a3d8d6a0d1a5e2a6850b3593f77439d3c",
+          "result": "f600d736fd24ac8216f4f3ef4a9483967a5857a7797f5e93051c94617ad4b32a",
+          "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+          "usage": {
+            "calls": 5,
+            "cost_microunits": 5,
+            "elapsed_ms": 0,
+            "reason": null,
+            "tokens": 5,
+            "unresolved_calls": 0
+          },
+          "witnesses": "24a8e5c829b0b929509907407e8b6257ccf0ac9833ec578ab93f02c582fd478f"
+        },
+        "network_attempts": 0,
+        "new_dispatches": 0,
+        "persisted": "1be7f51abc4e46072a6a6664914e0198509874b65ab5e4ca995728a9b67b3014",
+        "phase": "recover",
+        "pid": 14
+      },
+      "schema": "runspindle.gepa313-durable.v1",
+      "scope": "actual compile and fresh-process checkpoint recovery only; no heldout evaluation",
+      "sources": {
+        "refinery/__init__.py": "2a372055baae947e8aaca1df614eefd95755a18654d9db8ca93b73fb86008c61",
+        "refinery/dspy_local.py": "64dfca3fb0419641fa88ee60b87c3f545c3e7d70492f4f5d758e59db1353cb06",
+        "refinery/dspy_optimizer.py": "243c12b888c4111c497642dbc190fb5e2fe5af2abc2167ea6c907d2d2ca6b1e6",
+        "refinery/durable_dspy.py": "ae58fb3053a2b5e5d91c0f3561bbc07ea053e00ee9f10886e8afc9128c300123",
+        "refinery/durable_evaluation.py": "8b43113f498011647d0aa16f8173f0f36fecb26fd5af2ae7b64cef6da23fb2c5",
+        "refinery/durable_optimization.py": "79129f220bc5ca6d4c400852f98d226d9c4df982cb9eca1644f0b90f88dcfe4e",
+        "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+        "refinery/feedback_collection.py": "111fb5d29bda7e51a854ddf2b66a48be4996fab407ac9d7c729e2d2de72b288e",
+        "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+        "refinery/gepa_codec.py": "b55ac8d2deeac5d2852e0fa592b0df35ab26b0a1a7e4f7e7ba609e3706e7c2e4",
+        "refinery/gepa_evidence.py": "fc53abe80ef1238dcc99bcde6b550107d65125c6e9d0e771301ef5eb3674ee93",
+        "refinery/gepa_optimizer.py": "abb02a8c5a4c11a1663aed9d40fb1e54b813a0f4be3e23042d422c8fb1333d4f",
+        "refinery/gepa_runtime.py": "5e91f45746a48b04ed5368376d897f88497e164d02deb7d465cb46876f064476",
+        "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+        "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+        "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+        "refinery/schema.py": "e7f4dff84a79c9af4995f1f5dd0a54238baf618490d414e4cf0cfbddee23d138",
+        "refinery/serving.py": "c94110587390a5dc6dad9bbb89ae271bb2f652c8280ee98b451a69e012d279c2",
+        "refinery/source_feedback.py": "f9ff4938d32bae14b42e892064568d7090fdd02fcbc8b0db0ede7248bf181f5f",
+        "refinery/storage.py": "13c62d821fb4e0b3d1beb706b93346fd50440f357ddc7df16a03e3e28e0e491e",
+        "refinery/tether_dependency.py": "6d48f52fb819785be35b5fc12135ed22aeec3a8f6cbc1ad357d630871cd8d15f",
+        "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+        "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+        "tools/offline_gepa.py": "1eade7851c4807a8f6a20a43311494687297a07542d999885b96b7a519c3621c",
+        "tools/test_gepa_durable.py": "df64c314f8c20ebc519a43ce699be2882fcd74ca670b5624c48fc290430794d3",
+        "tools/test_gepa_reflection.py": "e44644a73b4ecdb8e5cc4a75289a26fc7e2ce7f09902485c420f426a60746591"
+      },
+      "status": "passed"
+    }
+  ],
+  "launcher_stdout_sha256": [
+    "6c6f4b53346bd02844473fa4bb78fbdb74729cd104e2b778aea5cbb44b7ccadd",
+    "6c6f4b53346bd02844473fa4bb78fbdb74729cd104e2b778aea5cbb44b7ccadd"
+  ],
+  "limits": [
+    "Synthetic completions, no live providers or model quota",
+    "No heldout evaluation, promotion, distributed authority or production qualification",
+    "Failed parent wrapper is preserved, not reclassified as passing",
+    "Exact retained UDF reproduction only; original314 lane unchanged"
+  ],
+  "offline_exact_source_validator": "both passed after extraction; no framework rerun",
+  "postprocessing_failure": "Additional parent-Python validator import failed because source directory was not on sys.path; original launchers already validated both reports before exiting0",
+  "raw_reports_equal": true,
+  "result_log_sha256": "f45a0c513c3c7586ac30322231741b3457adc31795124ef05337f9c6fc141de6",
+  "schema": 1,
+  "seconds": 203.09724645900133,
+  "source": "af55a7f061ad608eb1b903cd78ab3834a54380a7",
+  "stable_reports_equal": true,
+  "supervisor_sha256": "1c4046d07f4bddcd394c996dd065eeea96f3d03536fa7838a88d5b556a582b6c",
+  "transport_sha256": "b0db9cdf22d26d1260a7dcd6958e07f9b924ca0d5554b4737e1f7dba61e8ee35",
+  "tree": "47712326ee28923540809dfedd5248f909391db1",
+  "udf_sha256": "745bcba6a09f146e993ae45c1787db4e72a1783cb868909e69b01c47c9c6b350"
+}

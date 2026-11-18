@@ -1,0 +1,503 @@
+{
+  "adopted_manifest_canonical_json_sha256": "2f439085e18c57e109144d40bb8eab300597d88de6127fad13afc218590fdc1f",
+  "base_unchanged": true,
+  "config": "sha256:261deca7b4c0ee17ae67a04a5499437a5dc4dd52ea501a2f9da02eb6c475537b",
+  "elapsed_guest_seconds": 230.41756350000003,
+  "evidence_class": "actual_dspy_controlled_overlap_capacity",
+  "exact_adopted_manifest_match": true,
+  "guest_exit_code": 0,
+  "guest_timeout_seconds": 900,
+  "host_cleanup": "guest exited and no matching QEMU process remained",
+  "image": "sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93",
+  "input_sha256": {
+    "capacity-transport.iso": "621654ae5b83688135a2c540ca1aac91167e75aafb39f8a8c034e6c77734643b",
+    "native-wheelhouse-v2.udf.iso": "241dc8e276f8c3f3e5395f9b853edcd13e690439f1a50bde5f036e1937a69671",
+    "ubuntu-arm64.img": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  },
+  "launcher_cleanup": "unchanged launcher requires named container absent; source cleanup requires every worker reaped",
+  "launcher_report_stdout_sha256": [
+    "ca31c3fb7154816e2cded1fae77bf3b15c66ed4a3b4a9a52273b24df064b3dc5",
+    "ca31c3fb7154816e2cded1fae77bf3b15c66ed4a3b4a9a52273b24df064b3dc5"
+  ],
+  "launcher_reports_identical": true,
+  "launcher_runs": 2,
+  "launcher_timeout_seconds": 120,
+  "native_target": "Linux aarch64",
+  "network": "guest_no_NIC_and_container_network_none",
+  "report": {
+    "cases": [
+      {
+        "final_state": {
+          "attempts_sha256": "1dee8e2e184e4dd07e2165d3263b261ccd2a4986158fce1a650fb6f79fb244af",
+          "calls": 1,
+          "cost": 1,
+          "experiments": [
+            "first"
+          ],
+          "last": 0,
+          "ledger_sha256": "a6546a694e426a3f0560c80d8d00ee36867de989a05647c2a1802bb14e364954",
+          "ledger_without_reason_sha256": "0a87435f89dba3c10f446505a9176e6df454157bb7c5762e2bb6c4f658306c23",
+          "limits": {
+            "calls": 1,
+            "cost_microunits": 1000,
+            "time_ms": 1000,
+            "tokens": 1000
+          },
+          "outcomes": [
+            "settled"
+          ],
+          "pending": 0,
+          "reason": "calls_exhausted",
+          "receipt_cost": [
+            1
+          ],
+          "receipt_present": [
+            true
+          ],
+          "receipt_tokens": [
+            1
+          ],
+          "tokens": 1
+        },
+        "held_state": {
+          "attempts_sha256": "8186d13ddd0956874cee155bd8faf868d8aff2fcb881e0a981c8ea7f2bd84d65",
+          "calls": 1,
+          "cost": 0,
+          "experiments": [
+            "first"
+          ],
+          "last": 0,
+          "ledger_sha256": "b3f61bb15dfa06986320d5aed40240a4c05bc2d4fe4eecc9a50a50c4e400c01e",
+          "ledger_without_reason_sha256": "6d124bb1a419c63b388000ffbb03beca7dfb71280a53af7e4e02e0409fb215d5",
+          "limits": {
+            "calls": 1,
+            "cost_microunits": 1000,
+            "time_ms": 1000,
+            "tokens": 1000
+          },
+          "outcomes": [
+            "unknown"
+          ],
+          "pending": 1,
+          "reason": null,
+          "receipt_cost": [
+            null
+          ],
+          "receipt_present": [
+            false
+          ],
+          "receipt_tokens": [
+            null
+          ],
+          "tokens": 0
+        },
+        "variant": "known",
+        "workers": [
+          {
+            "attempt_count": 1,
+            "candidate_present": false,
+            "candidate_sha256": null,
+            "compile_entries": 1,
+            "configuration_sha256": "652a102145548a14223c17d61ebde6a004c9e9324f61e6707e907dbba3d45d8e",
+            "network_attempts": 0,
+            "new_dispatches": 1,
+            "result_reason": "calls_exhausted",
+            "retry_reason": "calls_exhausted",
+            "role": "first",
+            "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+            "source_sha256": {
+              "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+              "offline/dependency-adoption.json": "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206",
+              "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+              "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e",
+              "refinery/dspy_optimizer.py": "8a5d519cebc906cee1bc6f4790c0dd83cfa149c54292d3b29ab6e87a007dc1c6",
+              "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+              "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+              "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+              "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+              "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+              "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+              "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+              "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+              "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+              "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+              "tools/dspy_fresh_process.py": "e9492cef19f3b2f7398610bb0c531ecdba3f8a14c71167fd1bd87a87d513f2cd",
+              "tools/offline_dspy.py": "a89fec7810db974b6ffb8fb2a69383444e9322620f65fce0d00f3a88ad19ee15",
+              "tools/test_dspy_capacity.py": "3314d31f7eec658c74413c1106d90c6913382720d57f6a87af37583872e36496",
+              "tools/test_dspy_optimizer.py": "1705a857717effe27c23cfe5a0fe6acbdd9d115a3ae0511cf7a5da05a4408981",
+              "tools/test_dspy_ownership.py": "3d349613a3e5d90043b565244f099f4173fb92c89a94e52c67ad6a7f0b8ebc71"
+            },
+            "state": {
+              "attempts_sha256": "1dee8e2e184e4dd07e2165d3263b261ccd2a4986158fce1a650fb6f79fb244af",
+              "calls": 1,
+              "cost": 1,
+              "experiments": [
+                "first"
+              ],
+              "last": 0,
+              "ledger_sha256": "a6546a694e426a3f0560c80d8d00ee36867de989a05647c2a1802bb14e364954",
+              "ledger_without_reason_sha256": "0a87435f89dba3c10f446505a9176e6df454157bb7c5762e2bb6c4f658306c23",
+              "limits": {
+                "calls": 1,
+                "cost_microunits": 1000,
+                "time_ms": 1000,
+                "tokens": 1000
+              },
+              "outcomes": [
+                "settled"
+              ],
+              "pending": 0,
+              "reason": "calls_exhausted",
+              "receipt_cost": [
+                1
+              ],
+              "receipt_present": [
+                true
+              ],
+              "receipt_tokens": [
+                1
+              ],
+              "tokens": 1
+            },
+            "status": "blocked",
+            "train_only": true,
+            "usage": {
+              "calls": 1,
+              "cost_microunits": 1,
+              "elapsed_ms": 0,
+              "reason": "calls_exhausted",
+              "tokens": 1,
+              "unresolved_calls": 0
+            },
+            "variant": "known"
+          },
+          {
+            "attempt_count": 0,
+            "candidate_present": false,
+            "candidate_sha256": null,
+            "compile_entries": 1,
+            "configuration_sha256": "652a102145548a14223c17d61ebde6a004c9e9324f61e6707e907dbba3d45d8e",
+            "network_attempts": 0,
+            "new_dispatches": 0,
+            "result_reason": "calls_exhausted",
+            "retry_reason": "calls_exhausted",
+            "role": "second",
+            "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+            "source_sha256": {
+              "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+              "offline/dependency-adoption.json": "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206",
+              "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+              "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e",
+              "refinery/dspy_optimizer.py": "8a5d519cebc906cee1bc6f4790c0dd83cfa149c54292d3b29ab6e87a007dc1c6",
+              "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+              "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+              "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+              "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+              "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+              "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+              "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+              "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+              "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+              "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+              "tools/dspy_fresh_process.py": "e9492cef19f3b2f7398610bb0c531ecdba3f8a14c71167fd1bd87a87d513f2cd",
+              "tools/offline_dspy.py": "a89fec7810db974b6ffb8fb2a69383444e9322620f65fce0d00f3a88ad19ee15",
+              "tools/test_dspy_capacity.py": "3314d31f7eec658c74413c1106d90c6913382720d57f6a87af37583872e36496",
+              "tools/test_dspy_optimizer.py": "1705a857717effe27c23cfe5a0fe6acbdd9d115a3ae0511cf7a5da05a4408981",
+              "tools/test_dspy_ownership.py": "3d349613a3e5d90043b565244f099f4173fb92c89a94e52c67ad6a7f0b8ebc71"
+            },
+            "state": {
+              "attempts_sha256": "8186d13ddd0956874cee155bd8faf868d8aff2fcb881e0a981c8ea7f2bd84d65",
+              "calls": 1,
+              "cost": 0,
+              "experiments": [
+                "first"
+              ],
+              "last": 0,
+              "ledger_sha256": "2290ee675cdb5584b2fd57208fc0adba3c60a10b0159366be3eafcdee5e9d5cc",
+              "ledger_without_reason_sha256": "6d124bb1a419c63b388000ffbb03beca7dfb71280a53af7e4e02e0409fb215d5",
+              "limits": {
+                "calls": 1,
+                "cost_microunits": 1000,
+                "time_ms": 1000,
+                "tokens": 1000
+              },
+              "outcomes": [
+                "unknown"
+              ],
+              "pending": 1,
+              "reason": "calls_exhausted",
+              "receipt_cost": [
+                null
+              ],
+              "receipt_present": [
+                false
+              ],
+              "receipt_tokens": [
+                null
+              ],
+              "tokens": 0
+            },
+            "status": "blocked",
+            "train_only": true,
+            "usage": {
+              "calls": 1,
+              "cost_microunits": null,
+              "elapsed_ms": 0,
+              "reason": "calls_exhausted",
+              "tokens": null,
+              "unresolved_calls": 1
+            },
+            "variant": "known"
+          }
+        ]
+      },
+      {
+        "final_state": {
+          "attempts_sha256": "4f899cee4c8adb7afbd4afd3d844f58a3f59f2509d318d914ece293ec2ed42be",
+          "calls": 1,
+          "cost": 0,
+          "experiments": [
+            "first"
+          ],
+          "last": 0,
+          "ledger_sha256": "0920f4ec8b83d990a79171d8832571c9dd0d57f2b3d8c7afa2c0d8ef6f8ade5c",
+          "ledger_without_reason_sha256": "e46e0aed007b398770fcccae1943a01f9e8dc50a283bc790536658ad5c53ab52",
+          "limits": {
+            "calls": 1,
+            "cost_microunits": 1000,
+            "time_ms": 1000,
+            "tokens": 1000
+          },
+          "outcomes": [
+            "unknown"
+          ],
+          "pending": 1,
+          "reason": "calls_exhausted",
+          "receipt_cost": [
+            1
+          ],
+          "receipt_present": [
+            true
+          ],
+          "receipt_tokens": [
+            null
+          ],
+          "tokens": 0
+        },
+        "held_state": {
+          "attempts_sha256": "37bfcfe9e983c3dbf10049d38f78c1eb8177c973c5b0dadbbc657262a4fe9880",
+          "calls": 1,
+          "cost": 0,
+          "experiments": [
+            "first"
+          ],
+          "last": 0,
+          "ledger_sha256": "81d637974459013d070ea799f4e97f5c372a214afa9a1c9ae27af56e6049caac",
+          "ledger_without_reason_sha256": "e46e0aed007b398770fcccae1943a01f9e8dc50a283bc790536658ad5c53ab52",
+          "limits": {
+            "calls": 1,
+            "cost_microunits": 1000,
+            "time_ms": 1000,
+            "tokens": 1000
+          },
+          "outcomes": [
+            "unknown"
+          ],
+          "pending": 1,
+          "reason": null,
+          "receipt_cost": [
+            null
+          ],
+          "receipt_present": [
+            false
+          ],
+          "receipt_tokens": [
+            null
+          ],
+          "tokens": 0
+        },
+        "variant": "unknown_tokens",
+        "workers": [
+          {
+            "attempt_count": 1,
+            "candidate_present": false,
+            "candidate_sha256": null,
+            "compile_entries": 1,
+            "configuration_sha256": "d73f29ac0bb6080efea957fdbe8614797eff3d336fb4319125d6adceb85b9e4d",
+            "network_attempts": 0,
+            "new_dispatches": 1,
+            "result_reason": "calls_exhausted",
+            "retry_reason": "calls_exhausted",
+            "role": "first",
+            "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+            "source_sha256": {
+              "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+              "offline/dependency-adoption.json": "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206",
+              "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+              "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e",
+              "refinery/dspy_optimizer.py": "8a5d519cebc906cee1bc6f4790c0dd83cfa149c54292d3b29ab6e87a007dc1c6",
+              "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+              "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+              "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+              "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+              "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+              "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+              "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+              "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+              "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+              "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+              "tools/dspy_fresh_process.py": "e9492cef19f3b2f7398610bb0c531ecdba3f8a14c71167fd1bd87a87d513f2cd",
+              "tools/offline_dspy.py": "a89fec7810db974b6ffb8fb2a69383444e9322620f65fce0d00f3a88ad19ee15",
+              "tools/test_dspy_capacity.py": "3314d31f7eec658c74413c1106d90c6913382720d57f6a87af37583872e36496",
+              "tools/test_dspy_optimizer.py": "1705a857717effe27c23cfe5a0fe6acbdd9d115a3ae0511cf7a5da05a4408981",
+              "tools/test_dspy_ownership.py": "3d349613a3e5d90043b565244f099f4173fb92c89a94e52c67ad6a7f0b8ebc71"
+            },
+            "state": {
+              "attempts_sha256": "4f899cee4c8adb7afbd4afd3d844f58a3f59f2509d318d914ece293ec2ed42be",
+              "calls": 1,
+              "cost": 0,
+              "experiments": [
+                "first"
+              ],
+              "last": 0,
+              "ledger_sha256": "0920f4ec8b83d990a79171d8832571c9dd0d57f2b3d8c7afa2c0d8ef6f8ade5c",
+              "ledger_without_reason_sha256": "e46e0aed007b398770fcccae1943a01f9e8dc50a283bc790536658ad5c53ab52",
+              "limits": {
+                "calls": 1,
+                "cost_microunits": 1000,
+                "time_ms": 1000,
+                "tokens": 1000
+              },
+              "outcomes": [
+                "unknown"
+              ],
+              "pending": 1,
+              "reason": "calls_exhausted",
+              "receipt_cost": [
+                1
+              ],
+              "receipt_present": [
+                true
+              ],
+              "receipt_tokens": [
+                null
+              ],
+              "tokens": 0
+            },
+            "status": "blocked",
+            "train_only": true,
+            "usage": {
+              "calls": 1,
+              "cost_microunits": null,
+              "elapsed_ms": 0,
+              "reason": "calls_exhausted",
+              "tokens": null,
+              "unresolved_calls": 1
+            },
+            "variant": "unknown_tokens"
+          },
+          {
+            "attempt_count": 0,
+            "candidate_present": false,
+            "candidate_sha256": null,
+            "compile_entries": 1,
+            "configuration_sha256": "d73f29ac0bb6080efea957fdbe8614797eff3d336fb4319125d6adceb85b9e4d",
+            "network_attempts": 0,
+            "new_dispatches": 0,
+            "result_reason": "calls_exhausted",
+            "retry_reason": "calls_exhausted",
+            "role": "second",
+            "snapshot": "e4e87e6e5f32d8c24696ea8926662b2931179eac92e5b7325fe33f03c8d33c00",
+            "source_sha256": {
+              "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+              "offline/dependency-adoption.json": "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206",
+              "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525",
+              "offline/toolchain.json": "78780e0589afad80beea89118ec51359d98b90760c4e594d98f85f7d50de890e",
+              "refinery/dspy_optimizer.py": "8a5d519cebc906cee1bc6f4790c0dd83cfa149c54292d3b29ab6e87a007dc1c6",
+              "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+              "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+              "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+              "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+              "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+              "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+              "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+              "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+              "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+              "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+              "tools/dspy_fresh_process.py": "e9492cef19f3b2f7398610bb0c531ecdba3f8a14c71167fd1bd87a87d513f2cd",
+              "tools/offline_dspy.py": "a89fec7810db974b6ffb8fb2a69383444e9322620f65fce0d00f3a88ad19ee15",
+              "tools/test_dspy_capacity.py": "3314d31f7eec658c74413c1106d90c6913382720d57f6a87af37583872e36496",
+              "tools/test_dspy_optimizer.py": "1705a857717effe27c23cfe5a0fe6acbdd9d115a3ae0511cf7a5da05a4408981",
+              "tools/test_dspy_ownership.py": "3d349613a3e5d90043b565244f099f4173fb92c89a94e52c67ad6a7f0b8ebc71"
+            },
+            "state": {
+              "attempts_sha256": "37bfcfe9e983c3dbf10049d38f78c1eb8177c973c5b0dadbbc657262a4fe9880",
+              "calls": 1,
+              "cost": 0,
+              "experiments": [
+                "first"
+              ],
+              "last": 0,
+              "ledger_sha256": "0920f4ec8b83d990a79171d8832571c9dd0d57f2b3d8c7afa2c0d8ef6f8ade5c",
+              "ledger_without_reason_sha256": "e46e0aed007b398770fcccae1943a01f9e8dc50a283bc790536658ad5c53ab52",
+              "limits": {
+                "calls": 1,
+                "cost_microunits": 1000,
+                "time_ms": 1000,
+                "tokens": 1000
+              },
+              "outcomes": [
+                "unknown"
+              ],
+              "pending": 1,
+              "reason": "calls_exhausted",
+              "receipt_cost": [
+                null
+              ],
+              "receipt_present": [
+                false
+              ],
+              "receipt_tokens": [
+                null
+              ],
+              "tokens": 0
+            },
+            "status": "blocked",
+            "train_only": true,
+            "usage": {
+              "calls": 1,
+              "cost_microunits": null,
+              "elapsed_ms": 0,
+              "reason": "calls_exhausted",
+              "tokens": null,
+              "unresolved_calls": 1
+            },
+            "variant": "unknown_tokens"
+          }
+        ]
+      }
+    ],
+    "evidence_class": "actual_dspy_controlled_overlap_capacity",
+    "live_provider": "not_run",
+    "promotion": "not_authorized",
+    "reflection": "not_qualified",
+    "simultaneous_acquisition": "not_qualified",
+    "status": "passed"
+  },
+  "retained_private_raw_evidence_sha256": {
+    "capacity-report.json": "8fff6d8314386fee8f1fc56053feaee2154dd4f3b62cae8bc49cbd25a323d88b",
+    "guest-receipt.json": "97df0534f718b74cb9aa6470c7e54806e19c2a83649fc0e1404d7ce1c63232cb",
+    "host-receipt.json": "34f1fe8c258b29bc99962b1f82873e129ada80e7da7d48e19813420317dbdc1f",
+    "result.log": "6d4071855142e9469973271f37a810d28e5fb7ad6d1c297f2cb4b19de06dfb71"
+  },
+  "schema": "runspindle.native-dspy-capacity-qualification.v1",
+  "scope_limits": [
+    "controlled overlap with first completion held before settlement; not simultaneous acquisition",
+    "known and unknown_tokens variants only with zero synthetic latency",
+    "reflection not qualified; no live providers, model quota, production or promotion",
+    "same retained sealed wheelhouse; distribution and reconstruction not established"
+  ],
+  "source": "3eeccf063be41b3391cc4d1acc4ce5d528ede063",
+  "source_tree": "1f1ff7a52d56faeb037bb75d9e3ba2abdeccb404",
+  "status": "passed"
+}

@@ -31,7 +31,13 @@ MUTATIONS = {
     ),
     "approval_bypass": (
         "serving.py",
-        "if type(actor) is not str or actor != approval.actor:",
+        "if (\n"
+        "            type(actor) is not str\n"
+        "            or actor != expected_actor\n"
+        "            or self.store is not store\n"
+        "            or self.verify_approval is not verifier\n"
+        "            or pack(approval) != approval_bytes\n"
+        "        ):",
         "if False:",
         "test_durable.ServingTests.test_exact_approval_default_deny_forgery_and_changed_target_zero_loads",
     ),

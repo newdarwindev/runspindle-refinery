@@ -517,10 +517,15 @@ class Registry:
         _token(activation_id)
         _hash(candidate_key)
         _integer(expected_generation)
-        approval.__post_init__()
-        candidate = self.store.get("candidate", candidate_key)
+        if type(approval) is not Approval:
+            raise ValueError("unsupported approval type")
+        Approval.__post_init__(approval)
+        store, verifier = self.store, self.verify_approval
+        approval_bytes, expected_actor = pack(approval), approval.actor
+        candidate = store.get("candidate", candidate_key)
+        candidate_bytes = pack(candidate)
         if (
-            digest(pack(candidate)) != candidate_key
+            digest(candidate_bytes) != candidate_key
             or digest(candidate["content"]) != candidate["candidate_sha256"]
         ):
             raise ValueError("candidate identity changed")
@@ -537,13 +542,21 @@ class Registry:
         ):
             raise ValueError("approval binding conflict")
         try:
-            actor = self.verify_approval(approval) if self.verify_approval else None
+            actor = verifier(approval) if verifier else None
         except Exception:
             actor = None
-        if type(actor) is not str or actor != approval.actor:
+        if (
+            type(actor) is not str
+            or actor != expected_actor
+            or self.store is not store
+            or self.verify_approval is not verifier
+            or pack(approval) != approval_bytes
+        ):
             raise ValueError("approval denied")
-        environment = approval.environment
-        with self.store.transaction() as tx:
+        environment = candidate["environment"]
+        with store.transaction() as tx:
+            if pack(store.get("candidate", candidate_key)) != candidate_bytes:
+                raise ValueError("candidate changed during approval")
             state = self.state(environment)
             if (
                 state["generation"] != expected_generation

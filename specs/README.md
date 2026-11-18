@@ -93,3 +93,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Python 3.13 ARM64 preparation candidate](dspy-arm313-preparation-candidate.md):
   acquired pinned inputs and read-only compatibility/repeatability audit; native
   preparations and actual framework qualification remain unrun.
+
+- [Linux-native preparation candidate](linux-native-preparation-candidate.md): twice reproduced from one sealed wheelhouse; explicit review proposal, not canonical adoption or DSPy execution.

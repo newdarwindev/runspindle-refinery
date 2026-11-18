@@ -20,7 +20,39 @@ from tools import test_gepa_heldout_materialized as h
 
 
 def phases() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    a, _ = importlib.import_module("test_gepa_materialized_harness").receipts()
+    usage = dict(
+        calls=5,
+        tokens=5,
+        cost_microunits=5,
+        elapsed_ms=0,
+        unresolved_calls=0,
+        reason=None,
+    )
+    compile_identity: dict[str, Any] = {
+        k: c * 64
+        for k, c in zip(
+            (
+                "snapshot",
+                "configuration",
+                "binding",
+                "candidate",
+                "result",
+                "attempts",
+                "witnesses",
+            ),
+            "abcdefa",
+        )
+    }
+    compile_identity.update(usage=usage, clock_ms=0)
+    a: dict[str, Any] = dict(
+        identity=compile_identity,
+        persisted="f" * 64,
+        network_attempts=0,
+        framework=dict(
+            candidate_sha256=compile_identity["candidate"],
+            configuration_sha256=compile_identity["configuration"],
+        ),
+    )
     material = {
         p: dict(
             manifest="a" * 64,
@@ -40,8 +72,19 @@ def phases() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     ident = dict(
         candidate=a["identity"]["candidate"],
         configuration=a["identity"]["configuration"],
+        binding=a["identity"]["binding"],
+        report="a" * 64,
+        attempts="b" * 64,
+        clock_ms=0,
         state="complete",
-        usage=dict(calls=7, tokens=7, cost_microunits=7, unresolved_calls=0),
+        usage=dict(
+            calls=7,
+            tokens=7,
+            cost_microunits=7,
+            elapsed_ms=0,
+            unresolved_calls=0,
+            reason=None,
+        ),
     )
     b = dict(
         phase="evaluate",
@@ -111,6 +154,31 @@ class HeldoutHarnessTests(unittest.TestCase):
                 altered["materialized"]["evaluation"][key] = "changed"
                 with self.subTest(key=key), self.assertRaises(ValueError):
                     h.validate_phases(a, b, altered)
+
+    def test_exact_owner_and_complete_identity_are_mandatory(self) -> None:
+        a, b, c = phases()
+        with patch.object(h, "validate"):
+            for field in ("binding", "report", "attempts", "clock_ms", "usage"):
+                b2, c2 = copy.deepcopy((b, c))
+                b2["identity"].pop(field)
+                c2["identity"].pop(field)
+                with self.subTest(missing=field), self.assertRaises(ValueError):
+                    h.validate_phases(a, b2, c2)
+            b2, c2 = copy.deepcopy((b, c))
+            b2["identity"]["binding"] = c2["identity"]["binding"] = "f" * 64
+            with self.assertRaisesRegex(ValueError, "Session owner"):
+                h.validate_phases(a, b2, c2)
+            for bad in ("short", "Z" * 64, 123):
+                b2, c2 = copy.deepcopy((b, c))
+                b2["identity"]["report"] = c2["identity"]["report"] = bad
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    h.validate_phases(a, b2, c2)
+            b2, c2 = copy.deepcopy((b, c))
+            b2["identity"]["usage"]["elapsed_ms"] = c2["identity"]["usage"][
+                "elapsed_ms"
+            ] = False
+            with self.assertRaises(ValueError):
+                h.validate_phases(a, b2, c2)
 
     def test_replay_import_guard_precedes_components_and_restores_meta_path(
         self,

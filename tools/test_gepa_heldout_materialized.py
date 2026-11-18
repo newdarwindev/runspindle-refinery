@@ -730,10 +730,94 @@ def replay_child(
         sys.meta_path.remove(reject)
 
 
+def validate_identity(value: Any, *, compiled: bool) -> None:
+    hashes = (
+        {
+            "snapshot",
+            "configuration",
+            "binding",
+            "candidate",
+            "result",
+            "attempts",
+            "witnesses",
+        }
+        if compiled
+        else {"candidate", "configuration", "binding", "report", "attempts"}
+    )
+    keys = hashes | {"usage", "clock_ms"} | (set() if compiled else {"state"})
+    require(type(value) is dict and set(value) == keys, "exact phase identity schema")
+    for key in hashes:
+        digest_value = value[key]
+        require(
+            type(digest_value) is str
+            and len(digest_value) == 64
+            and all(c in "0123456789abcdef" for c in digest_value),
+            "phase identity digest",
+        )
+    require(
+        type(value["clock_ms"]) is int and value["clock_ms"] == 0,
+        "synthetic clock identity",
+    )
+    usage = value["usage"]
+    require(
+        type(usage) is dict
+        and set(usage)
+        == {
+            "calls",
+            "tokens",
+            "cost_microunits",
+            "elapsed_ms",
+            "unresolved_calls",
+            "reason",
+        },
+        "exact usage identity",
+    )
+    total = 5 if compiled else 7
+    require(
+        all(
+            type(usage[k]) is int and usage[k] == total
+            for k in ("calls", "tokens", "cost_microunits")
+        ),
+        "phase budget identity",
+    )
+    require(
+        type(usage["elapsed_ms"]) is int
+        and usage["elapsed_ms"] == 0
+        and type(usage["unresolved_calls"]) is int
+        and usage["unresolved_calls"] == 0
+        and usage["reason"] is None,
+        "resolved phase usage",
+    )
+    if not compiled:
+        require(value["state"] == "complete", "complete evaluation required")
+
+
 def validate_phases(
     first: dict[str, Any], second: dict[str, Any], third: dict[str, Any]
 ) -> None:
     validate(first["framework"])
+    validate_identity(first["identity"], compiled=True)
+    validate_identity(second["identity"], compiled=False)
+    validate_identity(third["identity"], compiled=False)
+    require(
+        first["identity"]["binding"] == second["identity"]["binding"],
+        "Session owner changed between phases",
+    )
+    require(
+        first["identity"]["candidate"] == first["framework"]["candidate_sha256"]
+        and first["identity"]["configuration"]
+        == first["framework"]["configuration_sha256"],
+        "compile checkpoint association changed",
+    )
+    for phase in (first, second, third):
+        value = phase["persisted"]
+        require(
+            type(value) is str
+            and len(value) == 64
+            and all(c in "0123456789abcdef" for c in value),
+            "checkpoint digest shape",
+        )
+
     require(
         [v.get("phase") for v in (first, second, third)]
         == ["compile", "evaluate", "replay"],

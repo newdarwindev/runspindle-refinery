@@ -7,6 +7,7 @@ import hashlib
 import importlib
 import io
 import json
+import re
 import socket
 import sys
 import tempfile
@@ -115,6 +116,53 @@ def observe_completion(
     return reply
 
 
+def compile_diagnostic(exc: BaseException) -> dict[str, Any]:
+    """Bounded synthetic-run exception metadata, without locals or source text."""
+    # Do not invoke arbitrary argument repr/str implementations while reporting.
+    args = [value[:1024] for value in exc.args[:4] if type(value) is str]
+    message = " | ".join(args)
+    message = re.sub(r"(?:[A-Za-z]:)?[/\\][^\s'\"<>]+", "<path>", message)
+    message = "".join(c if 32 <= ord(c) < 127 else " " for c in message)[:512]
+    frames: list[dict[str, Any]] = []
+    cursor = exc.__traceback__
+    traversed = 0
+    while cursor is not None and traversed < 64:
+        code = cursor.tb_frame.f_code
+        filename = code.co_filename
+        admitted = filename.startswith(str(ROOT) + "/") or filename.startswith("/deps/")
+        frames.append(
+            {
+                "file": Path(filename).name[:96] if admitted else "<external>",
+                "line": cursor.tb_lineno,
+                "function": code.co_name[:96] if admitted else "<external>",
+            }
+        )
+        cursor = cursor.tb_next
+        traversed += 1
+    return {
+        "exception_type": type(exc).__name__[:96],
+        "message": message,
+        "frames": frames[-12:],
+        "trace_truncated": cursor is not None or traversed > 12,
+    }
+
+
+def observe_compile(original: Any, instance: Any, *args: Any, **kwargs: Any) -> Any:
+    try:
+        return original(instance, *args, **kwargs)
+    except BaseException as exc:
+        # Diagnostics cannot authorize success or replace the original failure.
+        try:
+            print(
+                "GEPA_COMPILE_EXCEPTION "
+                + json.dumps(compile_diagnostic(exc), sort_keys=True),
+                file=sys.__stderr__,
+            )
+        except BaseException:
+            pass
+        raise
+
+
 def once(forbidden: list[str]) -> dict[str, Any]:
     from refinery import evaluation as ev
     from refinery import gepa_codec as codec
@@ -138,7 +186,7 @@ def once(forbidden: list[str]) -> dict[str, Any]:
 
     def compile_call(instance: Any, *args: Any, **kwargs: Any) -> Any:
         compile_entries.append(True)
-        result = original_compile(instance, *args, **kwargs)
+        result = observe_compile(original_compile, instance, *args, **kwargs)
         compiled_instructions.append(result.predict.signature.instructions)
         return result
 

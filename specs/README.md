@@ -115,3 +115,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Guarded materialized dataset batches](materialized-dataset-batches.md)
 
 - [Materialized durable ownership](materialized-durable-ownership.md)
+
+- [Proposed signed materialized GEPA qualification](materialized-gepa-qualification.md): bounded harness only; native receipt required.

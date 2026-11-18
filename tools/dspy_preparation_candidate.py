@@ -70,7 +70,7 @@ MAX_BYTES = 1024 * 1024 * 1024
 MAX_FILES = 30000
 
 
-def snapshot(base: Path) -> dict[str, bytes]:
+def snapshot(base: Path, *, installer_lock: bool = False) -> dict[str, bytes]:
     """Read once with descriptor-relative, no-follow opens (Linux/POSIX only)."""
     flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
     root = os.open("/", flags | os.O_DIRECTORY)
@@ -88,8 +88,22 @@ def snapshot(base: Path) -> dict[str, bytes]:
                 raise ValueError("input node limit")
             child = os.open(name, flags, dir_fd=fd)
             try:
-                mode = os.fstat(child).st_mode
+                opened = os.fstat(child)
+                mode = opened.st_mode
                 relative = prefix + name
+                if (
+                    installer_lock
+                    and relative == ".lock"
+                    and (
+                        not stat.S_ISREG(mode)
+                        or stat.S_IMODE(mode) != 0o666
+                        or opened.st_nlink != 1
+                        or opened.st_size != 0
+                    )
+                ):
+                    raise ValueError(
+                        "expected empty regular single-link mode-0666 installer .lock"
+                    )
                 if stat.S_ISDIR(mode):
                     if name == "__pycache__":
                         raise ValueError("bytecode is not a preparation input")
@@ -125,6 +139,8 @@ def snapshot(base: Path) -> dict[str, bytes]:
         raise ValueError("unreadable input or symlinks in input tree") from error
     finally:
         os.close(root)
+    if installer_lock and result.get(".lock") != b"":
+        raise ValueError("expected empty regular single-link mode-0666 installer .lock")
     return result
 
 
@@ -413,8 +429,10 @@ def candidate(
     base: Path, recipe: dict[str, Any], artifacts: Path, wheels: Path
 ) -> dict[str, Any]:
     identities = check_recipe(recipe, artifacts, wheels)
-    files = snapshot(base)
-    check_record_bytes(files)
+    files = snapshot(base, installer_lock=True)
+    # uv owns this installer metadata, not a wheel RECORD. Keep its bytes in
+    # the complete inventory; every other file still requires RECORD coverage.
+    check_record_bytes({name: data for name, data in files.items() if name != ".lock"})
     scripts = scripts_from_bytes(files)
     manifest = inventory_bytes(files)
     if {

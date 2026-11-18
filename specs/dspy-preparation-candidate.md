@@ -105,3 +105,19 @@ The strict `tools/offline_dspy.py` inventory also rejects cache directories and
 an inventory-integrity check. Synthetic inventory tests observe zero subprocess
 calls for rejected trees and detect a guard-removal mutation that restores the
 old false inventory match. No cached payload is executed by these tests.
+
+## Installer-owned lock coverage
+
+The canonical candidate auditor requires the root `.lock` installed by uv. It
+accepts only an empty, regular, single-link file with exact mode `0666`, checked
+through the same no-follow descriptor used to capture its bytes. Missing locks,
+directories, symbolic/hard links, special files, changed contents and other modes
+fail closed. Only this root path is excluded from wheel RECORD coverage; nested
+`.lock` files and all other extra files still require coverage. Generic RECORD
+validation remains strict and has no exception.
+
+The empty lock is retained in the complete byte inventory and canonical-manifest
+comparison, not removed or normalized. No canonical manifest, dependency pin or
+framework-qualification status is changed. Synthetic tests exercise these
+boundaries and preserve the original inventory schema; they do not establish
+actual ARM64 installation, DSPy execution or production qualification.

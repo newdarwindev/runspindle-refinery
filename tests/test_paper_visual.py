@@ -38,7 +38,10 @@ class PaperVisualTests(unittest.TestCase):
                 "sha256": visual.digest(b"synthetic"),
             },
             "status": "reviewed",
-            "review_receipt": "synthetic-test-only",
+            "review_receipt": {
+                "path": "docs/paper-visual/review.json",
+                "sha256": visual.digest(b"reviewed synthetic"),
+            },
             "text_anchors": {name: ["first", "label", "last"] for name in visual.NAMES},
             "links": [{"page": 8, "url": url}],
             "references": {name: visual.raster(self.image) for name in visual.NAMES},
@@ -46,6 +49,7 @@ class PaperVisualTests(unittest.TestCase):
         receipt = self.root / "docs/paper-visual/source-build.json"
         receipt.parent.mkdir(parents=True)
         receipt.write_bytes(b"synthetic")
+        (receipt.parent / "review.json").write_bytes(b"reviewed synthetic")
         (self.output / "fonts.txt").write_text(
             "name type encoding emb sub uni object ID\n---\nSynthetic Type1 Custom yes yes yes 1 0\n"
         )
@@ -168,6 +172,42 @@ class PaperVisualTests(unittest.TestCase):
             visual.inspect(self.output, self.manifest)
         with self.assertRaisesRegex(ValueError, "bounded"):
             visual.regular(self.output / "page-2.ppm", 1)
+
+    def test_review_receipt_binding_is_strict(self) -> None:
+        for value in (
+            None,
+            True,
+            "reviewed",
+            {},
+            {"path": "../outside", "sha256": "0" * 64},
+            {"path": "docs/paper-visual/review.json", "sha256": "bad"},
+        ):
+            self.manifest["review_receipt"] = value
+            with (
+                self.subTest(value=value),
+                self.assertRaisesRegex(ValueError, "receipt binding"),
+            ):
+                visual.contract(self.manifest, reviewed=True)
+
+    def test_changed_or_missing_review_receipt_fails_check(self) -> None:
+        receipt = self.root / "docs/paper-visual/review.json"
+        receipt.write_bytes(b"changed")
+        with (
+            patch.object(visual, "verify_inputs"),
+            self.assertRaisesRegex(ValueError, "review receipt mismatch"),
+        ):
+            visual.check(self.root, self.output, self.manifest)
+        receipt.unlink()
+        with (
+            patch.object(visual, "verify_inputs"),
+            self.assertRaisesRegex(ValueError, "unsafe or unreadable"),
+        ):
+            visual.check(self.root, self.output, self.manifest)
+
+    def test_candidate_contract_requires_no_review_receipt(self) -> None:
+        self.manifest["status"] = "candidate"
+        del self.manifest["review_receipt"]
+        visual.contract(self.manifest, reviewed=False)
 
     def test_runtime_hash_mismatch_rejected(self) -> None:
         with patch.object(visual, "regular", return_value=b"synthetic"):

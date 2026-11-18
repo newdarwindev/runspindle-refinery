@@ -30,8 +30,9 @@ explicitly. There is no accept/update-baseline mode. The manifest requires:
   duplicate annotations. The current paper has six annotations/five unique URLs.
 - For `reviewed` state, `references`: exactly 16 records keyed by `NAMES`, each
   containing `width`, `height`, `mode: RGB`, and `pixel_sha256`. Also supply a
-  nonempty `review_receipt` identifying the explicit review. The tool checks the
-  state, but cannot authenticate a human reviewer.
+  `review_receipt: {path, sha256}` binding a regular file under this directory
+  identifying the explicit review. Check verifies its bytes; candidate rendering
+  does not require a review receipt. The tool cannot authenticate a human reviewer.
 
 Generate only a candidate into a nonexistent directory with a canonical existing
 parent. Run in the exact pinned Linux environment; no dependencies are installed:

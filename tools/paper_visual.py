@@ -134,6 +134,18 @@ def sha_map(value: Any) -> bool:
     )
 
 
+def receipt_binding(receipt: Any) -> None:
+    if (
+        not isinstance(receipt, dict)
+        or set(receipt) != {"path", "sha256"}
+        or not isinstance(receipt["path"], str)
+        or not receipt["path"].startswith("docs/paper-visual/")
+        or ".." in Path(receipt["path"]).parts
+        or not sha_map({"receipt": receipt["sha256"]})
+    ):
+        raise ValueError("invalid receipt binding")
+
+
 def contract(manifest: dict[str, Any], *, reviewed: bool) -> None:
     if (
         manifest.get("schema") != "runspindle.paper-visual.v1"
@@ -162,22 +174,13 @@ def contract(manifest: dict[str, Any], *, reviewed: bool) -> None:
             ("/usr/", "/lib/", "/lib64/", "/etc/fonts/", "/etc/os-release")
         ):
             raise ValueError("unsafe runtime pin")
-    receipt = manifest.get("source_build_receipt")
-    if (
-        not isinstance(receipt, dict)
-        or set(receipt) != {"path", "sha256"}
-        or not isinstance(receipt["path"], str)
-        or not receipt["path"].startswith("docs/paper-visual/")
-        or ".." in Path(receipt["path"]).parts
-        or not sha_map({"receipt": receipt["sha256"]})
-    ):
-        raise ValueError("missing source build receipt binding")
+    receipt_binding(manifest.get("source_build_receipt"))
     if manifest.get("status") not in {"candidate", "reviewed"}:
         raise ValueError("invalid baseline state")
     if reviewed and manifest["status"] != "reviewed":
         raise ValueError("baseline has not been reviewed")
-    if reviewed and not manifest.get("review_receipt"):
-        raise ValueError("missing explicit review receipt")
+    if reviewed:
+        receipt_binding(manifest.get("review_receipt"))
     if set(manifest.get("text_anchors", {})) != set(NAMES):
         raise ValueError("all pages and figures require text expectations")
     for anchors in manifest["text_anchors"].values():
@@ -298,6 +301,9 @@ def compare(actual: dict[str, Any], reference: dict[str, Any]) -> None:
 
 def check(root: Path, output: Path, manifest: dict[str, Any]) -> dict[str, Any]:
     contract(manifest, reviewed=True)
+    receipt = manifest["review_receipt"]
+    if digest(regular(root / receipt["path"])) != receipt["sha256"]:
+        raise ValueError("review receipt mismatch")
     verify_inputs(root, manifest)
     actual = inspect(output, manifest)
     compare(actual, manifest["references"])

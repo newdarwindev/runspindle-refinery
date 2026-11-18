@@ -139,3 +139,46 @@ class ThumbsUpGoldTests(unittest.TestCase):
             self.assertEqual(data.examples[0].gold, self.output.content)
             self.assertEqual(data.examples[0].rule_id, THUMBS_UP_GOLD_RULE)
             self.assertIn(split.partition(self.source.family_id), ("train", "heldout"))
+
+    def test_ineligible_positive_cannot_veto_valid_thumb_but_stays_quarantined(
+        self,
+    ) -> None:
+        for rules, reason in (
+            ((), "unknown_gold_rule"),
+            (
+                (GoldRule(self.output.task_type, "review", ("correction",)),),
+                "unsupported_gold_kind",
+            ),
+        ):
+            other = replace(
+                self.feedback,
+                feedback_id="ineligible",
+                rule_id="review",
+                kind="positive",
+            )
+            result = self.build((other, self.feedback), rules)
+            self.assertEqual(result.examples[0].gold, self.output.content)
+            self.assertEqual(result.examples[0].feedback, (self.feedback,))
+            self.assertEqual(result.quarantine[0].feedback_id, other.feedback_id)
+            self.assertEqual(result.quarantine[0].reason, reason)
+            self.assertEqual(result.observed_feedback, 2)
+            # Without a valid thumb, preserve the previous target-level veto.
+            approved = replace(
+                self.feedback,
+                feedback_id="approved",
+                rule_id="allowed",
+                kind="positive",
+            )
+            legacy = self.build(
+                (other, approved),
+                rules + (GoldRule(self.output.task_type, "allowed", ("positive",)),),
+            )
+            self.assertFalse(legacy.examples)
+
+    def test_policy_exception_never_overrides_removed_or_changed_positive(self) -> None:
+        other = replace(
+            self.feedback, feedback_id="ineligible", rule_id="missing", kind="positive"
+        )
+        for field, value in (("target_available", False), ("output_sha256", "a" * 64)):
+            result = self.build((self.feedback, replace(other, **{field: value})))
+            self.assertFalse(result.examples)

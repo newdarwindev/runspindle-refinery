@@ -258,6 +258,7 @@ def build_dataset(
     quarantine = []
     candidates = {}
     excluded_targets = conflicting_targets
+    ineligible_positive_targets = set()
     for f in sorted(unique.values(), key=lambda f: f.feedback_id):
         key = (f.output_id, f.output_revision)
         output = output_map.get(key)
@@ -301,7 +302,15 @@ def build_dataset(
             # A distinct unverified event cannot veto verified observations.
             # Conflicting reuse of an immutable ID conservatively quarantines
             # both targets before actor verification.
-            if reason not in {"unverified_actor", "conflicting_feedback_id"}:
+            if f.kind == "positive" and reason in {
+                "unknown_gold_rule",
+                "unsupported_gold_kind",
+            }:
+                # Noncontradictory approvals remain quarantined, but cannot veto
+                # an independently verified exact thumbs-up. Defer until all
+                # events are validated; no order-dependent trust shortcut.
+                ineligible_positive_targets.add(key)
+            elif reason not in {"unverified_actor", "conflicting_feedback_id"}:
                 excluded_targets.add(key)
             continue
         gold = f.correction if f.kind == "correction" else output.content
@@ -311,6 +320,7 @@ def build_dataset(
         automatic = any(item[0].kind == "thumbs_up" for item in group)
         if (
             key in excluded_targets
+            or (key in ineligible_positive_targets and not automatic)
             or len({item[3] for item in group}) != 1
             or (not automatic and len({item[0].rule_id for item in group}) != 1)
         ):

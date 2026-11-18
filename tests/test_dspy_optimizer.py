@@ -149,12 +149,114 @@ class DSPyBoundaryTests(unittest.TestCase):
     def test_provider_failure_cannot_replay(self) -> None:
         provider = legacy.ScriptedProvider((), clock=self.clock)
         dispatch = self.dispatch(provider=provider)
-        with self.assertRaisesRegex(ev.Halt, "provider_unknown"):
-            self.call(dispatch)
-        with self.assertRaises(ev.Halt):
-            self.call(dispatch)
+        original = ev.ScriptedProvider.complete
+        observed: list[Any] = []
+
+        def observe(instance: Any, request: Any) -> Any:
+            observed.append(request)
+            return original(instance, request)
+
+        with patch.object(ev.ScriptedProvider, "complete", observe):
+            with self.assertRaisesRegex(ev.Halt, "^provider_unknown$"):
+                self.call(dispatch)
+            ledger = self.store.db.execute("SELECT payload FROM budgets").fetchall()
+            attempts = self.store.db.execute("SELECT * FROM attempts").fetchall()
+            with self.assertRaisesRegex(ev.Halt, "^provider_unknown$"):
+                self.call(dispatch)
+        self.assertEqual(len(observed), 1)
         self.assertEqual(len(provider.calls), 1)
+        self.assertEqual(dispatch.expected_calls, ())
         self.assertEqual(self.budget.snapshot()["unresolved_calls"], 1)
+        self.assertEqual(
+            ledger, self.store.db.execute("SELECT payload FROM budgets").fetchall()
+        )
+        self.assertEqual(
+            attempts, self.store.db.execute("SELECT * FROM attempts").fetchall()
+        )
+
+    def test_binding_rejection_retains_first_stop_without_clock_callback(self) -> None:
+        for durable in (False, True):
+            for prior in (
+                None,
+                "provider_unknown",
+                "cancelled",
+                "unknown_or_invalid_usage",
+            ):
+                with self.subTest(durable=durable, prior=prior):
+                    budget: Any = (
+                        SQLiteBudget(
+                            self.store,
+                            "clock-" + str(durable) + str(prior),
+                            self.limits,
+                            clock_ms=self.clock,
+                        )
+                        if durable
+                        else ev.Budget(self.limits, clock_ms=self.clock)
+                    )
+                    dispatch = self.dispatch(budget=budget)
+                    if prior is not None:
+                        budget.stop(prior)
+                    with patch.object(
+                        budget,
+                        "clock_ms",
+                        side_effect=AssertionError("untrusted clock invoked"),
+                    ) as clock:
+                        with self.assertRaisesRegex(
+                            ev.Halt, "^" + (prior or "dispatch_binding_changed") + "$"
+                        ):
+                            dispatch.check_binding()
+                        clock.assert_not_called()
+                    self.assertEqual(dispatch.expected_calls, ())
+                    self.assertEqual(self.provider.calls, [])
+                    self.assertEqual(budget.snapshot()["calls"], 0)
+
+    def test_foreign_cursor_retains_terminal_reason_but_never_adopts_cursor(
+        self,
+    ) -> None:
+        for prior in ("cancelled", "provider_unknown", "unknown_or_invalid_usage"):
+            with self.subTest(prior=prior):
+                provider = legacy.ScriptedProvider((), clock=self.clock)
+                budget = ev.Budget(self.limits, clock_ms=self.clock)
+                dispatch = self.dispatch(provider=provider, budget=budget)
+                budget.stop(prior)
+                provider.calls.append(
+                    ev.Request(
+                        "optimization",
+                        "rogue",
+                        "1",
+                        "a" * 64,
+                        "b" * 64,
+                        self.split.sha256,
+                        1,
+                    )
+                )
+                with self.assertRaisesRegex(ev.Halt, "^" + prior + "$"):
+                    self.call(dispatch)
+                self.assertEqual(dispatch.expected_calls, ())
+                self.assertEqual(dispatch.attempts, [])
+                self.assertEqual(budget.snapshot()["calls"], 0)
+
+    def test_malformed_terminal_reason_falls_back_to_binding_failure(self) -> None:
+        for reason in (None, 42, "", "private text\n/path", "x" * 129):
+            with self.subTest(reason=reason):
+                dispatch = self.dispatch()
+                dispatch.expected_calls = (
+                    ev.Request(
+                        "optimization",
+                        "rogue",
+                        "1",
+                        "a" * 64,
+                        "b" * 64,
+                        self.split.sha256,
+                        1,
+                    ),
+                )
+                with patch.object(
+                    self.budget, "snapshot", return_value={"reason": reason}
+                ):
+                    with self.assertRaisesRegex(ev.Halt, "^dispatch_binding_changed$"):
+                        dispatch.check_binding()
+                self.assertEqual(self.provider.calls, [])
 
     def test_holdout_cannot_enter_training_or_unattributed_call(self) -> None:
         with self.assertRaisesRegex(ValueError, "forbidden partition"):

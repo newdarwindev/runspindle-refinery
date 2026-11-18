@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from typing import Any, Callable
 
 from . import evaluation as ev
-from .lineage import MAX_BYTES, Dataset, Example, LockedSplit, digest
+from .lineage import MAX_BYTES, Dataset, Example, LockedSplit, _token, digest
 from .optimization import validate_dataset
 
 VERSION = "refinery.dspy.bootstrap.v1"
@@ -131,7 +131,16 @@ class Dispatch:
             or digest(canonical(vars(self.per_call))) != self.reservation_sha256
         ):
             self.budget.stop("dispatch_binding_changed")
-            raise ev.Halt("dispatch_binding_changed")
+            # Preserve the first terminal cause without invoking a possibly
+            # replaced clock or adopting a failed provider's changed cursor.
+            reason = self.budget.snapshot().get("reason")
+            if type(reason) is not str:
+                reason = "dispatch_binding_changed"
+            try:
+                _token(reason)
+            except ValueError:
+                reason = "dispatch_binding_changed"
+            raise ev.Halt(reason)
 
     def guard(self) -> None:
         self.check_binding()

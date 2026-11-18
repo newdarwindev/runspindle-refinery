@@ -22,6 +22,91 @@ ROOT = Path(__file__).resolve().parents[1]
 IMAGE = "python@sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93"
 
 
+# Updating this pin is an explicit reviewed source change, not a caller option.
+ADOPTION_SHA256 = "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206"
+ADOPTION_FILES = frozenset(
+    {
+        "offline/dependencies.json",
+        "offline/historical/dependencies-before-linux-native-20261118.json",
+        "offline/linux-native-candidate/dependencies.json",
+        "offline/linux-native-candidate/recipe.json",
+        "offline/linux-native-candidate/receipt.json",
+        "offline/linux-native-candidate/wheelhouse.json",
+        "offline/requirements.lock",
+        "offline/toolchain.json",
+        "offline/python-LICENSE",
+        "offline/tokenizers-LICENSE",
+    }
+)
+
+
+def source_bytes(relative: str) -> bytes:
+    """Capture bounded source bytes without accepting symlink aliases."""
+    path = ROOT.absolute() / relative
+    if ".." in path.parts:
+        raise ValueError("noncanonical adoption source path")
+    fd = os.open("/", os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for index, part in enumerate(path.parts[1:]):
+            flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+            if index < len(path.parts[1:]) - 1:
+                flags |= os.O_DIRECTORY
+            child = os.open(part, flags, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or info.st_size > 8 * 1024 * 1024:
+            raise ValueError("invalid adoption source file")
+        chunks = []
+        size = 0
+        while data := os.read(fd, min(1024 * 1024, 8 * 1024 * 1024 + 1 - size)):
+            chunks.append(data)
+            size += len(data)
+            if size > 8 * 1024 * 1024:
+                raise ValueError("adoption source size limit")
+        return b"".join(chunks)
+    except OSError as error:
+        raise ValueError("missing or unsafe adoption source file") from error
+    finally:
+        os.close(fd)
+
+
+def json_object(data: bytes) -> dict[str, Any]:
+    value = json.loads(data)
+    if not isinstance(value, dict):
+        raise ValueError("adoption source must be a JSON object")
+    return value
+
+
+def reviewed_closure() -> tuple[dict[str, Any], dict[str, Any]]:
+    receipt_bytes = source_bytes("offline/dependency-adoption.json")
+    if hashlib.sha256(receipt_bytes).hexdigest() != ADOPTION_SHA256:
+        raise ValueError("unreviewed dependency adoption receipt")
+    receipt = json_object(receipt_bytes)
+    if set(receipt["files"]) != ADOPTION_FILES:
+        raise ValueError("adoption closure paths changed")
+    captured = {name: source_bytes(name) for name in sorted(ADOPTION_FILES)}
+    if any(
+        hashlib.sha256(data).hexdigest() != receipt["files"][name]
+        for name, data in captured.items()
+    ):
+        raise ValueError("adopted source closure bytes changed")
+    if (
+        captured["offline/dependencies.json"]
+        != captured["offline/linux-native-candidate/dependencies.json"]
+    ):
+        raise ValueError("active manifest differs from reviewed candidate")
+    declared = json_object(captured["offline/dependencies.json"])
+    toolchain = json_object(captured["offline/toolchain.json"])
+    if (
+        toolchain["image"] != IMAGE
+        or toolchain["target"] != "linux/arm64"
+        or toolchain["version"] != "Python 3.14.0"
+    ):
+        raise ValueError("unqualified adopted execution target")
+    return declared, toolchain
+
+
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -125,17 +210,12 @@ def execute(prepared: str, suite: str = "predict") -> Any:
     if suite not in {"predict", "optimizer"}:
         raise ValueError("unqualified DSPy suite")
     base = Path(prepared).absolute()
-    declared = json.loads((ROOT / "offline/dependencies.json").read_bytes())
-    if cast(Any, inventory)(base) != declared:
+    actual = cast(Any, inventory)(base)
+    declared, toolchain = reviewed_closure()
+    if actual != declared:
         raise ValueError("prepared dependency bytes differ from reviewed manifest")
-    toolchain = json.loads((ROOT / "offline/toolchain.json").read_bytes())
     if toolchain["image"] != IMAGE or toolchain["target"] != "linux/arm64":
         raise ValueError("unqualified execution target")
-    if any(
-        cast(Any, sha)(ROOT / relative) != expected
-        for relative, expected in toolchain["notices"].items()
-    ):
-        raise ValueError("toolchain notice mismatch")
     container = "runspindle-dspy-" + uuid.uuid4().hex
     try:
         result = subprocess.run(

@@ -20,7 +20,14 @@ def read(name: str) -> dict[str, Any]:
 class LinuxNativeCandidateTests(unittest.TestCase):
     def test_manifest_digest_and_rights(self) -> None:
         new = read("dependencies.json")
-        old = json.loads((ROOT / "offline/dependencies.json").read_text())
+        historical = (
+            ROOT / "offline/historical/dependencies-before-linux-native-20261118.json"
+        )
+        self.assertEqual(
+            hashlib.sha256(historical.read_bytes()).hexdigest(),
+            "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+        )
+        old = json.loads(historical.read_text())
         digest = hashlib.sha256(
             json.dumps(new, sort_keys=True, separators=(",", ":")).encode()
         ).hexdigest()
@@ -31,9 +38,14 @@ class LinuxNativeCandidateTests(unittest.TestCase):
 
     def test_bounded_actual_delta(self) -> None:
         new = read("dependencies.json")["installed_files"]
-        old = json.loads((ROOT / "offline/dependencies.json").read_text())[
-            "installed_files"
-        ]
+        historical = (
+            ROOT / "offline/historical/dependencies-before-linux-native-20261118.json"
+        )
+        self.assertEqual(
+            hashlib.sha256(historical.read_bytes()).hexdigest(),
+            "087981ca63d9ca13d8a9a1a33072f553885a52c089b0b419dd31c08c6b27de52",
+        )
+        old = json.loads(historical.read_text())["installed_files"]
         added = sorted(new.keys() - old.keys())
         changed = sorted(p for p in new.keys() & old.keys() if new[p] != old[p])
         self.assertEqual(len(added), 76)

@@ -93,3 +93,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Python 3.13 ARM64 preparation candidate](dspy-arm313-preparation-candidate.md):
   acquired pinned inputs and read-only compatibility/repeatability audit; native
   preparations and actual framework qualification remain unrun.
+
+- [Prepared dependency file types](offline-dependency-file-types.md): reject aliases and special nodes before execution admission; no canonical adoption.

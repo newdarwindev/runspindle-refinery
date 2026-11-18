@@ -8,7 +8,9 @@ are permitted in the execution lane.
 import argparse
 import hashlib
 import json
+import os
 import signal
+import stat
 import subprocess
 import sys
 import uuid
@@ -24,6 +26,31 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def reject_unsafe_paths(base: Path) -> None:
+    """Reject aliases and non-file payloads before hashing or container dispatch.
+
+    The operator must keep the tree immutable during admission and execution;
+    this preflight is not a concurrent host-writer exclusion mechanism.
+    """
+    absolute = base.absolute()
+    if ".." in absolute.parts:
+        raise ValueError("noncanonical prepared dependency path")
+    def unreadable(error: OSError) -> None:
+        raise ValueError("unreadable prepared dependency directory") from error
+
+    try:
+        for parent in (*reversed(absolute.parents), absolute):
+            if not stat.S_ISDIR(parent.lstat().st_mode):
+                raise ValueError("prepared root and ancestors must be real directories")
+        for directory, names, files in os.walk(absolute, followlinks=False, onerror=unreadable):
+            for name in names + files:
+                mode = (Path(directory) / name).lstat().st_mode
+                if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+                    raise ValueError("symlink or special file in prepared dependencies")
+    except OSError as error:
+        raise ValueError("unreadable prepared dependency path") from error
+
+
 def reject_bytecode(base: Path) -> None:
     # -B/PYTHONDONTWRITEBYTECODE disables writes, not reads of cached code.
     # Match the preparation contract before comparing the reviewed inventory.
@@ -33,6 +60,7 @@ def reject_bytecode(base: Path) -> None:
 
 
 def inventory(base):
+    reject_unsafe_paths(base)
     reject_bytecode(base)
     rows = []
     for dist in sorted(base.glob("*.dist-info")):
@@ -93,7 +121,7 @@ def inventory(base):
 def execute(prepared: str, suite: str = "predict") -> Any:
     if suite not in {"predict", "optimizer"}:
         raise ValueError("unqualified DSPy suite")
-    base = Path(prepared).resolve()
+    base = Path(prepared).absolute()
     declared = json.loads((ROOT / "offline/dependencies.json").read_bytes())
     if cast(Any, inventory)(base) != declared:
         raise ValueError("prepared dependency bytes differ from reviewed manifest")

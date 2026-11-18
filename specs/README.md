@@ -94,4 +94,5 @@ incompatible component stores and rolls back invalid transaction changes.
   acquired pinned inputs and read-only compatibility/repeatability audit; native
   preparations and actual framework qualification remain unrun.
 
+- [Prepared dependency file types](offline-dependency-file-types.md): reject aliases and special nodes before execution admission; no canonical adoption.
 - [Linux-native preparation candidate](linux-native-preparation-candidate.md): twice reproduced from one sealed wheelhouse; explicit review proposal, not canonical adoption or DSPy execution.

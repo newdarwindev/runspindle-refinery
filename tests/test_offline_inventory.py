@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import socket
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,6 +53,76 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(engine.inventory(self.prepared), self.original)
         self.assertEqual(len(self.original["dependencies"]), 76)
         self.assertIn("synthetic.py", self.original["installed_files"])
+
+    def assert_rejected_without_dispatch(self, prepared: Path) -> None:
+        with patch.object(
+            engine.subprocess,
+            "run",
+            side_effect=AssertionError("unexpected subprocess effect"),
+        ) as calls:
+            with self.assertRaises(ValueError):
+                engine.execute(str(prepared))
+            calls.assert_not_called()
+
+    def test_payload_symlink_rejected_even_when_bytes_match(self) -> None:
+        payload = self.prepared / "synthetic.py"
+        external = self.root / "external.py"
+        external.write_bytes(payload.read_bytes())
+        payload.unlink()
+        for target in (external, Path("../external.py")):
+            with self.subTest(target=str(target)):
+                payload.symlink_to(target)
+                try:
+                    self.assert_rejected_without_dispatch(self.prepared)
+                finally:
+                    payload.unlink()
+
+    def test_directory_and_dangling_symlinks_rejected(self) -> None:
+        link = self.prepared / "unrecorded"
+        for target in (self.root, self.root / "absent"):
+            with self.subTest(target=str(target)):
+                link.symlink_to(target)
+                try:
+                    self.assert_rejected_without_dispatch(self.prepared)
+                finally:
+                    link.unlink()
+
+    def test_root_and_ancestor_symlinks_rejected(self) -> None:
+        root_link = self.root / "alias"
+        root_link.symlink_to(self.prepared)
+        self.assert_rejected_without_dispatch(root_link)
+        ancestor = self.root / "ancestor"
+        ancestor.symlink_to(self.root)
+        self.assert_rejected_without_dispatch(ancestor / "prepared")
+
+    def test_fifo_and_socket_rejected_without_opening_them(self) -> None:
+        fifo = self.prepared / "extra.fifo"
+        os.mkfifo(fifo)
+        self.assert_rejected_without_dispatch(self.prepared)
+        fifo.unlink()
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.bind(str(self.prepared / "extra.socket"))
+            self.assert_rejected_without_dispatch(self.prepared)
+
+    def test_unreadable_walk_is_not_silently_omitted(self) -> None:
+        with patch.object(
+            engine.os, "scandir", side_effect=PermissionError("synthetic")
+        ):
+            self.assert_rejected_without_dispatch(self.prepared)
+
+    def test_file_type_guard_mutation_exposes_false_inventory_match(self) -> None:
+        payload = self.prepared / "synthetic.py"
+        external = self.root / "external.py"
+        external.write_bytes(payload.read_bytes())
+        payload.unlink()
+        payload.symlink_to(external)
+        with self.assertRaises(ValueError):
+            engine.inventory(self.prepared)
+        with patch.object(engine, "reject_unsafe_paths", return_value=None):
+            self.assertEqual(engine.inventory(self.prepared), self.original)
+            with self.assertRaises(AssertionError):
+                with self.assertRaises(ValueError):
+                    engine.inventory(self.prepared)
 
     def test_bytecode_rejected_before_any_container_call(self) -> None:
         for relative in (

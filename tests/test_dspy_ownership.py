@@ -154,6 +154,36 @@ class OwnershipOracleTests(unittest.TestCase):
                 if fail_second_launch:
                     children[1].kill.assert_not_called()
 
+    def test_cleanup_failure_does_not_abandon_later_children(self) -> None:
+        for failed_operation in ("kill", "wait"):
+            with (
+                self.subTest(operation=failed_operation),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                children = [Mock(), Mock()]
+                for child in children:
+                    child.poll.return_value = None
+                    child.wait.return_value = 0
+                getattr(
+                    children[0], failed_operation
+                ).side_effect = subprocess.TimeoutExpired("synthetic", 5)
+                with (
+                    patch.object(subprocess, "Popen", side_effect=children),
+                    patch.object(
+                        probe, "wait_for", side_effect=ValueError("original failure")
+                    ),
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError, "cleanup incomplete"
+                    ) as caught:
+                        probe.orchestrate(Path(temporary))
+                self.assertIsInstance(
+                    caught.exception.__cause__, subprocess.TimeoutExpired
+                )
+                for child in children:
+                    child.kill.assert_called_once_with()
+                    child.wait.assert_called_once_with(timeout=5)
+
     def test_invalid_loser_never_releases_winner(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

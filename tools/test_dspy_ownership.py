@@ -56,7 +56,7 @@ def wait_for(test: Callable[[], bool], seconds: float = 20) -> None:
 
 
 def persisted(directory: Path) -> dict[str, str]:
-    with sqlite3.connect(directory / "store.sqlite") as db:
+    with contextlib.closing(sqlite3.connect(directory / "store.sqlite")) as db:
         row = db.execute(
             "SELECT payload FROM budgets WHERE identity=?", (BUDGET,)
         ).fetchone()
@@ -488,10 +488,21 @@ def orchestrate(directory: Path) -> list[dict[str, Any]]:
             )
             return validate_results(result)
         finally:
+            cleanup_errors: list[Exception] = []
             for child in children:
-                if child.poll() is None:
-                    child.kill()
-                child.wait(timeout=5)
+                try:
+                    if child.poll() is None:
+                        child.kill()
+                except Exception as error:
+                    cleanup_errors.append(error)
+                try:
+                    child.wait(timeout=5)
+                except Exception as error:
+                    cleanup_errors.append(error)
+            if cleanup_errors:
+                raise ValueError(
+                    "ownership child cleanup incomplete"
+                ) from cleanup_errors[0]
 
 
 def run() -> dict[str, Any]:

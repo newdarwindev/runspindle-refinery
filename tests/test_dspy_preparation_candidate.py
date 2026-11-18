@@ -7,6 +7,7 @@ import csv
 import hashlib
 import io
 import json
+import os
 import tarfile
 import tempfile
 import unittest
@@ -176,6 +177,7 @@ class PreparationCandidateTests(unittest.TestCase):
 
     def test_candidate_is_not_promoted(self) -> None:
         recipe, artifacts, wheels = self.recipe_fixture()
+        self.add_installer_lock()
         canonical = self.root / "offline/dependencies.json"
         canonical.write_text('{"old": true}')
         before = canonical.read_bytes()
@@ -195,6 +197,101 @@ class PreparationCandidateTests(unittest.TestCase):
         self.assertEqual(canonical.read_bytes(), before)
         self.assertIn("candidate_manifest", result)
         self.assertNotIn("installed_files", result)
+
+    def add_installer_lock(self) -> Path:
+        lock = self.base / ".lock"
+        lock.write_bytes(b"")
+        lock.chmod(0o666)
+        return lock
+
+    def run_lock_candidate(self) -> dict[str, Any]:
+        # Only unrelated artifact/76-distribution setup is synthetic. Filesystem
+        # capture, RECORD coverage, scripts and complete inventory input are real.
+        (self.root / "offline").mkdir(exist_ok=True)
+        canonical = self.root / "offline/dependencies.json"
+        canonical.write_text('{"unchanged": true}')
+        before = canonical.read_bytes()
+        captured: dict[str, bytes] = {}
+
+        def inventory(files: dict[str, bytes]) -> dict[str, Any]:
+            captured.update(files)
+            return {"dependencies": []}
+
+        with (
+            patch.object(prep, "ROOT", self.root),
+            patch.object(prep, "check_recipe", return_value=set()),
+            patch.object(prep, "inventory_bytes", side_effect=inventory),
+        ):
+            result = prep.candidate(self.base, {}, self.root, self.root)
+        self.assertEqual(canonical.read_bytes(), before)
+        self.assertEqual(captured, prep.snapshot(self.base))
+        self.assertIn(".lock", captured)
+        self.assertEqual(captured[".lock"], b"")
+        self.assertEqual(result["framework_qualification"], "not_run")
+        return result
+
+    def test_candidate_installer_lock_retained_in_inventory(self) -> None:
+        self.add_installer_lock()
+        self.run_lock_candidate()
+        # The exception belongs only to candidate(), not generic RECORD checks.
+        with self.assertRaisesRegex(ValueError, "unrecorded"):
+            prep.check_records(self.base)
+
+    def test_candidate_requires_installer_lock(self) -> None:
+        with self.assertRaisesRegex(ValueError, "installer .lock"):
+            self.run_lock_candidate()
+
+    def test_candidate_rejects_invalid_installer_lock(self) -> None:
+        lock = self.add_installer_lock()
+        for mode, data in (
+            (0o666, b"not empty"),
+            (0o644, b""),
+            (0o777, b""),
+            (0o4666, b""),
+        ):
+            with self.subTest(mode=mode, data=data):
+                lock.write_bytes(data)
+                lock.chmod(mode)
+                with self.assertRaisesRegex(ValueError, "installer .lock"):
+                    self.run_lock_candidate()
+
+    def test_candidate_rejects_linked_or_directory_installer_lock(self) -> None:
+        lock = self.base / ".lock"
+        external = self.root / "empty"
+        external.write_bytes(b"")
+        external.chmod(0o666)
+        for kind in ("symlink", "hardlink", "directory", "fifo"):
+            with self.subTest(kind=kind):
+                if kind == "symlink":
+                    lock.symlink_to(external)
+                elif kind == "hardlink":
+                    os.link(external, lock)
+                elif kind == "fifo":
+                    os.mkfifo(lock)
+                else:
+                    lock.mkdir()
+                try:
+                    with self.assertRaises(ValueError):
+                        self.run_lock_candidate()
+                finally:
+                    if kind == "directory":
+                        lock.rmdir()
+                    else:
+                        lock.unlink()
+
+    def test_candidate_lock_exception_does_not_cover_other_paths(self) -> None:
+        self.add_installer_lock()
+        for name in ("nested/.lock", ".lock.extra", "extra"):
+            with self.subTest(name=name):
+                extra = self.base / name
+                extra.parent.mkdir(exist_ok=True)
+                extra.write_bytes(b"")
+                extra.chmod(0o666)
+                try:
+                    with self.assertRaisesRegex(ValueError, "unrecorded"):
+                        self.run_lock_candidate()
+                finally:
+                    extra.unlink()
 
     def test_duplicate_wheel_distribution(self) -> None:
         recipe, artifacts, wheels = self.recipe_fixture()
@@ -251,12 +348,52 @@ class PreparationCandidateTests(unittest.TestCase):
                 "Name: " + name + "\nVersion: " + version + "\nLicense: MIT\n"
             )
             (dist / "LICENSE").write_text("Synthetic notice fixture")
+            rows = []
+            for path in sorted(dist.iterdir()):
+                data = path.read_bytes()
+                value = (
+                    base64.urlsafe_b64encode(hashlib.sha256(data).digest())
+                    .decode()
+                    .rstrip("=")
+                )
+                rows.append(
+                    [
+                        path.relative_to(tree).as_posix(),
+                        "sha256=" + value,
+                        str(len(data)),
+                    ]
+                )
+            rows.append([dist.name + "/RECORD", "", ""])
+            with (dist / "RECORD").open("w", newline="") as stream:
+                csv.writer(stream).writerows(rows)
+        lock = tree / ".lock"
+        lock.write_bytes(b"")
+        lock.chmod(0o666)
         from typing import cast
 
         self.assertEqual(
-            prep.inventory_bytes(prep.snapshot(tree)),
+            prep.inventory_bytes(prep.snapshot(tree, installer_lock=True)),
             cast(Any, offline_dspy.inventory)(tree),
         )
+        expected = prep.inventory_bytes(prep.snapshot(tree))
+        self.assertEqual(expected["installed_files"][".lock"], prep.digest(b""))
+        offline = self.root / "offline"
+        offline.mkdir()
+        (offline / "requirements.lock").write_bytes(
+            (prep.ROOT / "offline/requirements.lock").read_bytes()
+        )
+        canonical = offline / "dependencies.json"
+        canonical.write_text(json.dumps(expected))
+        original = canonical.read_bytes()
+        identities = {(row["name"], row["version"]) for row in expected["dependencies"]}
+        with (
+            patch.object(prep, "ROOT", self.root),
+            patch.object(prep, "check_recipe", return_value=identities),
+        ):
+            result = prep.candidate(tree, {}, self.root, self.root)
+        self.assertTrue(result["matches_canonical_manifest"])
+        self.assertEqual(result["candidate_manifest"], expected)
+        self.assertEqual(canonical.read_bytes(), original)
 
     def test_recipe_file_boundaries(self) -> None:
         path = self.root / "recipe.json"

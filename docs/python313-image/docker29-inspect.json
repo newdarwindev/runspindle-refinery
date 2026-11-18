@@ -1,0 +1,49 @@
+[
+    {
+        "Id": "sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+        "RepoTags": [
+            "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f"
+        ],
+        "RepoDigests": [
+            "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f"
+        ],
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2026-05-19T23:58:26.568783992Z",
+        "Config": {
+            "Env": [
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.13.13",
+                "PYTHON_SHA256=2ab91ff401783ccca64f75d10c882e957bdfd60e2bf5a72f8421793729b78a71"
+            ],
+            "Cmd": [
+                "python3"
+            ]
+        },
+        "Architecture": "arm64",
+        "Variant": "v8",
+        "Os": "linux",
+        "Size": 206467968,
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:3bfd0b5a99a1f25a488230217defd5c2781ad861f692f5df22d9734bbddfc53d",
+                "sha256:05fb0001b0435f8ef5aa810ecc585fc40b6c0db42742986276305b4cb620e181",
+                "sha256:85712237fc48ac3ffba48576af054259840780394c6d14498eb3ff2e73afb446",
+                "sha256:60b020d6fc05b6666d7a1e3fa06aab4fd514f7af0356b48d8ac2cee6ef2f2f9c"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2026-11-18T06:48:50.759966493Z"
+        },
+        "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+            "size": 1754,
+            "annotations": {
+                "io.containerd.image.name": "docker.io/library/python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+                "org.opencontainers.image.ref.name": "docker.io/library/python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f"
+            }
+        }
+    }
+]

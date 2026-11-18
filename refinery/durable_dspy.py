@@ -101,6 +101,7 @@ class Session:
             (self.lifecycle, snapshot_sha256, self.config, budget_id)
         )
         self.binding_sha256 = digest(self.binding)
+        self._strategy_seal = self.strategy_binding()
         self.guards = {
             purpose: use_guard(
                 store,
@@ -119,6 +120,41 @@ class Session:
             )
         }
 
+    def strategy_binding(self) -> bytes:
+        """Closed selector admission, independent of callback-mutated branch labels."""
+        if type(self.strategy) is not str or self.strategy not in {"bootstrap", "gepa"}:
+            raise ev.Halt("lifecycle_strategy_changed")
+        bootstrap = self.strategy == "bootstrap"
+        lifecycle = LIFECYCLE if bootstrap else evidence.LIFECYCLE
+        kind = "dspy_compiled" if bootstrap else "gepa_compiled"
+        if (
+            self.lifecycle != lifecycle
+            or self.compiled_kind != kind
+            or type(self.key) is not str
+            or not self.key.startswith("dspy-" if bootstrap else "gepa-")
+            or (bootstrap and self.training_output_id is not None)
+            or (not bootstrap and type(self.training_output_id) is not str)
+        ):
+            raise ev.Halt("lifecycle_strategy_changed")
+        encode: Any = pack
+        if self.binding != encode(
+            (lifecycle, self.snapshot_sha256, self.config, self.budget_id)
+        ) or self.binding_sha256 != digest(self.binding):
+            raise ev.Halt("lifecycle_strategy_changed")
+        return cast(
+            bytes,
+            encode(
+                (
+                    self.strategy,
+                    self.training_output_id,
+                    self.lifecycle,
+                    self.compiled_kind,
+                    self.key,
+                    self.binding,
+                )
+            ),
+        )
+
     def cursor(self) -> tuple[ev.Request, ...]:
         if type(self.provider) is not ev.ScriptedProvider:
             raise ev.Halt("lifecycle_provider_changed")
@@ -136,15 +172,32 @@ class Session:
         return tuple(self.provider.calls)
 
     def guard(self, purpose: str) -> None:
+        seal = Session.strategy_binding(self)
+        if seal != self._strategy_seal:
+            raise ev.Halt("lifecycle_strategy_changed")
+        strategy = self.strategy
         cursor = self.cursor()
         claim = self.row(self.store.db)
-        if self.strategy == "gepa" and purpose != "optimization":
+        if strategy == "gepa" and purpose != "optimization":
             raise ValueError("GEPA heldout evaluation is not implemented")
-        self.guards[purpose]()
-        if self.strategy == "gepa":
-            if self.row(self.store.db) != claim or self.cursor() != cursor:
+        purposes = (
+            (purpose,) if strategy == "bootstrap" else ("optimization", "reflection")
+        )
+        guards = self.guards
+        callbacks = tuple(guards[p] for p in purposes)
+        for callback in callbacks:
+            callback()
+            if (
+                Session.strategy_binding(self) != seal
+                or self._strategy_seal != seal
+                or self.guards is not guards
+                or any(self.guards[p] is not c for p, c in zip(purposes, callbacks))
+            ):
+                raise ev.Halt("lifecycle_strategy_changed")
+            if self.row(self.store.db) != claim:
                 raise ev.Halt("lifecycle_claim_changed")
-            self.guards["reflection"]()
+            if self.cursor() != cursor:
+                raise ev.Halt("lifecycle_provider_changed")
         if self.row(self.store.db) != claim:
             raise ev.Halt("lifecycle_claim_changed")
         if self.cursor() != cursor:

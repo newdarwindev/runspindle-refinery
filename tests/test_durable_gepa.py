@@ -342,6 +342,106 @@ class DurableGEPATests(unittest.TestCase):
         self.assertIsNone(s.row(self.store.db))
         self.assertEqual(s.provider.calls, [])
 
+    def test_strategy_metadata_mutation_cannot_skip_reflection_before_claim(
+        self,
+    ) -> None:
+        for field, value in (
+            ("strategy", "other"),
+            ("strategy", "bootstrap"),
+            ("lifecycle", "foreign"),
+            ("compiled_kind", "dspy_compiled"),
+            ("training_output_id", "foreign"),
+            ("key", "gepa-foreign"),
+        ):
+            with self.subTest(field=field, value=value):
+                s = self.make()
+                checked: list[str] = []
+
+                def mutate() -> None:
+                    setattr(s, field, value)
+
+                def denied_reflection() -> None:
+                    checked.append("reflection")
+                    raise ev.Halt("reflection_denied")
+
+                s.guards["optimization"] = mutate
+                s.guards["reflection"] = denied_reflection
+                with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+                    s.claim_compile()
+                self.assertEqual(s.provider.calls, [])
+                self.assertEqual(checked, [])
+                self.assertEqual(
+                    self.store.db.execute(
+                        "SELECT count(*) FROM experiments"
+                    ).fetchone()[0],
+                    0,
+                )
+                self.assertEqual(
+                    self.store.db.execute("SELECT count(*) FROM attempts").fetchone()[
+                        0
+                    ],
+                    0,
+                )
+
+    def test_strategy_mutation_after_reservation_denies_provider_with_charge(
+        self,
+    ) -> None:
+        s = self.session
+
+        def mutate(stage: str) -> None:
+            if stage == "after_budget_reservation":
+                s.strategy = "other"
+
+        s.checkpoint = mutate
+        s.claim_compile()
+        d = gepa.Transport(
+            self.example,
+            s.split,
+            config=s.config,
+            provider=s.provider,
+            budget=s.budget(),
+            per_call=s.per_call,
+            check_use=lambda: s.guard("optimization"),
+        )
+        with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+            d.invoke_sealed(
+                lambda **_: d.forward([]),
+                "optimization",
+                codec.INITIAL,
+                case(self.example),
+            )
+        self.assertEqual(s.provider.calls, [])
+        self.assertEqual(s.budget().snapshot()["unresolved_calls"], 1)
+        self.assertEqual(
+            self.store.db.execute("SELECT count(*) FROM attempts").fetchone()[0], 1
+        )
+
+    def test_authority_callback_cannot_replace_reflection_or_reseal_selection(
+        self,
+    ) -> None:
+        s = self.session
+
+        def replacement() -> None:
+            s.guards["reflection"] = lambda: None
+
+        s.guards["optimization"] = replacement
+        with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+            s.claim_compile()
+        self.assertEqual(s.provider.calls, [])
+        self.assertIsNone(s.row(self.store.db))
+        s = self.make()
+
+        def reseal() -> None:
+            s.training_output_id = "foreign"
+            s._strategy_seal = Session.strategy_binding(s)
+            s.strategy_binding = lambda: s._strategy_seal
+
+        s.guards["optimization"] = reseal
+        with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+            s.claim_compile()
+        self.assertEqual(s.provider.calls, [])
+        self.assertIsNone(s.row(self.store.db))
+
     def test_missing_witness_rejects_replay(self) -> None:
         self.compile_fixture()
         self.store.db.execute("DROP TRIGGER objects_DELETE")

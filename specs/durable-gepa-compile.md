@@ -24,7 +24,12 @@ runtime. No caller-supplied manifest or validator chooses the strategy.
 
 Every GEPA compilation/recovery authority check requires both optimization and
 reflection use permission. Reflection does not inherit optimization consent.
-Claims and provider cursor are rechecked after callbacks. Existing family
+The exact strategy, lifecycle, object kind, selected training identifier, key and
+binding are sealed before and after every authority callback. The original
+authority callable identities are also retained across each check. Unknown or
+changed selectors fail before reservation/provider effects; mutation after a
+reservation still denies dispatch and retains the charge. Claims and provider
+cursor are rechecked after callbacks. Existing family
 partition enrollment and cumulative shared SQLite budgets are reused. Runtime
 identity, candidate strategy or selected example changes cannot recover an old
 claim under a different configuration.

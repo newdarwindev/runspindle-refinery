@@ -24,8 +24,12 @@ Five disposable-store cases exercise three challenges:
   deny before any provider effect. With only held-out admission deliberately
   injected into that allowlist, the original provider observer must see exactly
   one held-out request and charged call. The independent no-leak oracle must fail.
-  No candidate may emerge from either path. This is deliberately broken synthetic
-  execution, not a newly permitted optimizer mode.
+  The fixture requires held-out gold to differ from every training gold and uses
+  the original one-call budget; its wrong trace and denied retry must yield no
+  candidate. This is containment for this bounded challenge, not a claim that
+  removing the guard universally prevents contaminated candidates. No harness
+  aborts or erases a returned candidate: any candidate fails the oracle. This is
+  deliberately broken synthetic execution, not a permitted optimizer mode.
 
 Transparent compile/provider wrappers invoke the originals. All mutation patches
 are bounded to a case and restored afterward; stores are distinct and disposable.

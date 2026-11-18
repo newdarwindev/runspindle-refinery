@@ -398,6 +398,10 @@ def run() -> dict[str, Any]:
                     dataset, split = store.lineage(snapshot)
                     train, heldout = opt.validate_dataset(dataset, split)
                     target = heldout[0]
+                    require(
+                        all(target.gold != example.gold for example in train),
+                        "heldout challenge gold overlaps training gold",
+                    )
                     provider = ev.ScriptedProvider(
                         (ev.Completion(target.gold, 1, 1, True, 0),),
                         clock=ev.VirtualClock(),

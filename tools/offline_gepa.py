@@ -8,6 +8,7 @@ import json
 import os
 import selectors
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -69,9 +70,68 @@ def bounded(
             raise cleanup_error
 
 
-def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
-    if suite not in {"reflection", "durable"}:
+GIT_SHA256 = "54af380ba6ca1b36305358e99427a31ae4b0af5dc5cb6d0198c6f2f16e97651d"
+
+
+def canonical_input(value: str, *, directory: bool) -> Path:
+    path = Path(value)
+    if (
+        not path.is_absolute()
+        or value != str(path.resolve(strict=True))
+        or any(c in value for c in (":", ",", "\n"))
+    ):
+        raise ValueError("canonical materialized input path required")
+    mode = path.lstat().st_mode
+    if not (stat.S_ISDIR(mode) if directory else stat.S_ISREG(mode)):
+        raise ValueError("regular materialized input required")
+    return path
+
+
+def materialized_inputs(tether: str, git: str) -> dict[str, Any]:
+    from refinery.tether_dependency import COMMIT, bounded_file
+
+    source = canonical_input(tether, directory=True)
+    binary = canonical_input(git, directory=False)
+    info = binary.stat()
+    if (
+        stat.S_IMODE(info.st_mode) != 0o755
+        or runtime.digest(bounded_file(binary, 16 * 1024 * 1024)) != GIT_SHA256
+    ):
+        raise ValueError("pinned real Git binary changed")
+    pin_raw = runtime.source_bytes("dependencies/tether-feedback.json")
+    pin = json.loads(pin_raw)
+    if pin["commit"] != COMMIT:
+        raise ValueError("current Tether pin required")
+    actual = {}
+    for name, expected in pin["files"].items():
+        file = canonical_input(str(source / name), directory=False)
+        actual[name] = runtime.digest(bounded_file(file))
+        if actual[name] != expected:
+            raise ValueError("Tether source file changed")
+    return {
+        "git_sha256": GIT_SHA256,
+        "tether_commit": COMMIT,
+        "tether_pin_sha256": runtime.digest(pin_raw),
+        "tether_files": actual,
+    }
+
+
+def execute(
+    prepared: str,
+    *,
+    suite: str = "reflection",
+    tether: str | None = None,
+    git: str | None = None,
+) -> dict[str, Any]:
+    if suite not in {"reflection", "durable", "materialized", "heldout"}:
         raise ValueError("unknown GEPA suite")
+    inputs = None
+    if suite in {"materialized", "heldout"}:
+        if type(tether) is not str or type(git) is not str:
+            raise ValueError("explicit materialized Tether and Git inputs required")
+        inputs = materialized_inputs(tether, git)
+    elif tether is not None or git is not None:
+        raise ValueError("materialized inputs cannot alter legacy lanes")
     base = Path(prepared).absolute()
     if any(c in str(path) for path in (base, ROOT) for c in (":", ",", "\n")):
         raise ValueError("unsafe GEPA mount path")
@@ -80,6 +140,10 @@ def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
 
     if suite == "durable":
         from tools.test_gepa_durable import source_hashes, validate_report
+    if suite in {"materialized", "heldout"}:
+        from tools.test_gepa_materialized import source_hashes, validate_report
+    if suite == "heldout":
+        from tools.test_gepa_heldout_materialized import source_hashes, validate_report
     sources = source_hashes()
     inspected = bounded(["docker", "image", "inspect", runtime.IMAGE], 30)
     if inspected.returncode:
@@ -119,6 +183,15 @@ def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
         "-w",
         "/work",
     ]
+    if suite in {"materialized", "heldout"}:
+        argv += [
+            "-v",
+            str(tether) + ":/tether:ro",
+            "-v",
+            str(git) + ":/usr/bin/git:ro",
+            "-e",
+            "RUNSPINDLE_TETHER_SOURCE=/tether",
+        ]
     for entry in (
         "PYTHONPATH=/deps:/work",
         "PYTHONDONTWRITEBYTECODE=1",
@@ -137,7 +210,11 @@ def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
         "/usr/local/bin/python3.13",
         "tools/test_gepa_reflection.py"
         if suite == "reflection"
-        else "tools/test_gepa_durable.py",
+        else "tools/test_gepa_durable.py"
+        if suite == "durable"
+        else "tools/test_gepa_materialized.py"
+        if suite == "materialized"
+        else "tools/test_gepa_heldout_materialized.py",
     ]
     try:
         result = bounded(argv, 120)
@@ -165,8 +242,13 @@ def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("GEPA native qualification failed")
     value = json.loads(result.stdout)
-    if suite == "durable":
+    if suite in {"durable", "materialized", "heldout"}:
         validate_report(value)
+        if suite in {"materialized", "heldout"} and (
+            value["inputs"] != inputs
+            or materialized_inputs(cast(str, tether), cast(str, git)) != inputs
+        ):
+            raise ValueError("materialized execution inputs changed")
         if source_hashes() != sources:
             raise ValueError("GEPA source changed during execution")
         return cast(dict[str, Any], value)
@@ -198,12 +280,18 @@ def main() -> None:
     parser.add_argument("--prepared", required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
-        "--suite", choices=("reflection", "durable"), default="reflection"
+        "--suite",
+        choices=("reflection", "durable", "materialized", "heldout"),
+        default="reflection",
     )
+    parser.add_argument("--tether")
+    parser.add_argument("--git")
     args = parser.parse_args()
     # Refuse overwrite before any runtime execution. No auto-acceptance of evidence.
     with args.report.open("x") as output:
-        report = execute(args.prepared, suite=args.suite)
+        report = execute(
+            args.prepared, suite=args.suite, tether=args.tether, git=args.git
+        )
         output.write(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))
 

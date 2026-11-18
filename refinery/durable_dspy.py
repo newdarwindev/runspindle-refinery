@@ -150,7 +150,7 @@ class Session:
             for purpose in (
                 ("optimization", "evaluation")
                 if strategy == "bootstrap"
-                else ("optimization", "reflection")
+                else ("optimization", "reflection", "evaluation")
             )
         }
         if strategy == "gepa":
@@ -230,7 +230,7 @@ class Session:
         if (
             routes is None
             or type(self.guards) is not dict
-            or set(self.guards) != {"optimization", "reflection"}
+            or set(self.guards) != {"optimization", "reflection", "evaluation"}
             or any(
                 callback() is None or self.guards[p] is not callback()
                 for p, callback in routes
@@ -298,10 +298,12 @@ class Session:
         strategy = self.strategy
         cursor = self.cursor()
         claim = self.row(self.store.db)
-        if strategy == "gepa" and purpose != "optimization":
-            raise ValueError("GEPA heldout evaluation is not implemented")
+        if purpose not in {"optimization", "evaluation"}:
+            raise ValueError("unknown durable purpose")
         purposes = (
-            (purpose,) if strategy == "bootstrap" else ("optimization", "reflection")
+            ("optimization", "reflection")
+            if strategy == "gepa" and purpose == "optimization"
+            else (purpose,)
         )
         guards = self.guards
         callbacks = tuple(guards[p] for p in purposes)
@@ -402,11 +404,35 @@ class Session:
             not in (
                 {"optimization", "baseline", "candidate"}
                 if self.strategy == "bootstrap"
-                else {"optimization", "reflection"}
+                else {"optimization", "reflection", "baseline", "candidate"}
             )
             for request, _, _ in rows
         ):
             raise ValueError("invalid durable DSPy request")
+        if self.strategy == "gepa":
+            evaluation_seen = False
+            candidate_seen = False
+            compile_position = 0
+            evaluation_counts: dict[tuple[str, str, str], int] = {}
+            for request, _, _ in rows:
+                if type(request.attempt) is not int:
+                    raise ValueError("GEPA phase cursor changed")
+                if request.stage in {"baseline", "candidate"}:
+                    key = (request.stage, request.output_id, request.output_revision)
+                    evaluation_counts[key] = evaluation_counts.get(key, 0) + 1
+                    if request.attempt != evaluation_counts[key]:
+                        raise ValueError("GEPA evaluation cursor changed")
+                    evaluation_seen = True
+                    if request.stage == "candidate":
+                        candidate_seen = True
+                    elif candidate_seen:
+                        raise ValueError("GEPA baseline follows candidate")
+                else:
+                    if evaluation_seen:
+                        raise ValueError("GEPA compilation follows heldout evaluation")
+                    compile_position += 1
+                    if request.attempt != compile_position:
+                        raise ValueError("GEPA compile cursor changed")
         return tuple(row for row in rows if row[0].stage in stages)
 
     def verify_attempts(
@@ -582,10 +608,14 @@ class Session:
         )
         if self.strategy == "gepa":
             rows = self.receipts({"optimization", "reflection"})
-            tickets = self.store.db.execute(
-                "SELECT ticket FROM attempts WHERE experiment=? ORDER BY ticket",
-                (self.key,),
-            ).fetchall()
+            tickets = tuple(
+                (ticket,)
+                for ticket, request in self.store.db.execute(
+                    "SELECT ticket,request FROM attempts WHERE experiment=? ORDER BY ticket",
+                    (self.key,),
+                )
+                if unpack(request).stage in {"optimization", "reflection"}
+            )
             prefix = self.key + ":"
             stored_ids = {
                 r[0]
@@ -868,7 +898,9 @@ class Session:
         self.commit_compiled(result)
         return result
 
-    def verify_evaluated(self, report: dict[str, Any], compiled: opt.Compiled) -> None:
+    def verify_evaluated(
+        self, report: dict[str, Any], compiled: opt.Compiled | evidence.GEPACompiled
+    ) -> None:
         if type(report) is not dict or report.get("status") not in {
             "evaluated",
             "blocked",
@@ -897,8 +929,12 @@ class Session:
         self.verify_attempts(
             attempts, {"baseline", "candidate"}, success=report["status"] == "evaluated"
         )
-        baseline_sha = digest(
-            opt.canonical({"signature": opt.SIGNATURE, "demonstrations": []})
+        baseline_sha = (
+            gepa_codec.baseline_artifact()
+            if self.strategy == "gepa"
+            else digest(
+                opt.canonical({"signature": opt.SIGNATURE, "demonstrations": []})
+            )
         )
         if any(
             a.request.artifact_sha256
@@ -1009,9 +1045,7 @@ class Session:
                 raise ValueError("invalid DSPy lifecycle state")
             self.guard("evaluation")
             compiled, _ = self.compiled()
-            if type(compiled) is not opt.Compiled:
-                raise ValueError("GEPA heldout evaluation is not implemented")
-            value = self.store.get("dspy_evaluated", self.key)
+            value = self.store.get(Session.evaluated_kind(self), self.key)
             encode: Any = pack
             if (
                 type(value) is not dict
@@ -1026,15 +1060,13 @@ class Session:
                 raise ev.Halt("lifecycle_claim_changed")
             return value["report"]  # type: ignore[no-any-return]
 
-    def claim_evaluation(self) -> opt.Compiled:
+    def claim_evaluation(self) -> opt.Compiled | evidence.GEPACompiled:
         self.guard("evaluation")
         with self.store.transaction() as tx:
             row = self.row(tx)
             if row is None or row[1] != "compiled":
                 raise ev.Halt("interrupted_or_owned_dspy_phase")
             compiled, clock_ms = self.compiled()
-            if type(compiled) is not opt.Compiled:
-                raise ValueError("GEPA heldout evaluation is not implemented")
             if compiled.status != "compiled":
                 raise ev.Halt("DSPy compilation blocked")
             if self.provider.clock() < clock_ms:
@@ -1092,21 +1124,19 @@ class Session:
             if row is None or row[1] != "evaluating":
                 raise ev.Halt("DSPy evaluation ownership unavailable")
             compiled, _ = self.compiled()
-            if type(compiled) is not opt.Compiled:
-                raise ValueError("GEPA heldout evaluation is not implemented")
             self.verify_evaluated(report, compiled)
             self.verify_current_usage(
                 report.get("usage"), success=report["status"] == "evaluated"
             )
             self.verify_cursor(compiled.attempts + report["attempts"])
             record = {
-                "version": LIFECYCLE,
+                "version": self.lifecycle,
                 "binding_sha256": self.binding_sha256,
                 "report": report,
             }
-            sha = self.store.put(tx, "dspy_evaluated", self.key, record)
+            sha = self.store.put(tx, Session.evaluated_kind(self), self.key, record)
             self.verify_result_identity(
-                "dspy_evaluated", "report", report, report_bytes, sha
+                Session.evaluated_kind(self), "report", report, report_bytes, sha
             )
             tx.execute(
                 "UPDATE experiments SET state='complete',report=? WHERE identity=?",
@@ -1121,7 +1151,7 @@ class Session:
             )
             self.verify_cursor(compiled.attempts + report["attempts"])
             self.verify_result_identity(
-                "dspy_evaluated", "report", report, report_bytes, sha
+                Session.evaluated_kind(self), "report", report, report_bytes, sha
             )
             self.verify_evaluated(report, compiled)
         self.checkpoint("after_dspy_evaluation_commit")
@@ -1134,30 +1164,47 @@ class Session:
             report["usage"], success=report["status"] == "evaluated"
         )
         self.verify_result_identity(
-            "dspy_evaluated", "report", report, report_bytes, sha
+            Session.evaluated_kind(self), "report", report, report_bytes, sha
         )
 
+    def evaluated_kind(self) -> str:
+        if Session.strategy_binding(self) != self._strategy_seal:
+            raise ev.Halt("lifecycle_strategy_changed")
+        return "gepa_evaluated" if self.strategy == "gepa" else "dspy_evaluated"
+
     def evaluate(self) -> dict[str, Any]:
-        if self.strategy != "bootstrap":
-            raise ValueError("GEPA heldout evaluation is not implemented")
         cached = self.recover_evaluated()
         if cached is not None:
             return cached
+        if self.strategy == "gepa":
+            gepa.runtime_identity()
         opt.framework()
         compiled = self.claim_evaluation()
         if compiled.candidate is None or compiled.candidate_sha256 is None:
             raise ValueError("missing compiled candidate")
-        report = opt.evaluate_locked(
-            compiled.candidate,
-            expected_sha256=compiled.candidate_sha256,
-            configuration_sha256=self.config,
-            dataset=self.dataset,
-            split=self.split,
-            provider=self.provider,
-            budget=self.budget(),
-            per_call=self.per_call,
-            check_use=lambda: self.guard("evaluation"),
-            settings=self.settings,
-        )
+        if self.strategy == "gepa":
+            report = gepa.evaluate_locked(
+                compiled,
+                dataset=self.dataset,
+                split=self.split,
+                training_output_id=cast(str, self.training_output_id),
+                provider=self.provider,
+                budget=self.budget(),
+                per_call=self.per_call,
+                check_use=lambda: self.guard("evaluation"),
+            )
+        else:
+            report = opt.evaluate_locked(
+                compiled.candidate,
+                expected_sha256=compiled.candidate_sha256,
+                configuration_sha256=self.config,
+                dataset=self.dataset,
+                split=self.split,
+                provider=self.provider,
+                budget=self.budget(),
+                per_call=self.per_call,
+                check_use=lambda: self.guard("evaluation"),
+                settings=self.settings,
+            )
         self.commit_evaluated(report)
         return report

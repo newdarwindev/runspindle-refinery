@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: newdarwindev/runspindle-tether
-          ref: c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d
+          ref: 1e8d2091c55dfad47fdc64ec2e73fcd946da9921
           path: .feedback-deps/tether
           persist-credentials: false
       - id: partition

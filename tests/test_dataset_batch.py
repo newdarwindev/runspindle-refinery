@@ -120,9 +120,9 @@ class BatchTests(unittest.TestCase):
                 self.capture()
 
     def second(self, *, same_input: bool = False) -> Selection:
+        from refinery.dataset_materialization import prepare
         from refinery.feedback_projection import RetainedSource
         from refinery.feedback_use import RetainedFeedbackUse
-        from refinery.dataset_materialization import prepare
 
         h: Any = importlib.import_module(
             "test_thumbs_up_collection"
@@ -184,7 +184,7 @@ class BatchTests(unittest.TestCase):
                     approve=self.h.approve,
                     permission_ref="explicit-test-grant",
                 )
-            return self.h.approve(descriptor, purpose, reference)
+            return self.h.approve(descriptor, purpose, reference) is True
 
         with self.assertRaises(ValueError):
             capture(self.h.registry, selections, **dict(self.kwargs, approve=approve))

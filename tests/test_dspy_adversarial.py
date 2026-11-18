@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import contextlib
 import copy
+import io
+import json
 import subprocess
 import unittest
 from typing import Any
@@ -37,6 +40,40 @@ def fixture(name: str) -> dict[str, Any]:
 
 
 class AdversarialOracleTests(unittest.TestCase):
+    def test_failed_observation_still_raises_without_success_output(self) -> None:
+        receipt = fixture("provider_failure")
+        receipt["reason"] = "unexpected_synthetic_reason"
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            with self.assertRaisesRegex(ValueError, "unexpected failure"):
+                probe.validate_observed(receipt)
+        self.assertEqual(out.getvalue(), "")
+        value = json.loads(err.getvalue())
+        self.assertEqual(value["case"], "provider_failure")
+        self.assertEqual(value["reason"], "unexpected_synthetic_reason")
+        self.assertEqual(value["ledger"]["reason"], "provider_unknown")
+        self.assertLess(len(err.getvalue()), 2048)
+
+    def test_diagnostic_cannot_dump_payload_or_unbounded_values(self) -> None:
+        receipt = fixture("cancel")
+        receipt.update(
+            reason="secret /private/path " * 10000,
+            candidate=b"PRIVATE_PAYLOAD",
+            request="PRIVATE_REQUEST",
+        )
+        receipt["ledger"].update(reason="line\nsecret", tokens=10**1000)
+        encoded = json.dumps(probe.diagnostic(receipt))
+        self.assertLess(len(encoded), 2048)
+        for private in ("PRIVATE", "secret", "/private", "request"):
+            self.assertNotIn(private, encoded)
+        self.assertEqual(probe.diagnostic(receipt)["reason"], "redacted")
+
+    def test_passing_observation_emits_no_diagnostic(self) -> None:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            probe.validate_observed(fixture("cancel"))
+        self.assertEqual(err.getvalue(), "")
+
     def test_five_expected_receipts(self) -> None:
         self.assertEqual(len(probe.CASES), 5)
         for name in probe.CASES:

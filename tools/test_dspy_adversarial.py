@@ -65,6 +65,64 @@ def validate(receipt: dict[str, Any]) -> None:
         )
 
 
+def diagnostic(receipt: dict[str, Any]) -> dict[str, Any]:
+    """Bounded synthetic fields only: never content, requests, paths or exceptions."""
+
+    def token(value: Any) -> str:
+        if (
+            type(value) is str
+            and 0 < len(value) <= 96
+            and all(
+                c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-."
+                for c in value
+            )
+        ):
+            return value
+        return "redacted"
+
+    def number(value: Any) -> int | str | None:
+        if value is None:
+            return None
+        return value if type(value) is int and 0 <= value <= 2**64 - 1 else "redacted"
+
+    ledger = receipt.get("ledger")
+    if type(ledger) is not dict:
+        ledger = {}
+    return {
+        "diagnostic": "failed_adversarial_oracle",
+        "case": receipt.get("case") if receipt.get("case") in CASES else "redacted",
+        "status": token(receipt.get("status")),
+        "reason": token(receipt.get("reason")),
+        "retry_reason": token(receipt.get("retry_reason")),
+        "compile_entries": number(receipt.get("compile_entries")),
+        "new_dispatches": number(receipt.get("new_dispatches")),
+        "network_attempts": number(receipt.get("network_attempts")),
+        "candidate_present": receipt.get("candidate") is not None,
+        "candidate_digest_present": receipt.get("candidate_sha256") is not None,
+        "ledger": {
+            **{
+                key: number(ledger.get(key))
+                for key in (
+                    "calls",
+                    "tokens",
+                    "cost_microunits",
+                    "unresolved_calls",
+                    "elapsed_ms",
+                )
+            },
+            "reason": token(ledger.get("reason")),
+        },
+    }
+
+
+def validate_observed(receipt: dict[str, Any]) -> None:
+    try:
+        validate(receipt)
+    except ValueError:
+        print(json.dumps(diagnostic(receipt), sort_keys=True), file=sys.stderr)
+        raise
+
+
 def run() -> dict[str, Any]:
     require(sys.version_info[:3] == (3, 14, 0), "unqualified Python")
     require(
@@ -195,7 +253,7 @@ def run() -> dict[str, Any]:
                         ),
                         "network_attempts": len(forbidden),
                     }
-                    validate(receipt)
+                    validate_observed(receipt)
                     receipt["ledger_sha256"] = opt.digest(before)
                     receipt["attempts_sha256"] = opt.digest(
                         storage.pack(

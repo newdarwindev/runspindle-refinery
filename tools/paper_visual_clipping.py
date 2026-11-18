@@ -31,8 +31,7 @@ def probe(actual: Path, manifest: dict[str, Any], output: Path) -> dict[str, Any
             at = (y * width + x) * 3
             changed[at : at + 3] = b"\xff\xff\xff"
     differences = [
-        pixels[i : i + 3] != changed[i : i + 3]
-        for i in range(0, len(pixels), 3)
+        pixels[i : i + 3] != changed[i : i + 3] for i in range(0, len(pixels), 3)
     ]
     count = sum(differences)
     if count == 0:
@@ -51,8 +50,7 @@ def probe(actual: Path, manifest: dict[str, Any], output: Path) -> dict[str, Any
     output.mkdir(mode=0o700)
     (output / "clipped.ppm").write_bytes(clipped)
     diff = header + b"".join(
-        b"\xff\x00\x00" if different else b"\xff\xff\xff"
-        for different in differences
+        b"\xff\x00\x00" if different else b"\xff\xff\xff" for different in differences
     )
     (output / "diff.ppm").write_bytes(diff)
     return {

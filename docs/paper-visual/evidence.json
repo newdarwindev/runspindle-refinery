@@ -382,7 +382,7 @@
     "reference_modified": false,
     "source_pdf_modified": false
   },
-  "clipping_tool_sha256": "b6e76abc1a4e17c39876300e6d95cf297f1a14a74d25e8186efc2b8ec7da199a",
+  "clipping_tool_sha256": "dd8400dc00e7e113d381c78dede0fb25b7464277fb2b52c9ed81064dc5318ccd",
   "clipping_previews": {
     "clipped.png": "657caf2e43f3e58081f01aa926e305ef01b8785eeb56ea147bfc455e13689f31",
     "diff.png": "82c4b9fd2aaa0d047aab045c159864434ae97c9a7965a744abeea97fe900252d"
@@ -400,5 +400,10 @@
     "responsive_DOM_keyboard": "not_applicable static PDF",
     "runtime_or_provider_qualification": "not_claimed"
   },
-  "full_repository_aggregate": "pending_final_commit"
+  "full_repository_aggregate": "recorded_separately_in_final_PR_receipt",
+  "clipping_tool_format_only_change": {
+    "native_executed_sha256": "b6e76abc1a4e17c39876300e6d95cf297f1a14a74d25e8186efc2b8ec7da199a",
+    "non_location_ast_identical": true,
+    "reason": "Pinned Ruff0.14.5 formatting only; executable AST unchanged. Final native verification recorded separately."
+  }
 }

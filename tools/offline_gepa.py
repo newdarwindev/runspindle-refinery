@@ -138,12 +138,25 @@ def execute(prepared: str) -> dict[str, Any]:
     try:
         result = bounded(argv, 120)
     finally:
-        # Attempt inspect even when removal fails; never report success on residue.
+        # --rm may already have removed the container. Only a successful scoped
+        # listing proves absence; daemon/transport errors are never absence.
         try:
             bounded(["docker", "rm", "--force", container], 30)
         finally:
-            if bounded(["docker", "inspect", container], 30).returncode == 0:
-                raise RuntimeError("GEPA container cleanup incomplete")
+            absence = bounded(
+                [
+                    "docker",
+                    "ps",
+                    "-a",
+                    "--filter",
+                    "name=^/" + container + "$",
+                    "--format",
+                    "{{.ID}}",
+                ],
+                30,
+            )
+            if absence.returncode != 0 or absence.stdout.strip():
+                raise RuntimeError("GEPA container absence not established")
     if result.returncode:
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("GEPA native qualification failed")

@@ -122,7 +122,7 @@ class RuntimeTests(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, 0, image, "")
             if argv[:2] == ["docker", "run"]:
                 raise TimeoutError("synthetic timeout")
-            return subprocess.CompletedProcess(argv, 1, "", "")
+            return subprocess.CompletedProcess(argv, 0, "", "")
 
         with (
             patch.object(runtime, "verify_prepared"),
@@ -136,7 +136,7 @@ class RuntimeTests(unittest.TestCase):
                 ["docker", "image"],
                 ["docker", "run"],
                 ["docker", "rm"],
-                ["docker", "inspect"],
+                ["docker", "ps"],
             ],
         )
         argv, timeout = calls[1]
@@ -151,6 +151,54 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn("--read-only", argv)
         self.assertIn(runtime.IMAGE, argv)
         self.assertIn("/usr/local/bin/python3.13", argv)
+
+    def test_cleanup_requires_positive_empty_scoped_query(self) -> None:
+        image = json.dumps(
+            [{"Id": runtime.IMAGE_CONFIG, "Architecture": "arm64", "Os": "linux"}]
+        )
+        for code, output in ((1, ""), (0, "remaining-id\n")):
+            calls: list[list[str]] = []
+
+            def fake(argv: list[str], timeout: int) -> subprocess.CompletedProcess[str]:
+                calls.append(argv)
+                if argv[:3] == ["docker", "image", "inspect"]:
+                    return subprocess.CompletedProcess(argv, 0, image, "")
+                if argv[:2] == ["docker", "run"]:
+                    return subprocess.CompletedProcess(
+                        argv, 0, '{"status":"passed"}', ""
+                    )
+                if argv[:2] == ["docker", "ps"]:
+                    return subprocess.CompletedProcess(
+                        argv, code, output, "daemon unavailable" if code else ""
+                    )
+                return subprocess.CompletedProcess(
+                    argv, 1, "", "already removed or daemon error"
+                )
+
+            with (
+                self.subTest(code=code),
+                patch.object(runtime, "verify_prepared"),
+                patch.object(launcher, "bounded", fake),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "absence not established"):
+                    launcher.execute("/prepared")
+            self.assertEqual(calls[-2][:2], ["docker", "rm"])
+            self.assertEqual(calls[-1][:4], ["docker", "ps", "-a", "--filter"])
+            container = calls[1][calls[1].index("--name") + 1]
+            self.assertEqual(calls[-1][4], "name=^/" + container + "$")
+
+    def test_provider_entry_observed_even_when_original_raises(self) -> None:
+        observed: list[Any] = []
+        entered: list[Any] = []
+
+        def failed(instance: Any, request: Any) -> Any:
+            entered.append(request)
+            raise RuntimeError("original failed")
+
+        with self.assertRaisesRegex(RuntimeError, "original failed"):
+            harness.observe_completion(failed, observed, object(), "synthetic-request")
+        self.assertEqual(entered, ["synthetic-request"])
+        self.assertEqual(observed, [("synthetic-request", None)])
 
     def test_command_cleanup_reaps_even_when_kill_raises(self) -> None:
         class Child:

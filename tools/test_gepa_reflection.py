@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib
 import io
 import json
@@ -98,6 +99,22 @@ def validate(report: dict[str, Any]) -> None:
     )
 
 
+def observe_completion(
+    original: Any, observed: list[Any], instance: Any, request: Any
+) -> Any:
+    # Count entry before the original call: a throwing provider remains an effect.
+    index = len(observed)
+    observed.append((request, None))
+    reply = original(instance, request)
+    observed[index] = (
+        request,
+        hashlib.sha256(reply.content).hexdigest()
+        if reply.content is not None
+        else None,
+    )
+    return reply
+
+
 def once(forbidden: list[str]) -> dict[str, Any]:
     from refinery import evaluation as ev
     from refinery import gepa_codec as codec
@@ -135,11 +152,7 @@ def once(forbidden: list[str]) -> dict[str, Any]:
         return result
 
     def provider_call(instance: Any, request: ev.Request) -> Any:
-        reply = original_complete(instance, request)
-        observed.append(
-            (request, digest(reply.content) if reply.content is not None else None)
-        )
-        return reply
+        return observe_completion(original_complete, observed, instance, request)
 
     with (
         tempfile.TemporaryDirectory() as directory,

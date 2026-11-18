@@ -22,7 +22,10 @@ input mounts, dropped capabilities, no-new-privileges, two CPUs, 1536 MiB memory
 256 PIDs, a 512 MiB temporary filesystem and a 120-second runtime deadline.
 Command output is bounded to 1 MiB. Image inspection and cleanup each have bounded
 30-second commands; child kill/reap and container removal/absence checks run on
-failure too. No caller credentials are passed into the container. Report paths
+failure too. A successful exact-name `docker ps -a` query with no IDs is required
+to establish absence; daemon errors and nonempty results fail closed, including
+after a successful runtime command. The provider spy records entry before calling
+the original provider, so throwing calls remain observed. No caller credentials are passed into the container. Report paths
 must be new; a failed run never yields a success receipt.
 
 Before framework imports or effects, the internal strategy verifies exact

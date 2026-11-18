@@ -61,6 +61,16 @@ def bounded_file(path: Path, limit: int = SOURCE_FILE_LIMIT) -> bytes:
             os.close(descriptor)
 
 
+def verify_ae5_historical_pin() -> None:
+    """Admit only the preserved prior manifest, never treat old/current as equal."""
+    raw = bounded_file(PIN.parent / "tether-feedback-ae5ac216.json")
+    if (
+        hashlib.sha256(raw).hexdigest()
+        != "480116946e7d1aeaf95aeb4f666dc3aeb58dc12bdbab0fe94287b0e7a5325b86"
+    ):
+        raise ValueError("historical Tether manifest changed")
+
+
 def bounded_head(root: Path) -> str:
     """Bound owned Git wait/output; not a descendant-cleanup or hostile-OS claim."""
     child: subprocess.Popen[bytes] | None = None

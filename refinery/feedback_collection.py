@@ -15,7 +15,7 @@ from .lineage import (
 )
 from .source_feedback import SourceFeedbackGuard, require_no_guarded_identity
 from .storage import VERSION, Store, pack
-from .tether_dependency import TetherDependency
+from .tether_dependency import TetherDependency, verify_ae5_historical_pin
 
 
 @dataclass(frozen=True)
@@ -107,6 +107,16 @@ def collect(
             or dependency.pin["commit"] != "1e8d2091c55dfad47fdc64ec2e73fcd946da9921"
         ):
             raise ValueError("unsupported feedback revalidation transition")
+
+    def check_historical_pin() -> None:
+        if (
+            prior_receipt is not None
+            and prior_receipt["dependency_commit"]
+            == "ae5ac216b45ca413283e4200c0a4a61054998b58"
+        ):
+            verify_ae5_historical_pin()
+
+    check_historical_pin()
     resolve: Any = resolve_material
     verify: Any = verify_material
     collection: Any = approve_collection
@@ -271,6 +281,7 @@ def collect(
 
     def check_evidence() -> None:
         check_cancel()
+        check_historical_pin()
         dependency.check(tether_store)
         check_cancel()
         if source_guard is None:

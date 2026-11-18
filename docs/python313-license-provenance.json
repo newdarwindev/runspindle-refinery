@@ -1,0 +1,19 @@
+{
+  "schema": "runspindle.python313-license-provenance.v1",
+  "image": "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+  "image_path": "usr/local/lib/python3.13/LICENSE.txt",
+  "file": "offline/python313/python-LICENSE",
+  "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb",
+  "bytes": 13809,
+  "layer_events": [
+    {
+      "layer": "sha256:4fa1415133f17333dc45075a2a9ec73d04e8856502d2f2bee4e812d3aa99ea07",
+      "path": "usr/local/lib/python3.13/LICENSE.txt",
+      "is_regular": true,
+      "sha256": "78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb"
+    }
+  ],
+  "method": "read-only verified OCI layer inspection; one regular file and no subsequent overwrite or ancestor whiteout",
+  "previous_python314_notice": "preserved unchanged; bytes differ",
+  "runtime_execution": "not_run"
+}

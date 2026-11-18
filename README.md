@@ -10,13 +10,13 @@ Normal text describes implemented boundaries; *italic text marks upcoming work o
 
 **REFINERY** implements dataset lineage, retained-feedback controls, evaluation budgets, immutable candidate identity and serving-admission boundaries. An example stays attached to the exact source and output it evaluates; a score is evidence for review, never automatic authority to deploy.
 
-DSPy supplies optimization machinery. **REFINERY** supplies the operation signature, permitted examples, locked partitions, cumulative budget and exact candidate identity around it. The implemented [BootstrapFewShot adapter](specs/dspy-bootstrap-optimizer.md) calls the framework compiler for a bounded program with a scripted provider. That source implementation is not completed framework qualification or evidence of live model-quality gains.
+DSPy supplies optimization machinery. **REFINERY** supplies the operation signature, permitted examples, locked partitions, cumulative budget and exact candidate identity around it. The implemented [BootstrapFewShot adapter](specs/dspy-bootstrap-optimizer.md) calls the framework compiler for a bounded program with a scripted provider. The [pinned native offline qualification](specs/dspy-native-qualification.md) now covers actual compilation, locked evaluation and fresh-process recovery with synthetic completions. It is not evidence of live model-quality gains.
 
 **DURABLE EVIDENCE** uses SQLite for offline records and budget reservations. [Retained-feedback use](specs/retained-feedback-use.md) checks current permission separately from collection. [Explicit revalidation](specs/feedback-revalidation.md) can create a current-pin receipt only after fresh source checks and collection/training consent; old receipts remain immutable and do not inherit new permission. [Serving readback integrity](specs/serving-readback-integrity.md) keeps evaluated bytes distinct from claimed outcomes.
 
 **CANDIDATE SELECTION** preserves dataset, split, provider and content identity. It does not turn a cached result into authority, a teacher answer into verified gold, or an uncertain budget reservation into free spending.
 
-*Upcoming qualification includes the required pinned DSPy runtime, representative real-data evaluation, actual provider cost/quality measurement and approved production serving. Collection, training use, evaluation and deployment remain separate decisions; there is no automatic production improvement claim.*
+*Upcoming qualification includes representative real-data evaluation, actual provider cost/quality measurement and approved production serving. Collection, training use, evaluation and deployment remain separate decisions; there is no automatic production improvement claim.*
 
 ## FROM A CORRECTION TO AN EVALUATED CANDIDATE
 

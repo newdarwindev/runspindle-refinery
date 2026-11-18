@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import sqlite3
+import threading
 from contextlib import contextmanager, nullcontext
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from . import evaluation as ev
 from . import lineage as lin
@@ -145,7 +147,14 @@ class Store:
     def __init__(self, path: Any) -> None:
         self._admitted = False
         self.path = Path(path)
-        self.db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
+        self._owner_thread = threading.get_ident()
+        self._state_lock = threading.Lock()
+        self._worker_local = threading.local()
+        self._active_worker: int | None = None
+        self._owner_transaction = False
+        self._closed = False
+        self._worker_fault = False
+        self._db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
         try:
             self.db.execute("PRAGMA journal_mode=WAL")
             self.db.execute("PRAGMA synchronous=FULL")
@@ -170,6 +179,10 @@ class Store:
                     tx.execute("PRAGMA user_version=1")
                 self._validate(tx)
             self._admitted = True
+            filename = self.db.execute("PRAGMA database_list").fetchone()[2]
+            self._worker_path = Path(filename).resolve() if filename else None
+            info = os.stat(self._worker_path) if self._worker_path is not None else None
+            self._database_identity = (info.st_dev, info.st_ino) if info else None
         except BaseException:
             self.db.close()
             raise
@@ -180,8 +193,96 @@ class Store:
 
         validate(tx, STATEMENTS, unpack)
 
+    @property
+    def db(self) -> sqlite3.Connection:
+        thread = threading.get_ident()
+        with self._state_lock:
+            if self._closed or self._worker_fault:
+                raise ValueError("Store is closed or worker cleanup failed")
+            if thread == self._owner_thread:
+                if self._active_worker is not None:
+                    raise ValueError("Store worker is active")
+                return self._db
+            connection = getattr(self._worker_local, "connection", None)
+            if connection is None or self._active_worker != thread:
+                raise ValueError("Store worker context required")
+            return cast(sqlite3.Connection, connection)
+
+    @contextmanager
+    def worker_context(self) -> Any:
+        """One bounded foreign-thread connection; affinity remains enabled.
+
+        Nested scopes in the same worker reuse its connection. The original
+        owner never joins the worker transaction, and closes only its own handle.
+        """
+        thread = threading.get_ident()
+        if thread == self._owner_thread:
+            yield self.db
+            return
+        existing = getattr(self._worker_local, "connection", None)
+        if existing is not None:
+            yield self.db
+            return
+        with self._state_lock:
+            if (
+                self._closed
+                or self._worker_fault
+                or self._active_worker is not None
+                or self._owner_transaction
+                or self._worker_path is None
+            ):
+                raise ValueError("Store worker admission unavailable")
+            path = self._worker_path
+            identity = self._database_identity
+            self._active_worker = thread
+        connection = None
+        unfinished = False
+        try:
+            before = os.stat(path)
+            if (before.st_dev, before.st_ino) != identity:
+                raise ValueError("Store database path changed")
+            # Deliberately retain sqlite3's default check_same_thread=True.
+            connection = sqlite3.connect(path, timeout=5, isolation_level=None)
+            after = os.stat(path)
+            if (after.st_dev, after.st_ino) != identity:
+                raise ValueError("Store database path changed")
+            connection.execute("PRAGMA synchronous=FULL")
+            connection.execute("PRAGMA foreign_keys=ON")
+            connection.execute("PRAGMA max_page_count=32768")
+            if connection.execute("PRAGMA journal_mode").fetchone()[0] != "wal":
+                raise ValueError("Store worker requires existing WAL database")
+            self._worker_local.connection = connection
+            with self.transaction() as tx:
+                if tx.execute("PRAGMA user_version").fetchone()[0] != 1:
+                    raise ValueError("Store worker schema changed")
+            yield connection
+            unfinished = connection.in_transaction
+        finally:
+            try:
+                if connection is not None:
+                    try:
+                        if connection.in_transaction:
+                            connection.rollback()
+                    finally:
+                        connection.close()
+            except BaseException:
+                self._worker_fault = True
+                raise
+            finally:
+                self._worker_local.connection = None
+                with self._state_lock:
+                    self._active_worker = None
+        if unfinished:
+            raise ValueError("Store worker left an unfinished transaction")
+
     def close(self):
-        self.db.close()
+        with self._state_lock:
+            if threading.get_ident() != self._owner_thread:
+                raise ValueError("Store close requires owner thread")
+            if self._active_worker is not None:
+                raise ValueError("Store worker is active")
+            self._db.close()
+            self._closed = True
 
     def __enter__(self):
         return self
@@ -191,17 +292,31 @@ class Store:
 
     @contextmanager
     def transaction(self):
-        self.db.execute("BEGIN IMMEDIATE")
+        connection = self.db
+        owner = threading.get_ident() == self._owner_thread
+        previous = False
+        if owner:
+            with self._state_lock:
+                if self._active_worker is not None:
+                    raise ValueError("Store worker is active")
+                previous = self._owner_transaction
+                self._owner_transaction = True
         try:
-            if self._admitted:
-                self._validate(self.db)
-            yield self.db
-            if self._admitted:
-                self._validate(self.db)
-            self.db.commit()
-        except BaseException:
-            self.db.rollback()
-            raise
+            connection.execute("BEGIN IMMEDIATE")
+            try:
+                if self._admitted:
+                    self._validate(connection)
+                yield connection
+                if self._admitted:
+                    self._validate(connection)
+                connection.commit()
+            except BaseException:
+                connection.rollback()
+                raise
+        finally:
+            if owner:
+                with self._state_lock:
+                    self._owner_transaction = previous
 
     @staticmethod
     def room(tx, table, limit=MAX_OBJECTS):

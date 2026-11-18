@@ -255,6 +255,7 @@ def runtime_identity() -> str:
             "refinery/dspy_optimizer.py",
             "refinery/evaluation.py",
             "refinery/durable_evaluation.py",
+            "refinery/storage.py",
         )
     }
     return digest(canonical({"adoption": verified, "sources": sources}))

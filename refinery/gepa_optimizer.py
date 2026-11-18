@@ -7,6 +7,8 @@ fallback. All task/reflection calls use one cursor and one existing shared ledge
 from __future__ import annotations
 
 import importlib.metadata
+import threading
+from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -61,6 +63,9 @@ class Transport(Dispatch):
             per_call=per_call,
             check_use=check_use,
         )
+        self._execution_lock = threading.Lock()
+        self._execution_local = threading.local()
+        self._overlap = threading.Event()
         self.example = example
         self.config = config
         self.training_case = case(example)
@@ -75,8 +80,42 @@ class Transport(Dispatch):
         self.signature: Any = None
         self._association_binding = (config, self.training_case, split.sha256, example)
 
+    @contextmanager
+    def execution_scope(self) -> Any:
+        """Admit the fixed serial profile without replacing DSPy's executor."""
+        if getattr(self._execution_local, "active", False):
+            yield
+            return
+        if not self._execution_lock.acquire(blocking=False):
+            self._overlap.set()
+            raise ev.Halt("gepa_concurrent_execution")
+        self._execution_local.active = True
+        try:
+            scope = (
+                self.budget.store.worker_context()
+                if type(self.budget) is SQLiteBudget
+                else nullcontext()
+            )
+            with scope:
+                self.check_binding()
+                yield
+                self.check_binding()
+        finally:
+            self._execution_local.active = False
+            self._execution_lock.release()
+
     def check_binding(self) -> None:
         super().check_binding()
+        if self._overlap.is_set():
+            self.budget.stop("gepa_concurrent_execution")
+            reason = self.budget.snapshot().get("reason")
+            if type(reason) is not str:
+                reason = "gepa_concurrent_execution"
+            try:
+                _token(reason)
+            except ValueError:
+                reason = "gepa_concurrent_execution"
+            raise ev.Halt(reason)
         if (
             (self.config, self.training_case, self.split.sha256, self.example)
             != self._association_binding
@@ -367,7 +406,8 @@ def optimize(
             )
 
         def forward(self, case: str) -> Any:
-            return dispatch.task(self.predict, case)
+            with dispatch.execution_scope():
+                return dispatch.task(self.predict, case)
 
     student, lm = Program(), LocalLM()
     dispatch.signature = student.predict.signature
@@ -381,24 +421,27 @@ def optimize(
         pred_name: Any = None,
         pred_trace: Any = None,
     ) -> Any:
-        score, feedback = dispatch.metric_feedback(
-            gold.case, gold.answer, pred.answer, pred_name
-        )
+        with dispatch.execution_scope():
+            score, feedback = dispatch.metric_feedback(
+                gold.case, gold.answer, pred.answer, pred_name
+            )
         return dspy.Prediction(score=score, feedback=feedback)
 
     def proposer(
         candidate: Any, reflective_dataset: Any, components_to_update: Any
     ) -> Any:
-        return dispatch.propose(
-            reflection,
-            candidate=candidate,
-            reflective_dataset=reflective_dataset,
-            components_to_update=components_to_update,
-        )
+        with dispatch.execution_scope():
+            return dispatch.propose(
+                reflection,
+                candidate=candidate,
+                reflective_dataset=reflective_dataset,
+                components_to_update=components_to_update,
+            )
 
     def stop(state: Any) -> bool:
-        dispatch.guard()
-        return bool(dispatch.proposals)
+        with dispatch.execution_scope():
+            dispatch.guard()
+            return bool(dispatch.proposals)
 
     candidate, reason = None, None
     try:

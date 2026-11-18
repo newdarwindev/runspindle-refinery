@@ -123,10 +123,10 @@ def execute(
     tether: str | None = None,
     git: str | None = None,
 ) -> dict[str, Any]:
-    if suite not in {"reflection", "durable", "materialized"}:
+    if suite not in {"reflection", "durable", "materialized", "heldout"}:
         raise ValueError("unknown GEPA suite")
     inputs = None
-    if suite == "materialized":
+    if suite in {"materialized", "heldout"}:
         if type(tether) is not str or type(git) is not str:
             raise ValueError("explicit materialized Tether and Git inputs required")
         inputs = materialized_inputs(tether, git)
@@ -140,8 +140,10 @@ def execute(
 
     if suite == "durable":
         from tools.test_gepa_durable import source_hashes, validate_report
-    if suite == "materialized":
+    if suite in {"materialized", "heldout"}:
         from tools.test_gepa_materialized import source_hashes, validate_report
+    if suite == "heldout":
+        from tools.test_gepa_heldout_materialized import source_hashes, validate_report
     sources = source_hashes()
     inspected = bounded(["docker", "image", "inspect", runtime.IMAGE], 30)
     if inspected.returncode:
@@ -181,7 +183,7 @@ def execute(
         "-w",
         "/work",
     ]
-    if suite == "materialized":
+    if suite in {"materialized", "heldout"}:
         argv += [
             "-v",
             str(tether) + ":/tether:ro",
@@ -210,7 +212,9 @@ def execute(
         if suite == "reflection"
         else "tools/test_gepa_durable.py"
         if suite == "durable"
-        else "tools/test_gepa_materialized.py",
+        else "tools/test_gepa_materialized.py"
+        if suite == "materialized"
+        else "tools/test_gepa_heldout_materialized.py",
     ]
     try:
         result = bounded(argv, 120)
@@ -238,9 +242,9 @@ def execute(
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("GEPA native qualification failed")
     value = json.loads(result.stdout)
-    if suite in {"durable", "materialized"}:
+    if suite in {"durable", "materialized", "heldout"}:
         validate_report(value)
-        if suite == "materialized" and (
+        if suite in {"materialized", "heldout"} and (
             value["inputs"] != inputs
             or materialized_inputs(cast(str, tether), cast(str, git)) != inputs
         ):
@@ -277,7 +281,7 @@ def main() -> None:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
         "--suite",
-        choices=("reflection", "durable", "materialized"),
+        choices=("reflection", "durable", "materialized", "heldout"),
         default="reflection",
     )
     parser.add_argument("--tether")

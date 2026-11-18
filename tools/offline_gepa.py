@@ -77,13 +77,7 @@ def execute(prepared: str) -> dict[str, Any]:
     if inspected.returncode:
         raise ValueError("pinned GEPA image unavailable")
     images = json.loads(inspected.stdout)
-    if (
-        len(images) != 1
-        or images[0]["Id"] != runtime.IMAGE_CONFIG
-        or images[0]["Architecture"] != "arm64"
-        or images[0]["Os"] != "linux"
-    ):
-        raise ValueError("GEPA image configuration changed")
+    runtime.verify_image(images)
     container = "runspindle-gepa-" + uuid.uuid4().hex
     argv = [
         "docker",

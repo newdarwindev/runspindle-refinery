@@ -13,7 +13,7 @@ from typing import Any
 
 from tools.offline_dspy import source_bytes as source_bytes
 
-ADOPTION_SHA256 = "d125ce97be59f074080af87a1038ed5596018db593e92e239a5574eaf58f8e78"
+ADOPTION_SHA256 = "e7e7f997c79024dbfde658e3825a4786743e1b249005112cb6598c87ed2e79ae"
 IMAGE = "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f"
 IMAGE_CONFIG = "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b"
 FILES = frozenset(
@@ -26,6 +26,10 @@ FILES = frozenset(
         "docs/python313-native-preparation.json",
         "offline/python313/python-LICENSE",
         "docs/python313-license-provenance.json",
+        "docs/python313-image/manifest.json",
+        "docs/python313-image/config.json",
+        "docs/python313-image/docker29-inspect.json",
+        "docs/python313-image/provenance.json",
     }
 )
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,6 +71,73 @@ def reviewed() -> tuple[dict[str, Any], dict[str, Any]]:
     }:
         raise ValueError("GEPA adopted inventories disagree")
     return inventory, modes
+
+
+def verify_image(images: Any) -> None:
+    """Bind known Docker ID representations to the same exact OCI image.
+
+    The existing local Docker daemon remains trusted. Descriptor annotations and
+    mutable repository tags are not execution authority; raw source hashes,
+    runtime configuration and ordered rootfs diff IDs are mandatory.
+    """
+    reviewed()
+    manifest_bytes = source_bytes("docs/python313-image/manifest.json")
+    config_bytes = source_bytes("docs/python313-image/config.json")
+    manifest_digest = IMAGE.removeprefix("python@")
+    if (
+        "sha256:" + digest(manifest_bytes) != manifest_digest
+        or "sha256:" + digest(config_bytes) != IMAGE_CONFIG
+    ):
+        raise ValueError("GEPA raw OCI binding changed")
+    manifest, config = json.loads(manifest_bytes), json.loads(config_bytes)
+    if (
+        manifest["schemaVersion"] != 2
+        or manifest["mediaType"] != "application/vnd.oci.image.manifest.v1+json"
+        or manifest["config"]
+        != {
+            "mediaType": "application/vnd.oci.image.config.v1+json",
+            "digest": IMAGE_CONFIG,
+            "size": len(config_bytes),
+        }
+        or config["rootfs"]["type"] != "layers"
+        or len(manifest["layers"]) != len(config["rootfs"]["diff_ids"])
+    ):
+        raise ValueError("GEPA manifest/config association changed")
+    # The raw manifest hash pins every compressed layer descriptor. Diff IDs
+    # below are the separate uncompressed layer hashes bound by the raw config.
+    if type(images) is not list or len(images) != 1 or type(images[0]) is not dict:
+        raise ValueError("GEPA image inspect shape changed")
+    image = images[0]
+    if (
+        image.get("Id") not in {IMAGE_CONFIG, manifest_digest}
+        or image.get("Architecture") != config["architecture"]
+        or image.get("Os") != config["os"]
+        or image.get("Variant") != config["variant"]
+        or image.get("Created") != config["created"]
+        or image.get("Config") != config["config"]
+        or image.get("RootFS")
+        != {"Type": config["rootfs"]["type"], "Layers": config["rootfs"]["diff_ids"]}
+    ):
+        raise ValueError("GEPA image configuration changed")
+    if image["Id"] == IMAGE_CONFIG and image.get("RepoDigests") != [IMAGE]:
+        raise ValueError("GEPA requested manifest reference changed")
+    descriptor = image.get("Descriptor")
+    if image["Id"] == manifest_digest or descriptor is not None:
+        if (
+            type(descriptor) is not dict
+            or not {"mediaType", "digest", "size"} <= set(descriptor)
+            or set(descriptor) - {"mediaType", "digest", "size", "annotations"}
+            or descriptor.get("mediaType") != manifest["mediaType"]
+            or descriptor.get("digest") != manifest_digest
+            or type(descriptor.get("size")) is not int
+            or descriptor.get("size") != len(manifest_bytes)
+        ):
+            raise ValueError("GEPA image descriptor changed")
+        annotations = descriptor.get("annotations", {})
+        if type(annotations) is not dict or any(
+            type(k) is not str or type(v) is not str for k, v in annotations.items()
+        ):
+            raise ValueError("GEPA descriptor annotations malformed")
 
 
 def snapshot(path: Path) -> dict[str, Any]:

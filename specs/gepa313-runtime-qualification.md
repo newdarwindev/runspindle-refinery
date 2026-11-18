@@ -18,6 +18,27 @@ The recipe's image/config, interpreter, uv archive/binary/checksum and sealed UD
 provenance remain the existing reviewed values. Native preparation establishes
 this sealed input realization, not arbitrary wheelhouse rebuild/distribution.
 
+The first attempted native launcher at `d0b95bf7b10b828661442cf408c47400203ddc27`
+failed before framework execution because Docker 29's containerd store reported
+the pinned manifest digest as `Id`, not the config digest. The failed log digest,
+actual full inspect, and exact imported raw manifest/config are retained under
+`docs/python313-image/`; no successful GEPA run is inferred from that observation.
+
+The image verifier now cryptographically binds the raw manifest to its exact
+config and compressed-layer descriptors, then requires inspect's ordered rootfs
+diff IDs and complete runtime configuration to match that pinned config. These
+uncompressed diff IDs are not confused with compressed layer digests. Only the
+exact classic config-ID representation or observed manifest-ID representation is
+accepted. Config-ID additionally requires the exact requested manifest reference
+in the reviewed single-entry RepoDigests form; same config/rootfs under a different
+compressed-layer manifest is not enough. Manifest-ID requires matching Descriptor
+digest, size and media type;
+a descriptor, when present on either form, must match. Missing bindings, arbitrary
+IDs, changed runtime configuration or reordered layers reject. Mutable tags and
+descriptor annotations do not grant authority. This relies on the existing local
+Docker daemon's content-addressed inspection, not protection from a hostile daemon.
+Classic compatibility is source-tested; the retained actual observation is Docker29.
+
 `tools/offline_gepa.py` performs full source/inventory checks before Docker. It
 accepts only the pinned Linux ARM64 image/config, never pulls, never prepares and
 never accepts another manifest. Execution has no network, a read-only root and

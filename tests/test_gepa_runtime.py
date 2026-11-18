@@ -46,6 +46,73 @@ class RuntimeTests(unittest.TestCase):
                     launcher.execute("/unused")
                 command.assert_not_called()
 
+    def test_exact_classic_and_observed_docker29_identity(self) -> None:
+        observed = json.loads(
+            runtime.source_bytes("docs/python313-image/docker29-inspect.json")
+        )
+        runtime.verify_image(observed)
+        classic = copy.deepcopy(observed)
+        classic[0]["Id"] = runtime.IMAGE_CONFIG
+        del classic[0]["Descriptor"]
+        runtime.verify_image(classic)
+        classic[0]["RepoDigests"] = ["python@sha256:" + "b" * 64]
+        with self.assertRaisesRegex(ValueError, "manifest reference changed"):
+            runtime.verify_image(classic)
+        classic[0].pop("RepoDigests")
+        with self.assertRaisesRegex(ValueError, "manifest reference changed"):
+            runtime.verify_image(classic)
+        # A manifest-style ID without its descriptor is not a fallback.
+        del observed[0]["Descriptor"]
+        with self.assertRaisesRegex(ValueError, "descriptor changed"):
+            runtime.verify_image(observed)
+
+    def test_image_descriptor_rootfs_and_runtime_configuration_tampering(self) -> None:
+        original = json.loads(
+            runtime.source_bytes("docs/python313-image/docker29-inspect.json")
+        )
+        changes = [
+            ("Id", "sha256:" + "a" * 64),
+            ("Architecture", "amd64"),
+            ("Os", "windows"),
+            ("Variant", "wrong"),
+        ]
+        value: Any
+        for field, value in changes:
+            changed = copy.deepcopy(original)
+            changed[0][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                runtime.verify_image(changed)
+        for field, value in (
+            ("digest", runtime.IMAGE_CONFIG),
+            ("size", 1755),
+            ("mediaType", "application/vnd.oci.image.index.v1+json"),
+        ):
+            changed = copy.deepcopy(original)
+            changed[0]["Descriptor"][field] = value
+            with (
+                self.subTest(descriptor=field),
+                self.assertRaisesRegex(ValueError, "descriptor changed"),
+            ):
+                runtime.verify_image(changed)
+        changed = copy.deepcopy(original)
+        changed[0]["RootFS"]["Layers"].reverse()
+        with self.assertRaisesRegex(ValueError, "configuration changed"):
+            runtime.verify_image(changed)
+        for field, value in (
+            ("Entrypoint", ["sh"]),
+            ("Env", ["PYTHONPATH=/foreign"]),
+            ("Cmd", ["false"]),
+            ("User", "different"),
+            ("Volumes", {"/usr/local": {}}),
+        ):
+            changed = copy.deepcopy(original)
+            changed[0]["Config"][field] = value
+            with (
+                self.subTest(config=field),
+                self.assertRaisesRegex(ValueError, "configuration changed"),
+            ):
+                runtime.verify_image(changed)
+
     def test_snapshot_binds_files_and_directory_modes(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -111,9 +178,9 @@ class RuntimeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "image configuration"):
                 launcher.execute("/prepared")
             self.assertEqual(command.call_count, 1)
-        image = json.dumps(
-            [{"Id": runtime.IMAGE_CONFIG, "Architecture": "arm64", "Os": "linux"}]
-        )
+        image = runtime.source_bytes(
+            "docs/python313-image/docker29-inspect.json"
+        ).decode()
         calls: list[tuple[list[str], int]] = []
 
         def fake(argv: list[str], timeout: int) -> subprocess.CompletedProcess[str]:
@@ -153,9 +220,9 @@ class RuntimeTests(unittest.TestCase):
         self.assertIn("/usr/local/bin/python3.13", argv)
 
     def test_cleanup_requires_positive_empty_scoped_query(self) -> None:
-        image = json.dumps(
-            [{"Id": runtime.IMAGE_CONFIG, "Architecture": "arm64", "Os": "linux"}]
-        )
+        image = runtime.source_bytes(
+            "docs/python313-image/docker29-inspect.json"
+        ).decode()
         for code, output in ((1, ""), (0, "remaining-id\n")):
             calls: list[list[str]] = []
 

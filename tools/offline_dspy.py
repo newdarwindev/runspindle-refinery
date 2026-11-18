@@ -207,7 +207,7 @@ def inventory(base):
 
 
 def execute(prepared: str, suite: str = "predict") -> Any:
-    if suite not in {"predict", "optimizer", "adversarial"}:
+    if suite not in {"predict", "optimizer", "adversarial", "ownership"}:
         raise ValueError("unqualified DSPy suite")
     base = Path(prepared).absolute()
     actual = cast(Any, inventory)(base)
@@ -269,7 +269,11 @@ def execute(prepared: str, suite: str = "predict") -> Any:
                 else (
                     "tools/test_dspy_optimizer.py"
                     if suite == "optimizer"
-                    else "tools/test_dspy_adversarial.py"
+                    else (
+                        "tools/test_dspy_adversarial.py"
+                        if suite == "adversarial"
+                        else "tools/test_dspy_ownership.py"
+                    )
                 ),
             ],
             capture_output=True,
@@ -302,7 +306,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepared", default=str(ROOT / "local/python-deps"))
     parser.add_argument(
-        "--suite", choices=("predict", "optimizer", "adversarial"), default="predict"
+        "--suite",
+        choices=("predict", "optimizer", "adversarial", "ownership"),
+        default="predict",
     )
     parser.add_argument("--report", required=True)
     args = parser.parse_args()

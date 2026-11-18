@@ -8,12 +8,15 @@ bytes only. Errors never reproduce request headers, credentials or server text.
 from __future__ import annotations
 
 import base64
+import hashlib
 import ipaddress
 import json
 import os
+import re
 import ssl
 import subprocess
 import sys
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -94,6 +97,149 @@ def validate_request(method: str, path: str, body: bytes | None) -> None:
         raise ValueError("unsupported score operation")
 
 
+def validate_dataset_request(method: str, path: str, body: bytes | None) -> None:
+    """Text-only immutable descriptor profile, not general Langfuse API access."""
+    if type(path) is not str:
+        raise ValueError("exact dataset endpoint required")
+    if method == "GET":
+        if body is not None or not (
+            re.fullmatch(r"/api/public/v2/datasets/[A-Za-z0-9_-]{1,64}", path)
+            or re.fullmatch(r"/api/public/dataset-items/[0-9a-f]{64}", path)
+        ):
+            raise ValueError("exact existing dataset read required")
+        return
+    if (
+        method != "POST"
+        or path != "/api/public/dataset-items"
+        or type(body) is not bytes
+        or not 1 <= len(body) <= 262144
+    ):
+        raise ValueError("bounded dataset item POST required")
+
+    def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def canonical(value: Any) -> bytes:
+        return json.dumps(
+            value,
+            ensure_ascii=True,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+
+    count = [0]
+
+    def safe(value: Any, depth: int = 0) -> None:
+        count[0] += 1
+        if depth > 32 or count[0] > 10000:
+            raise ValueError("dataset structural bound")
+        if type(value) is str:
+            if (
+                any(unicodedata.category(ch) in {"Cc", "Cs"} for ch in value)
+                or "@@@langfuseMedia:" in value
+            ):
+                raise ValueError("unsupported dataset text/media")
+        elif type(value) is dict:
+            for key, child in value.items():
+                safe(key, depth + 1)
+                safe(child, depth + 1)
+        elif type(value) is list:
+            for child in value:
+                safe(child, depth + 1)
+
+    try:
+        value = json.loads(body, object_pairs_hook=unique)
+        safe(value)
+        if canonical(value) != body:
+            raise ValueError("noncanonical dataset JSON")
+        if (
+            type(value) is not dict
+            or set(value)
+            != {"id", "datasetName", "input", "expectedOutput", "metadata", "status"}
+            or value["status"] != "ACTIVE"
+            or type(value["id"]) is not str
+            or not re.fullmatch("[0-9a-f]{64}", value["id"])
+            or type(value["datasetName"]) is not str
+            or not re.fullmatch("[A-Za-z0-9_-]{1,64}", value["datasetName"])
+            or type(value["expectedOutput"]) is not str
+        ):
+            raise ValueError("exact active item required")
+        metadata = value["metadata"]
+        if (
+            type(metadata) is not dict
+            or set(metadata) != {"runspindle_dataset", "projection_sha256"}
+            or metadata["projection_sha256"] != value["id"]
+        ):
+            raise ValueError("exact projection metadata required")
+        descriptor = metadata["runspindle_dataset"]
+        if (
+            type(descriptor) is not dict
+            or set(descriptor)
+            != {
+                "version",
+                "dataset",
+                "source_identity_sha256",
+                "input_sha256",
+                "output_sha256",
+                "family_sha256",
+                "split",
+                "item_id",
+            }
+            or descriptor["version"] != "runspindle.dataset-materialization.v1"
+            or descriptor["split"] not in ("train", "heldout")
+            or type(descriptor["dataset"]) is not str
+            or not re.fullmatch("[A-Za-z0-9_-]{1,64}", descriptor["dataset"])
+        ):
+            raise ValueError("exact dataset descriptor required")
+        for key in (
+            "source_identity_sha256",
+            "input_sha256",
+            "output_sha256",
+            "family_sha256",
+            "item_id",
+        ):
+            if type(descriptor[key]) is not str or not re.fullmatch(
+                "[0-9a-f]{64}", descriptor[key]
+            ):
+                raise ValueError("descriptor digest required")
+        raw_input = canonical(value["input"])
+        raw_output = value["expectedOutput"].encode("utf-8")
+        without_id = {key: val for key, val in descriptor.items() if key != "item_id"}
+        if (
+            len(raw_input) > 65536
+            or len(raw_output) > 65536
+            or hashlib.sha256(raw_input).hexdigest() != descriptor["input_sha256"]
+            or hashlib.sha256(raw_output).hexdigest() != descriptor["output_sha256"]
+            or hashlib.sha256(canonical(without_id)).hexdigest()
+            != descriptor["item_id"]
+        ):
+            raise ValueError("dataset content identity mismatch")
+    except (ValueError, TypeError, KeyError, UnicodeError, RecursionError):
+        raise ValueError("invalid bounded dataset item") from None
+
+
+def profile_limits(profile: str) -> tuple[int, int, int]:
+    if profile == "score-v1":
+        return 65536, 160000, 90000
+    if profile == "dataset-v1":
+        return 262144, 420000, 350000
+    raise ValueError("unknown transport profile")
+
+
+def validate_profile(profile: str, method: str, path: str, body: bytes | None) -> None:
+    profile_limits(profile)
+    if profile == "score-v1":
+        validate_request(method, path, body)
+    else:
+        validate_dataset_request(method, path, body)
+
+
 @dataclass(frozen=True)
 class LangfuseHTTP:
     origin: str
@@ -122,13 +268,22 @@ class LangfuseHTTP:
         from .langfuse_projection import Response
 
         self.__post_init__()
-        validate_request(method, path, body)
+        profile = (
+            "score-v1"
+            if type(self) is LangfuseHTTP
+            else "dataset-v1"
+            if type(self) is DatasetHTTP
+            else "unknown"
+        )
+        response_limit, _, stdout_limit = profile_limits(profile)
+        validate_profile(profile, method, path, body)
         if type(timeout) is not int or not 1 <= timeout <= 10:
             raise ValueError("bounded request deadline required")
-        if type(max_bytes) is not int or not 1 <= max_bytes <= 65536:
+        if type(max_bytes) is not int or not 1 <= max_bytes <= response_limit:
             raise ValueError("bounded response required")
         payload = json.dumps(
             dict(
+                profile=profile,
                 origin=self.origin,
                 authorization=self.authorization,
                 ca_pem=self.ca_pem,
@@ -153,7 +308,7 @@ class LangfuseHTTP:
             )
         except (OSError, subprocess.TimeoutExpired):
             raise TimeoutError("bounded Langfuse request unconfirmed") from None
-        if completed.returncode != 0 or len(completed.stdout) > 90000:
+        if completed.returncode != 0 or len(completed.stdout) > stdout_limit:
             raise ValueError("bounded Langfuse request unconfirmed")
         try:
             result = json.loads(completed.stdout)
@@ -167,17 +322,52 @@ class LangfuseHTTP:
         return Response(result["status"], raw)
 
 
+@dataclass(frozen=True)
+class DatasetHTTP(LangfuseHTTP):
+    """Explicit dataset-only profile; grants and destination stay in Export."""
+
+
 def worker() -> int:
     """Trusted child; outer process owns the wall-clock deadline and reaping."""
-    raw = sys.stdin.buffer.read(160001)
-    if len(raw) > 160000:
+    raw = sys.stdin.buffer.read(420001)
+    if len(raw) > 420000:
         return 1
-    data = json.loads(raw)
+
+    def unique_fields(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        value: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError("duplicate worker field")
+            value[key] = item
+        return value
+
+    data = json.loads(raw, object_pairs_hook=unique_fields)
+    if type(data) is not dict or set(data) != {
+        "profile",
+        "origin",
+        "authorization",
+        "ca_pem",
+        "method",
+        "path",
+        "body",
+        "timeout",
+        "max_bytes",
+    }:
+        return 1
+    response_limit, stdin_limit, _ = profile_limits(data["profile"])
+    if (
+        len(raw) > stdin_limit
+        or type(data["timeout"]) is not int
+        or not 1 <= data["timeout"] <= 10
+        or type(data["max_bytes"]) is not int
+        or not 1 <= data["max_bytes"] <= response_limit
+    ):
+        return 1
     transport = LangfuseHTTP(data["origin"], data["authorization"], data["ca_pem"])
     body = (
         None if data["body"] is None else base64.b64decode(data["body"], validate=True)
     )
-    validate_request(data["method"], data["path"], body)
+    validate_profile(data["profile"], data["method"], data["path"], body)
     context = ssl.create_default_context(cadata=transport.ca_pem)
     opener = build_opener(ProxyHandler({}), NoRedirect(), HTTPSHandler(context=context))
     request = Request(

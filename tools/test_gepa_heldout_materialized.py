@@ -292,12 +292,10 @@ def compile_child(path: Path, forbidden: list[str]) -> dict[str, Any]:
     from refinery import gepa_codec as codec
     from refinery import gepa_optimizer as opt
     from refinery import gepa_runtime as runtime
-    from refinery.durable_dspy import Session
     from refinery.lineage import digest
 
     runtime_id = runtime.runtime_identity()
     dspy: Any = importlib.import_module("dspy")
-    storage: Any = importlib.import_module("refinery.storage")
     compiled_instructions: list[str] = []
     reflected_instructions: list[str] = []
     compile_entries: list[bool] = []
@@ -353,40 +351,7 @@ def compile_child(path: Path, forbidden: list[str]) -> dict[str, Any]:
             for e in dataset.examples
             if split.partition(e.source.family_id) == "train"
         )
-        clock: Any = ev.VirtualClock()
-        provider: Any = ev.ScriptedProvider(
-            tuple(
-                ev.Completion(value, 1, 1, True, 0)
-                for value in (
-                    b"wrong-initial",
-                    b"wrong-initial",
-                    INSTRUCTION.encode(),
-                    train.gold,
-                    train.gold,
-                    b"wrong-heldout-baseline",
-                    next(
-                        e.gold
-                        for e in dataset.examples
-                        if split.partition(e.source.family_id) == "heldout"
-                    ),
-                )
-            ),
-            clock=clock,
-        )
-        session: Any = Session(
-            store,
-            storage.VERSION,
-            "materialized-gepa-heldout",
-            snapshot,
-            provider=provider,
-            limits=ev.Limits(16, 100, 1000, 100),
-            per_call=ev.Reservation(10, 10),
-            budget_id="materialized-gepa-heldout",
-            strategy="gepa",
-            training_output_id=train.output.output_id,
-            retained_use=material["use"],
-            materialized_batches=material["batches"],
-        )
+        session, admission = admitted_session(material, intent="start")
         budget = session.budget()
         with (
             patch.object(dspy.GEPA, "compile", compile_call),
@@ -469,6 +434,7 @@ def compile_child(path: Path, forbidden: list[str]) -> dict[str, Any]:
         return {
             "pid": os.getpid(),
             "phase": "compile",
+            "admission": admission,
             "framework": report,
             "snapshot": snapshot,
             "identity": identity(session, result),
@@ -481,7 +447,7 @@ def compile_child(path: Path, forbidden: list[str]) -> dict[str, Any]:
         }
 
 
-def session_for(material: dict[str, Any]) -> Any:
+def session_for(material: dict[str, Any], *, intent: str) -> Any:
     from refinery import evaluation as ev
     from refinery.durable_dspy import Session
     from refinery.optimization import validate_dataset
@@ -498,7 +464,7 @@ def session_for(material: dict[str, Any]) -> Any:
         b"wrong-heldout-baseline",
         heldout[0].gold,
     )
-    return Session(
+    return Session.materialized_learning(
         material["store"],
         VERSION,
         "materialized-gepa-heldout",
@@ -510,10 +476,119 @@ def session_for(material: dict[str, Any]) -> Any:
         limits=ev.Limits(16, 100, 1000, 100),
         per_call=ev.Reservation(10, 10),
         budget_id="materialized-gepa-heldout",
-        strategy="gepa",
+        intent=intent,
         training_output_id=train[0].output.output_id,
         retained_use=material["use"],
         materialized_batches=material["batches"],
+    )
+
+
+def admitted_session(
+    material: dict[str, Any], *, intent: str
+) -> tuple[Any, dict[str, Any]]:
+    """Observe the original factory; reject omission, effects and checkpoint writes."""
+    from refinery import evaluation as ev
+    from refinery.durable_dspy import Session
+
+    before = persisted(material["store"])
+    original = Session.materialized_learning
+    require(
+        original.__module__ == "refinery.durable_dspy"
+        and original.__qualname__ == "Session.materialized_learning"
+        and Path(original.__code__.co_filename).resolve()
+        == ROOT / "refinery/durable_dspy.py",
+        "original factory implementation replaced",
+    )
+    entries: list[tuple[str, Any]] = []
+    provider_entries: list[bool] = []
+    framework_entries: list[bool] = []
+
+    def factory(*args: Any, **kwargs: Any) -> Any:
+        result = original(*args, **kwargs)
+        entries.append((cast(str, kwargs.get("intent")), result))
+        return result
+
+    def deny_provider(*_: Any, **__: Any) -> Any:
+        provider_entries.append(True)
+        raise ValueError("admission provider execution forbidden")
+
+    def deny_framework(*_: Any, **__: Any) -> Any:
+        framework_entries.append(True)
+        raise ValueError("admission framework execution forbidden")
+
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(Session, "materialized_learning", staticmethod(factory))
+        )
+        stack.enter_context(
+            patch.object(ev.ScriptedProvider, "complete", deny_provider)
+        )
+        # Never import a framework merely to observe admission, notably replay.
+        dspy = sys.modules.get("dspy")
+        if dspy is not None:
+            stack.enter_context(patch.object(dspy.GEPA, "compile", deny_framework))
+            stack.enter_context(patch.object(dspy.Predict, "forward", deny_framework))
+        session = session_for(material, intent=intent)
+    after = persisted(material["store"])
+    require(
+        type(session) is Session
+        and len(entries) == 1
+        and entries[0][0] == intent
+        and entries[0][1] is session,
+        "original admission factory bypassed",
+    )
+    require(
+        not provider_entries and not framework_entries and not session.provider.calls,
+        "admission attempted execution",
+    )
+    require(before == after, "admission changed checkpoint")
+    return session, dict(
+        intent=intent,
+        factory_entries=len(entries),
+        provider_entries=len(provider_entries),
+        framework_entries=len(framework_entries),
+        cursor_entries=len(session.provider.calls),
+        before=before,
+        after=after,
+    )
+
+
+def validate_admission(value: Any, *, intent: str, checkpoint: str) -> None:
+    require(
+        type(value) is dict
+        and set(value)
+        == {
+            "intent",
+            "factory_entries",
+            "provider_entries",
+            "framework_entries",
+            "cursor_entries",
+            "before",
+            "after",
+        },
+        "admission receipt schema",
+    )
+    require(
+        value["intent"] == intent
+        and type(value["factory_entries"]) is int
+        and value["factory_entries"] == 1,
+        "explicit original factory required",
+    )
+    require(
+        all(
+            type(value[k]) is int and value[k] == 0
+            for k in ("provider_entries", "framework_entries", "cursor_entries")
+        ),
+        "admission execution",
+    )
+    require(
+        value["before"] == value["after"] == checkpoint, "admission checkpoint changed"
+    )
+    require(
+        type(checkpoint) is str
+        and len(checkpoint) == 64
+        and all(c in "0123456789abcdef" for c in checkpoint),
+        "admission checkpoint digest",
     )
 
 
@@ -572,7 +647,7 @@ def evaluate_child(
         return observe_completion(original_complete, observed, instance, request)
 
     with materialized_context(path) as material:
-        session = session_for(material)
+        session, admission = admitted_session(material, intent="resume_evaluation")
         require(
             persisted(session.store) == first["persisted"],
             "checkpoint before evaluation changed",
@@ -618,6 +693,7 @@ def evaluate_child(
         )
         return dict(
             phase="evaluate",
+            admission=admission,
             pid=os.getpid(),
             identity=evaluated_identity(session, report),
             persisted=current,
@@ -671,7 +747,7 @@ def replay_child(
             patch.object(ev.ScriptedProvider, "complete", deny),
             materialized_context(path) as material,
         ):
-            session = session_for(material)
+            session, admission = admitted_session(material, intent="resume_evaluation")
             require(
                 persisted(session.store) == second["persisted"],
                 "evaluation checkpoint changed",
@@ -714,6 +790,7 @@ def replay_child(
             )
             return dict(
                 phase="replay",
+                admission=admission,
                 pid=os.getpid(),
                 identity=ident,
                 persisted=current,
@@ -796,6 +873,15 @@ def validate_phases(
     first: dict[str, Any], second: dict[str, Any], third: dict[str, Any]
 ) -> None:
     validate(first["framework"])
+    validate_admission(
+        first["admission"], intent="start", checkpoint=first["admission"]["before"]
+    )
+    validate_admission(
+        second["admission"], intent="resume_evaluation", checkpoint=first["persisted"]
+    )
+    validate_admission(
+        third["admission"], intent="resume_evaluation", checkpoint=second["persisted"]
+    )
     validate_identity(first["identity"], compiled=True)
     validate_identity(second["identity"], compiled=False)
     validate_identity(third["identity"], compiled=False)
@@ -973,6 +1059,12 @@ def source_hashes() -> dict[str, str]:
 
     return {
         **materialized_sources(),
+        "tests/test_learning_admission_harness.py": runtime.digest(
+            runtime.source_bytes("tests/test_learning_admission_harness.py")
+        ),
+        "tests/test_learning_admission.py": runtime.digest(
+            runtime.source_bytes("tests/test_learning_admission.py")
+        ),
         "tools/test_gepa_heldout_materialized.py": runtime.digest(
             runtime.source_bytes("tools/test_gepa_heldout_materialized.py")
         ),

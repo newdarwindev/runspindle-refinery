@@ -118,6 +118,20 @@ def phases() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         withdrawal_denied=True,
         withdrawal_preserved_checkpoint=True,
     )
+    for phase, intent, checkpoint in (
+        (a, "start", "a" * 64),
+        (b, "resume_evaluation", a["persisted"]),
+        (c, "resume_evaluation", b["persisted"]),
+    ):
+        phase["admission"] = dict(
+            intent=intent,
+            factory_entries=1,
+            provider_entries=0,
+            framework_entries=0,
+            cursor_entries=0,
+            before=checkpoint,
+            after=checkpoint,
+        )
     return a, b, c
 
 
@@ -312,7 +326,7 @@ class HeldoutHarnessTests(unittest.TestCase):
                 identities = []
                 for index in range(2):
                     with h.materialized_context(path) as material:
-                        session = h.session_for(material)
+                        session = h.session_for(material, intent="start")
                         session.guard("optimization")
                         session.guard("evaluation")
                         self.assertEqual(

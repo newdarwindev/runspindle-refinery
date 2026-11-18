@@ -98,3 +98,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Linux-native preparation candidate](linux-native-preparation-candidate.md): twice reproduced from one sealed wheelhouse; explicit review proposal, not canonical adoption or DSPy execution.
 
 - [Reviewed Linux dependency adoption proposal](reviewed-linux-dependency-adoption.md): explicit active closure selection with preserved history; actual framework qualification remains separate.
+
+- [Bounded GEPA reflection proposal](bounded-gepa-reflection-proposal.md): docs-only design for a distinct train-only, metered instruction adapter and durable strategy contract; not implemented or qualified.

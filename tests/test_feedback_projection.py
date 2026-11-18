@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import importlib
 import json
+import sqlite3
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -116,6 +117,91 @@ class ProjectionTests(unittest.TestCase):
         self.path = self.h.root / "projection.sqlite"
         self.ledger = ProjectionLedger(self.path, self.adapter.destination)
         self.addCleanup(self.ledger.close)
+
+    def test_empty_versioned_database_is_not_reinitialized(self) -> None:
+        for version in (1, 99):
+            path = self.h.root / f"empty-{version}.sqlite"
+            db = sqlite3.connect(path)
+            db.execute(f"PRAGMA user_version={version}")
+            db.close()
+            with self.assertRaises(ValueError):
+                ProjectionLedger(path, self.adapter.destination)
+            db = sqlite3.connect(path)
+            try:
+                self.assertEqual(
+                    db.execute("PRAGMA user_version").fetchone(), (version,)
+                )
+                self.assertEqual(
+                    db.execute("SELECT name FROM sqlite_master").fetchall(), []
+                )
+            finally:
+                db.close()
+
+    def test_incomplete_lineage_never_projects_eligible_gold(self) -> None:
+        self.h.store = type(self.h.store)(self.h.root / "incomplete.sqlite")
+        self.addCleanup(self.h.store.close)
+        self.h.material = replace(
+            self.h.material, source=replace(self.h.material.source, complete=False)
+        )
+        snapshot = self.h.collect(self.selected)
+        self.assertEqual(self.h.store.get("lineage", snapshot)["dataset"].examples, ())
+        source = replace(self.source, store=self.h.store, snapshot=snapshot)
+        value = self.ledger.capture(source)
+        self.assertEqual(value["state"], "quarantined")
+        self.assertFalse(value["gold"])
+        self.assertFalse(value["training_eligible"])
+
+    def test_final_authorizer_source_fence_denied_before_commit(self) -> None:
+        mutation = importlib.import_module("test_source_feedback").mutation
+        fixture = importlib.import_module("test_thumbs_up_collection")
+        NOW, SECRET = fixture.NOW, fixture.SECRET
+
+        from refinery.source_feedback import SourceFeedbackGuard
+
+        module = self.h.dep.modules["tether.source_observation"]
+        ingress = self.h.dep.modules["tether.slack_ingress"]
+        observer = module.SignedSlackSourceObserver(
+            str(self.h.root / "source-fence.sqlite"),
+            ingress.SlackMessageVerifier(SECRET, self.h.route, lambda: NOW),
+            self.h.route,
+            self.h.admission.admission,
+            authorize=lambda request: True,
+        )
+        self.addCleanup(observer.close)
+        key = module.SourceKey(
+            "ASYNTHETIC", "TSYNTHETIC", "CSYNTHETIC", "1900000000.000002"
+        )
+        guard = SourceFeedbackGuard(
+            self.h.dep,
+            observer.store,
+            lambda target, material: observer.store.resolve_original(key),
+        )
+        snapshot = self.h.collect(self.selected, source_guard=guard)
+        calls = []
+
+        def authorize(identity: str, destination: str) -> dict[str, Any]:
+            calls.append(identity)
+            if len(calls) == 2:
+                raw = mutation("message_deleted")
+                observer.observe(raw, self.h.headers(raw))
+            return dict(self.authority)
+
+        source = replace(
+            self.source,
+            snapshot=snapshot,
+            use=replace(self.source.use, source_guard=guard),
+            authorize_projection=authorize,
+        )
+        with self.assertRaisesRegex(ValueError, "source no longer eligible"):
+            self.ledger.dispatch(source, self.adapter)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(self.http.posts, 0)
+        self.assertEqual(
+            self.ledger.db.execute(
+                "SELECT COUNT(*) FROM projection_revisions"
+            ).fetchone()[0],
+            0,
+        )
 
     def test_consent_changed_inside_use_callback_denied_before_commit(self) -> None:
         def approve(request: Any) -> bool:

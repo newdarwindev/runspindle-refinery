@@ -90,7 +90,15 @@ class RetainedSource:
         )
         authority = contract.policy(self.authorize_projection(key, destination))
         admitted_policy = dict(authority)
-        state = "active"
+        eligible = any(
+            feedback in example.feedback
+            and example.output.output_id == feedback.output_id
+            and example.output.revision == feedback.output_revision
+            and example.output.sha256 == feedback.output_sha256
+            and example.gold == example.output.content
+            for example in value["dataset"].examples
+        )
+        state = "active" if eligible else "quarantined"
         if original["state"] in {"invalidated", "deleted"}:
             state = "revoked"
         elif (
@@ -133,6 +141,13 @@ class RetainedSource:
             != admitted_policy
         ):
             raise ValueError("projection policy changed during authority checks")
+        if receipt["version"] == "retained_feedback_collection.v2":
+            if self.use.source_guard is None:
+                raise ValueError("source use guard unavailable")
+            for selected_row in receipt["selected"]:
+                observation = selected_row["source_observation"]
+                if self.use.source_guard.reread(observation) != observation:
+                    raise ValueError("source no longer eligible")
         if (
             contract.canonical(
                 self.use.tether_store.evidence(
@@ -178,13 +193,12 @@ class ProjectionLedger:
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute("PRAGMA synchronous=FULL")
         self.db.execute("PRAGMA max_page_count=32768")
-        existing = self.db.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()
+        existing = self.db.execute("SELECT name FROM sqlite_master").fetchall()
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
-        if existing and version != 1:
+        fresh = not existing and version == 0
+        if not fresh and version != 1:
             raise ValueError("unrecognized projection schema")
-        if not existing:
+        if fresh:
             self.db.executescript(SCHEMA)
             self.db.execute("PRAGMA user_version=1")
         reference = sqlite3.connect(":memory:")

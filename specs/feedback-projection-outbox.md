@@ -11,13 +11,21 @@ family splits, source content and model deployment authority stay local.
 
 `RetainedSource` accepts an existing immutable collected snapshot and exact
 selection, the real pinned Tether store and an existing `RetainedFeedbackUse`.
-It checks retained event/actor/target association and current source state. The
+It checks retained event/actor/target association and current source state.
+Positive flags additionally require the exact selected feedback/output/gold to
+belong to an eligible reconstructed dataset example; incomplete or conflicting
+lineage remains quarantined despite a correctly authenticated thumbs-up. The
 host must explicitly authorize the new `feedback_projection` use purpose and a
 separate destination-bound projection policy. A copied remote JSON object cannot
 enter this bridge. `use_allowed` is additionally checked against existing local
 optimization-use authority. These projection flags never replace the optimizer's
 own fresh exact-run authority check. The complete projection policy is read again
 after use callbacks; any policy change rejects the observation before persistence.
+After the final policy callback, every source-bound receipt observation is reread
+without callbacks to reject newly recorded source fences. Host policy callbacks
+are trusted, pure snapshot authorities: these checks do not create an atomic
+transaction across arbitrary external consent services or prevent later changes.
+Every later dispatch/use must obtain its own fresh authorization.
 
 Only opaque hashes, revision, state and policy-derived booleans enter the outbox.
 The fresh policy authorizer receives the opaque feedback identity and explicit
@@ -32,7 +40,9 @@ Source/content materialization is not implemented or implicitly permitted.
 `ProjectionLedger` uses a separate SQLite sidecar with affinity on, WAL/FULL
 synchronous writes, an explicit schema, immutable revision triggers and bounded
 record count. Revision, head and outbox insertion commit together. Unknown schema
-is rejected, not migrated or repaired. Instances are bound to one destination;
+is rejected, not migrated or repaired. Initialization requires an empty
+`sqlite_master` and version zero; an emptied versioned database is never repaired
+as a new ledger, since that could erase prior revocation history. Instances are bound to one destination;
 callers own connection lifetimes and may reopen after process loss. Filesystem,
 host callbacks and SQLite are trusted; this is not a hostile-process sandbox or
 cross-database atomic revocation protocol.

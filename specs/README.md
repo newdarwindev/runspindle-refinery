@@ -102,3 +102,4 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Bounded GEPA reflection proposal](bounded-gepa-reflection-proposal.md): docs-only design for a distinct train-only, metered instruction adapter and durable strategy contract; not implemented or qualified.
 
 - [Sealed GEPA313 qualification lane](gepa313-runtime-qualification.md): separate supported runtime adoption and genuine reflection harness source; native execution and durable integration remain unqualified.
+- [Durable GEPA compilation](durable-gepa-compile.md): compile-only sealed Session strategy, transaction-bound request witnesses and component replay tests; heldout evaluation unavailable and actual durable GEPA qualification pending.

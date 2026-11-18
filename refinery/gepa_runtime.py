@@ -241,11 +241,17 @@ def runtime_identity() -> str:
         or sys.executable != "/usr/local/bin/python3.13"
     ):
         raise ValueError("unqualified GEPA Python or target")
-    verified = verify_prepared(Path("/deps"))
+    verify_prepared(Path("/deps"))
     for name in ("dspy", "gepa"):
         spec = importlib.util.find_spec(name)
         if spec is None or spec.origin != "/deps/" + name + "/__init__.py":
             raise ValueError("GEPA framework import origin changed")
+    return source_identity()
+
+
+def source_identity() -> str:
+    """Reviewed source identity only; not permission to execute the framework."""
+    reviewed()
     sources = {
         name: digest(source_bytes(name))
         for name in (
@@ -255,6 +261,9 @@ def runtime_identity() -> str:
             "refinery/dspy_optimizer.py",
             "refinery/evaluation.py",
             "refinery/durable_evaluation.py",
+            "refinery/durable_dspy.py",
+            "refinery/gepa_evidence.py",
+            "refinery/storage.py",
         )
     }
-    return digest(canonical({"adoption": verified, "sources": sources}))
+    return digest(canonical({"adoption": ADOPTION_SHA256, "sources": sources}))

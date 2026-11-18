@@ -151,6 +151,19 @@ class Transport(Dispatch):
         if len(matches) != 1:
             raise ValueError("unverified proposal payload")
 
+    def reserve(self, request: ev.Request) -> Any:
+        active = self.admission.get()
+        if active is None:
+            raise ev.Halt("unattributed_dispatch")
+        stage, instruction, payload = active
+        if type(self.budget) is SQLiteBudget and self.budget.experiment is not None:
+            return self.budget.reserve_gepa(
+                self.per_call,
+                request=request,
+                witness=(request, instruction, payload),
+            )
+        return super().reserve(request)
+
     def _forward(self, messages: Any) -> Any:
         active = self.admission.get()
         if active is None:
@@ -269,7 +282,7 @@ class Transport(Dispatch):
         return {codec.COMPONENT: instruction}
 
 
-def optimize(
+def binding(
     dataset: Dataset,
     split: LockedSplit,
     *,
@@ -277,8 +290,7 @@ def optimize(
     provider: ev.ScriptedProvider,
     budget: ev.Budget,
     per_call: ev.Reservation,
-    check_use: Callable[[], None],
-) -> Result:
+) -> tuple[Example, str]:
     # Reject unknown adapters before reading properties or invoking their code.
     if (
         type(provider) is not ev.ScriptedProvider
@@ -302,12 +314,14 @@ def optimize(
     )
     train, _ = validate_dataset(dataset, split)
     selected = [e for e in train if e.output.output_id == training_output_id]
-    if len(selected) != 1 or provider.calls or not 1 <= budget.limits.calls <= 16:
+    if len(selected) != 1 or not 1 <= budget.limits.calls <= 16:
         raise ValueError("explicit pristine bounded training run required")
     e = selected[0]
     codec.text(e.gold.decode())
     codec.text(case(e), 32768)
-    runtime = runtime_identity()
+    from .gepa_runtime import source_identity
+
+    runtime = source_identity()
     config = digest(
         canonical(
             {
@@ -328,6 +342,30 @@ def optimize(
             }
         )
     )
+    return e, config
+
+
+def optimize(
+    dataset: Dataset,
+    split: LockedSplit,
+    *,
+    training_output_id: str,
+    provider: ev.ScriptedProvider,
+    budget: ev.Budget,
+    per_call: ev.Reservation,
+    check_use: Callable[[], None],
+) -> Result:
+    e, config = binding(
+        dataset,
+        split,
+        training_output_id=training_output_id,
+        provider=provider,
+        budget=budget,
+        per_call=per_call,
+    )
+    if provider.calls:
+        raise ValueError("explicit pristine bounded training run required")
+    runtime_identity()
     dispatch = Transport(
         e,
         split,

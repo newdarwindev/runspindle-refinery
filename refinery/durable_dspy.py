@@ -7,6 +7,7 @@ use the existing Store, codec, immutable objects and cumulative SQLiteBudget.
 from __future__ import annotations
 
 from typing import Any, Callable, cast
+from weakref import ReferenceType, WeakKeyDictionary, ref
 
 from . import dspy_optimizer as opt
 from . import evaluation as ev
@@ -21,6 +22,12 @@ from .optimization import validate_dataset
 from .storage import Store, pack, unpack, version
 
 LIFECYCLE = "refinery.dspy.lifecycle.v1"
+
+# Component-owned routing, not a resettable Session attribute. Weak values avoid
+# retaining a Session through a test/authority callback that closes over it.
+_GEPA_AUTHORITIES: WeakKeyDictionary[
+    Any, tuple[tuple[str, ReferenceType[Any]], ...]
+] = WeakKeyDictionary()
 
 
 class Session:
@@ -119,6 +126,26 @@ class Session:
                 else ("optimization", "reflection")
             )
         }
+        if strategy == "gepa":
+            _GEPA_AUTHORITIES[self] = tuple(
+                (p, ref(callback)) for p, callback in self.guards.items()
+            )
+
+    def verify_authority_routes(self) -> tuple[tuple[str, ReferenceType[Any]], ...]:
+        if self.strategy != "gepa":
+            return ()
+        routes = _GEPA_AUTHORITIES.get(self)
+        if (
+            routes is None
+            or type(self.guards) is not dict
+            or set(self.guards) != {"optimization", "reflection"}
+            or any(
+                callback() is None or self.guards[p] is not callback()
+                for p, callback in routes
+            )
+        ):
+            raise ev.Halt("lifecycle_authority_changed")
+        return routes
 
     def strategy_binding(self) -> bytes:
         """Closed selector admission, independent of callback-mutated branch labels."""
@@ -175,6 +202,7 @@ class Session:
         seal = Session.strategy_binding(self)
         if seal != self._strategy_seal:
             raise ev.Halt("lifecycle_strategy_changed")
+        authority_routes = Session.verify_authority_routes(self)
         strategy = self.strategy
         cursor = self.cursor()
         claim = self.row(self.store.db)
@@ -186,7 +214,12 @@ class Session:
         guards = self.guards
         callbacks = tuple(guards[p] for p in purposes)
         for callback in callbacks:
+            Session.verify_authority_routes(self)
             callback()
+            if Session.strategy_binding(self) != seal or self._strategy_seal != seal:
+                raise ev.Halt("lifecycle_strategy_changed")
+            if Session.verify_authority_routes(self) is not authority_routes:
+                raise ev.Halt("lifecycle_authority_changed")
             if (
                 Session.strategy_binding(self) != seal
                 or self._strategy_seal != seal

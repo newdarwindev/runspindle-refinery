@@ -25,8 +25,12 @@ runtime. No caller-supplied manifest or validator chooses the strategy.
 Every GEPA compilation/recovery authority check requires both optimization and
 reflection use permission. Reflection does not inherit optimization consent.
 The exact strategy, lifecycle, object kind, selected training identifier, key and
-binding are sealed before and after every authority callback. The original
-authority callable identities are also retained across each check. Unknown or
+binding are sealed before and after every authority callback. GEPA authority routing identities are fixed at construction in a component-owned
+weak registry, not a resettable Session attribute. These exact callables are
+required across checks, checkpoints and provider effects; legitimate revocation
+is observed through the original callback, never by replacing its routing.
+Tests inject synthetic authority functions at the constructor seam, without a
+production injection or reseal API. Unknown or
 changed selectors fail before reservation/provider effects; mutation after a
 reservation still denies dispatch and retains the charge. Claims and provider
 cursor are rechecked after callbacks. Existing family

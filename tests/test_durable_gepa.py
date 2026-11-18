@@ -43,21 +43,30 @@ class DurableGEPATests(unittest.TestCase):
         )
         self.session = self.make()
 
-    def make(self, **kwargs: Any) -> Any:
-        return Session(
-            self.store,
-            storage.VERSION,
-            "gepa-run",
-            self.snapshot,
-            provider=ev.ScriptedProvider(self.script, clock=ev.VirtualClock()),
-            limits=ev.Limits(16, 100, 100, 100),
-            per_call=ev.Reservation(10, 10),
-            budget_id="shared",
-            strategy="gepa",
-            training_output_id=self.example.output.output_id,
-            synthetic_fixture=True,
-            **kwargs,
-        )
+    def make(self, *, authority: dict[str, Any] | None = None, **kwargs: Any) -> Any:
+        module: Any = importlib.import_module("refinery.durable_dspy")
+        original = module.use_guard
+
+        def constructor_guard(*args: Any, **options: Any) -> Any:
+            default = original(*args, **options)
+            return (authority or {}).get(options["purpose"], default)
+
+        # Synthetic constructor injection only; no production validator API or reseal.
+        with patch.object(module, "use_guard", side_effect=constructor_guard):
+            return Session(
+                self.store,
+                storage.VERSION,
+                "gepa-run",
+                self.snapshot,
+                provider=ev.ScriptedProvider(self.script, clock=ev.VirtualClock()),
+                limits=ev.Limits(16, 100, 100, 100),
+                per_call=ev.Reservation(10, 10),
+                budget_id="shared",
+                strategy="gepa",
+                training_output_id=self.example.output.output_id,
+                synthetic_fixture=True,
+                **kwargs,
+            )
 
     def compile_fixture(self) -> Any:
         s = self.session
@@ -323,7 +332,7 @@ class DurableGEPATests(unittest.TestCase):
         def deny() -> None:
             raise ev.Halt("reflection_revoked")
 
-        resumed.guards["reflection"] = deny
+        resumed = self.make(authority={"reflection": deny})
         before = tuple(self.store.db.execute("SELECT * FROM budgets"))
         with self.assertRaisesRegex(ev.Halt, "reflection_revoked"):
             resumed.compile()
@@ -336,7 +345,7 @@ class DurableGEPATests(unittest.TestCase):
         def change() -> None:
             s.provider.clock = ev.VirtualClock()
 
-        s.guards["reflection"] = change
+        s = self.make(authority={"reflection": change})
         with self.assertRaisesRegex(ev.Halt, "provider_changed"):
             s.claim_compile()
         self.assertIsNone(s.row(self.store.db))
@@ -364,8 +373,9 @@ class DurableGEPATests(unittest.TestCase):
                     checked.append("reflection")
                     raise ev.Halt("reflection_denied")
 
-                s.guards["optimization"] = mutate
-                s.guards["reflection"] = denied_reflection
+                s = self.make(
+                    authority={"optimization": mutate, "reflection": denied_reflection}
+                )
                 with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
                     s.claim_compile()
                 self.assertEqual(s.provider.calls, [])
@@ -424,8 +434,8 @@ class DurableGEPATests(unittest.TestCase):
         def replacement() -> None:
             s.guards["reflection"] = lambda: None
 
-        s.guards["optimization"] = replacement
-        with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+        s = self.make(authority={"optimization": replacement})
+        with self.assertRaisesRegex(ev.Halt, "(strategy|authority)_changed"):
             s.claim_compile()
         self.assertEqual(s.provider.calls, [])
         self.assertIsNone(s.row(self.store.db))
@@ -436,11 +446,68 @@ class DurableGEPATests(unittest.TestCase):
             s._strategy_seal = Session.strategy_binding(s)
             s.strategy_binding = lambda: s._strategy_seal
 
-        s.guards["optimization"] = reseal
-        with self.assertRaisesRegex(ev.Halt, "strategy_changed"):
+        s = self.make(authority={"optimization": reseal})
+        with self.assertRaisesRegex(ev.Halt, "(strategy|authority)_changed"):
             s.claim_compile()
         self.assertEqual(s.provider.calls, [])
         self.assertIsNone(s.row(self.store.db))
+
+    def test_revocation_and_route_swap_between_checks_denies_effects(self) -> None:
+        state = {"revoked": False, "checks_after_revocation": 0}
+
+        def original_reflection() -> None:
+            if state["revoked"]:
+                state["checks_after_revocation"] += 1
+                raise ev.Halt("reflection_revoked")
+
+        def checkpoint(stage: str) -> None:
+            if stage == "after_budget_reservation":
+                state["revoked"] = True
+                s.guards["reflection"] = lambda: None
+                # A writable instance attribute or shadowed helper cannot reseal routing.
+                s._gepa_authority_routes = tuple(s.guards.items())
+                s.verify_authority_routes = lambda: ()
+
+        s = self.make(
+            authority={"reflection": original_reflection}, checkpoint=checkpoint
+        )
+        self.session = s
+        with self.assertRaisesRegex(ev.Halt, "authority_changed"):
+            self.compile_fixture()
+        self.assertEqual(s.provider.calls, [])
+        self.assertEqual(s.budget().snapshot()["unresolved_calls"], 1)
+        self.assertEqual(
+            self.store.db.execute("SELECT count(*) FROM attempts").fetchone()[0], 1
+        )
+        self.assertEqual(
+            self.store.db.execute(
+                "SELECT count(*) FROM objects WHERE kind='gepa_compiled'"
+            ).fetchone()[0],
+            0,
+        )
+        self.assertEqual(s.row(self.store.db)[1], "compiling")
+
+    def test_revocation_without_route_swap_is_checked_after_reservation(self) -> None:
+        state = {"revoked": False, "checks_after_revocation": 0}
+
+        def original_reflection() -> None:
+            if state["revoked"]:
+                state["checks_after_revocation"] += 1
+                raise ev.Halt("reflection_revoked")
+
+        def checkpoint(stage: str) -> None:
+            if stage == "after_budget_reservation":
+                state["revoked"] = True
+
+        s = self.make(
+            authority={"reflection": original_reflection}, checkpoint=checkpoint
+        )
+        self.session = s
+        with self.assertRaisesRegex(ev.Halt, "reflection_revoked"):
+            self.compile_fixture()
+        self.assertEqual(state["checks_after_revocation"], 1)
+        self.assertEqual(s.provider.calls, [])
+        self.assertEqual(s.budget().snapshot()["unresolved_calls"], 1)
 
     def test_missing_witness_rejects_replay(self) -> None:
         self.compile_fixture()
@@ -474,7 +541,7 @@ class DurableGEPATests(unittest.TestCase):
         def deny() -> None:
             raise ev.Halt("reflection_denied")
 
-        self.session.guards["reflection"] = deny
+        self.session = self.make(authority={"reflection": deny})
         with self.assertRaisesRegex(ev.Halt, "reflection_denied"):
             self.session.claim_compile()
         self.assertIsNone(self.session.row(self.store.db))

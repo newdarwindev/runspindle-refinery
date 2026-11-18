@@ -18,6 +18,7 @@ from . import heldout_policy as policy
 from .durable_evaluation import SQLiteBudget, _restore
 from .feedback_use import RetainedFeedbackUse, use_guard
 from .lineage import _token, digest
+from .materialized_use import AuthorizedBatch, BoundBatch
 from .optimization import validate_dataset
 from .storage import Store, pack, unpack, version
 
@@ -28,6 +29,9 @@ LIFECYCLE = "refinery.dspy.lifecycle.v1"
 _GEPA_AUTHORITIES: WeakKeyDictionary[
     Any, tuple[tuple[str, ReferenceType[Any]], ...]
 ] = WeakKeyDictionary()
+
+
+_MATERIALIZED: WeakKeyDictionary[Any, tuple[Any, ...]] = WeakKeyDictionary()
 
 
 class Session:
@@ -48,6 +52,7 @@ class Session:
         retained_use: RetainedFeedbackUse | None = None,
         synthetic_fixture: bool = False,
         checkpoint: Callable[[str], None] = lambda _: None,
+        materialized_batches: tuple[AuthorizedBatch, ...] = (),
     ) -> None:
         check_version: Any = version
         check_version(api_version)
@@ -104,13 +109,35 @@ class Session:
             identity.encode()
         )
         encode: Any = pack
-        self.binding: bytes = encode(
-            (self.lifecycle, snapshot_sha256, self.config, budget_id)
+        if type(materialized_batches) is not tuple or len(materialized_batches) > 2:
+            raise ValueError("bounded materialized phase batches required")
+        if materialized_batches and (
+            synthetic_fixture or type(retained_use) is not RetainedFeedbackUse
+        ):
+            raise ValueError("materialized runs require retained authority")
+        self._materialized_batches = tuple(
+            BoundBatch(
+                b, store, snapshot_sha256, cast(RetainedFeedbackUse, retained_use)
+            )
+            for b in materialized_batches
         )
+        if len({b.purpose for b in self._materialized_batches}) != len(
+            self._materialized_batches
+        ):
+            raise ValueError("duplicate materialized phase")
+        if self._materialized_batches and "optimization" not in {
+            b.purpose for b in self._materialized_batches
+        }:
+            raise ValueError("materialized training batch required")
+        _MATERIALIZED[self] = tuple(
+            (ref(b), b.seal()) for b in self._materialized_batches
+        )
+        self.binding: bytes = self.ownership_binding()
+
         self.binding_sha256 = digest(self.binding)
         self._strategy_seal = self.strategy_binding()
         self.guards = {
-            purpose: use_guard(
+            purpose: self.make_use_guard(
                 store,
                 snapshot_sha256,
                 purpose=purpose,
@@ -130,6 +157,71 @@ class Session:
             _GEPA_AUTHORITIES[self] = tuple(
                 (p, ref(callback)) for p, callback in self.guards.items()
             )
+
+    def batches(self) -> tuple[BoundBatch, ...]:
+        registered = _MATERIALIZED.get(self)
+        batches = self._materialized_batches
+        if (
+            registered is None
+            or type(batches) is not tuple
+            or len(registered) != len(batches)
+            or any(
+                reference() is not batch or batch.seal() != seal
+                for batch, (reference, seal) in zip(batches, registered)
+            )
+        ):
+            raise ev.Halt("materialized_authority_changed")
+        return batches
+
+    def ownership_binding(self) -> bytes:
+        base = (self.lifecycle, self.snapshot_sha256, self.config, self.budget_id)
+        batches = self.batches()
+        encode: Any = pack
+        return cast(
+            bytes,
+            encode(
+                base
+                if not batches
+                else base
+                + (
+                    (
+                        "materialized-phase-batches.v1",
+                        tuple(sorted((b.purpose, b.identity) for b in batches)),
+                    ),
+                )
+            ),
+        )
+
+    def make_use_guard(
+        self, store: Store, snapshot: str, **kwargs: Any
+    ) -> Callable[[], None]:
+        if not self.batches():
+            return use_guard(store, snapshot, **kwargs)
+        purpose = kwargs["purpose"]
+        phase = "optimization" if purpose == "reflection" else purpose
+
+        def check() -> None:
+            matches = [b for b in self.batches() if b.purpose == phase]
+            if len(matches) != 1:
+                raise ev.Halt("materialized_phase_batch_required")
+            batch = matches[0]
+            expected = (
+                self.train
+                if phase == "optimization"
+                else validate_dataset(self.dataset, self.split)[1]
+            )
+            with batch.scope() as (registry, retained_use, selections):
+                batch.check(
+                    registry,
+                    selections,
+                    purpose=purpose,
+                    expected_examples=tuple(expected),
+                )
+                use_guard(store, snapshot, **dict(kwargs, retained_use=retained_use))()
+                batch.fence(registry, selections)
+                self.batches()
+
+        return check
 
     def verify_authority_routes(self) -> tuple[tuple[str, ReferenceType[Any]], ...]:
         if self.strategy != "gepa":
@@ -164,9 +256,9 @@ class Session:
         ):
             raise ev.Halt("lifecycle_strategy_changed")
         encode: Any = pack
-        if self.binding != encode(
-            (lifecycle, self.snapshot_sha256, self.config, self.budget_id)
-        ) or self.binding_sha256 != digest(self.binding):
+        if self.binding != self.ownership_binding() or self.binding_sha256 != digest(
+            self.binding
+        ):
             raise ev.Halt("lifecycle_strategy_changed")
         return cast(
             bytes,

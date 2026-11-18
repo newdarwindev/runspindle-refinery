@@ -1,0 +1,72 @@
+{
+  "all_four_bytes_types_modes_equal": true,
+  "bounds": {
+    "command_seconds": 120,
+    "cpus": 2,
+    "vm_memory_mib": 4096,
+    "vm_seconds": 900
+  },
+  "candidate_canonical_json_sha256": "c5b544140cea3fc03dce784765e76bcdcfa3ae621fe68e1a2724e466edd8515e",
+  "candidate_file_sha256": "bb4a26f0d79268d9ce4c62b0e10d6b5ab5a92fe65b303840c6b82ad318e0f928",
+  "canonical_python314": "unchanged",
+  "config": "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+  "framework_execution": "not_run",
+  "fresh_guests": 2,
+  "fresh_installs_per_guest": 2,
+  "full_inventory_canonical_json_sha256": "4c25670fbae99b20edd2be99796e33cae43bb8f2740c94f5da99b7cb83459dd8",
+  "full_inventory_file_sha256": "13313456ca786a2ae8d5fed65067fb73dfd04f95d58d249c62ed5b5237a07d6f",
+  "image": "sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+  "inputs": {
+    "python313-inert-input-audit-absolute.json": "69e1e8989e8642bf891d7101a2af976c0af87205cf73a841458dff0bb037b603",
+    "python313-transport.iso": "b4f22171705c83a7ca833b5c97b1af15a2bda19de8185db05bfc089ed0162a45",
+    "python313-wheelhouse.udf.iso": "745bcba6a09f146e993ae45c1787db4e72a1783cb868909e69b01c47c9c6b350",
+    "ubuntu-arm64.img": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  },
+  "isolation": "no-NIC guest; network-none containers; readonly inputs; no host shares",
+  "native_resolution": "76 distributions resolved without ignored Python requirements or dependencies",
+  "native_target": "Linux aarch64",
+  "prepared_files": 11877,
+  "prepared_paths": 14480,
+  "python": "3.13.13",
+  "recipe_sha256": "801b3e44c60b89db099d57289be7d65dd37ed471eee17d7f4dcf78b049a4abff",
+  "runs": [
+    {
+      "audit_exit": 0,
+      "base_unchanged": true,
+      "cleanup": "clean shutdown and no matching guest process",
+      "guest": 1,
+      "host_exit": 0,
+      "private_evidence_sha256": {
+        "candidate-report.json": "deb127458d976b3c6d79bcf29ee99adf9696a592ac06d986c7af2b3ddf611f95",
+        "guest-receipt.json": "41f0c02b967ff6265b6ac6db2b4370bb9c87316673ddf4f8e4ff746401792be8",
+        "host-receipt.json": "b83e0efd561db294b6fe1a7373774728b1159033c3d349c2b66529c196193dc4",
+        "result.log": "f547b713a835c2ea035d9f0393331175eff95325ff8e67c90cbe060974c0dca7"
+      },
+      "seconds": 177.725000334,
+      "status": "review_required_python313_candidate"
+    },
+    {
+      "audit_exit": 0,
+      "base_unchanged": true,
+      "cleanup": "clean shutdown and no matching guest process",
+      "guest": 2,
+      "host_exit": 0,
+      "private_evidence_sha256": {
+        "candidate-report.json": "deb127458d976b3c6d79bcf29ee99adf9696a592ac06d986c7af2b3ddf611f95",
+        "guest-receipt.json": "221aa6d5afcaaded0cb98fdb8fe4fd1f168d95f201c3bf2ce5f96af83d10ec01",
+        "host-receipt.json": "d61b576b9082f1c97b0f3420030d2b365fefa26511c848ef6c9f460b4de5e128",
+        "result.log": "379b2f73fe96f0cc222ebabe39fb66b3dc35bdbe8d76d6c448b9eff85182b52c"
+      },
+      "seconds": 177.96490929100003,
+      "status": "review_required_python313_candidate"
+    }
+  ],
+  "schema": "runspindle.python313-native-preparation.v1",
+  "scope_limits": [
+    "Same sealed UDF bytes and filesystem metadata; rebuild/distribution not established",
+    "Candidate preparation only; no DSPy/GEPA runtime qualification, provider calls or model quota",
+    "No active canonical replacement or new strategy runtime authority"
+  ],
+  "source": "232efb061899aae66c4f765348558b3445316da2",
+  "status": "reviewed_candidate_not_runtime_authority"
+}

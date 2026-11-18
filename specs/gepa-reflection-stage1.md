@@ -37,20 +37,19 @@ output, request order, no foreign effects, and successful post-proposal task
 execution. It does not widen the old demonstration codec or durable Session.
 Instructions remain data in a fixed signature, never executable code or authority.
 
-## Explicit runtime blocker
+## Separate supported runtime strategy
 
-The retained DSPy 3.1.0 dependency requires GEPA 0.0.22. That GEPA distribution's
-metadata requires Python >=3.10 and <3.14, whereas the currently adopted original
-closure uses Python 3.14.0. No experimental compatibility is claimed. The new
-strategy's `runtime_identity()` therefore rejects execution before framework
-imports or provider effects. A separately reviewed supported Python 3.13 closure
-must replace this closed gate with exact runtime/source verification and bind its
-identity into the configuration. There is no caller-controlled manifest override,
-installation, pin change or fallback. Existing Bootstrap execution is unaffected.
+The retained GEPA 0.0.22 metadata excludes Python 3.14, so the original Bootstrap
+closure is not execution authority for this adapter. The separately reviewed
+[Python 3.13 strategy lane](gepa313-runtime-qualification.md) replaces the initial
+closed gate with fixed adoption, exact version/architecture and complete byte/mode
+verification before imports/effects. It does not modify the original canonical
+closure or add caller-controlled manifests, installers or fallbacks. Actual GEPA
+qualification remains unrun until an independent native receipt establishes it.
 
 Synthetic source tests exercise the real transport, SQLite accounting and codec,
 not a fake GEPA engine. They are not native framework evidence. Remaining stages:
-review the extraction/adapter/codec, adopt the supported closure, run bounded real
+review the extraction/adapter/codec and supported closure, run bounded real
 GEPA under the isolated launcher and independent effect spies, then integrate a
 sealed durable strategy and fresh-process recovery. The outer 120-second native
 launcher deadline remains required when execution is enabled. No heldout score,

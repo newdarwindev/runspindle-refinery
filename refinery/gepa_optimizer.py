@@ -20,13 +20,9 @@ from .optimization import validate_dataset
 
 
 def runtime_identity() -> str:
-    """No supported GEPA closure has yet been adopted for this new strategy.
+    from .gepa_runtime import runtime_identity as verify
 
-    Existing Python 3.14 dependencies are not authority for GEPA, whose retained
-    metadata requires Python <3.14. A reviewed 3.13 adoption must replace this
-    closed gate with exact source/runtime verification, never a caller override.
-    """
-    raise ValueError("GEPA supported runtime closure not yet adopted")
+    return verify()
 
 
 @dataclass(frozen=True)

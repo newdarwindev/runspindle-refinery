@@ -1,0 +1,24 @@
+{
+  "candidate_canonical_sha256": "c5b544140cea3fc03dce784765e76bcdcfa3ae621fe68e1a2724e466edd8515e",
+  "files": {
+    "docs/python313-input-evidence.json": "8373c18a64345151cae3b7bf327cb80ce63be9be9dbbe294c72b5e22429ffd1a",
+    "docs/python313-native-preparation.json": "1f6546eb64527fb96cca2990b130c4f854f7e7210b53a158e7391669608e50a9",
+    "offline/python-LICENSE": "b0e25a78cffb43f4d92de8b61ccfa1f1f98ecbc22330b54b5251e7b6ba010231",
+    "offline/python313/candidate-dependencies.json": "bb4a26f0d79268d9ce4c62b0e10d6b5ab5a92fe65b303840c6b82ad318e0f928",
+    "offline/python313/candidate-file-modes.json": "13313456ca786a2ae8d5fed65067fb73dfd04f95d58d249c62ed5b5237a07d6f",
+    "offline/python313/recipe.json": "801b3e44c60b89db099d57289be7d65dd37ed471eee17d7f4dcf78b049a4abff",
+    "offline/requirements.lock": "830486665f562043c93297ff9da93db9b379c13cf12eba680b320dc1c5b4b525"
+  },
+  "image": "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+  "image_config": "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+  "limits": [
+    "Same sealed UDF preparation bytes and full metadata; arbitrary rebuild/distribution not established",
+    "Python 3.14 canonical closure remains unchanged",
+    "No runtime, durable recovery, heldout, provider or production qualification implied"
+  ],
+  "modes_canonical_sha256": "4c25670fbae99b20edd2be99796e33cae43bb8f2740c94f5da99b7cb83459dd8",
+  "platform": "linux/arm64",
+  "python": "3.13.13",
+  "schema": "runspindle.gepa313-adoption.v1",
+  "scope": "reviewed_source_proposal_for_synthetic_GEPA_qualification_only"
+}

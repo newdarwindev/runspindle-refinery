@@ -386,8 +386,8 @@ class GEPABoundaryTests(unittest.TestCase):
             self.task()
         self.assertEqual(self.provider.calls, [])
 
-    def test_supported_runtime_not_adopted_has_zero_effects(self) -> None:
-        with self.assertRaisesRegex(ValueError, "runtime closure not yet adopted"):
+    def test_unqualified_runtime_has_zero_effects(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unqualified GEPA Python or target"):
             gepa.optimize(
                 self.dataset,
                 self.split,

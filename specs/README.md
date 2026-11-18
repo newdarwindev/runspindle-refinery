@@ -104,3 +104,6 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Sealed GEPA313 qualification lane](gepa313-runtime-qualification.md): separate supported runtime adoption and genuine reflection harness source; native execution and durable integration remain unqualified.
 - [GEPA worker-owned Store context](gepa-worker-store.md): correction for confirmed native worker affinity failures; scoped connections and component tests, actual rerun pending.
 - [Automatic thumbs-up gold labels](automatic-thumbs-up-gold.md): authenticated exact-output reaction policy without bespoke task whitelist; separate consent and source capture boundaries remain.
+- [Durable GEPA compilation](durable-gepa-compile.md): compile-only sealed Session strategy, transaction-bound request witnesses and component replay tests; heldout evaluation unavailable and actual durable GEPA qualification pending.
+- [Durable GEPA worker integration](durable-gepa-worker-integration.md): compile-only reconciliation with real-worker authority/witness fixtures; actual framework and fresh-process qualification pending.
+- [Durable GEPA native qualification](gepa-durable-native-qualification.md): separate actual compile/fresh-process import-forbidden recovery harness; native evidence pending, no heldout claim.

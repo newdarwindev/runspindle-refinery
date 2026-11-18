@@ -189,10 +189,13 @@ class Dispatch:
         reply = self._complete(request, messages)
         return framed(reply, "answer")
 
+    def reserve(self, request: ev.Request) -> Any:
+        return self.budget.reserve(self.per_call, request=request)
+
     def _complete(self, request: ev.Request, messages: Any) -> ev.Completion:
         """Shared settlement only; framing and request admission belong to callers."""
         self.guard()
-        ticket = self.budget.reserve(self.per_call, request=request)
+        ticket = self.reserve(request)
         self.guard()
         self.messages.append(digest(canonical(messages)))
         try:

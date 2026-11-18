@@ -13,15 +13,19 @@ import sys
 import time
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from refinery import gepa_runtime as runtime  # noqa: E402
 
 
-def bounded(argv: list[str], timeout: int) -> subprocess.CompletedProcess[str]:
-    process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def bounded(
+    argv: list[str], timeout: int, *, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    process = subprocess.Popen(
+        argv, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
+    )
     streams: dict[str, bytearray] = {"stdout": bytearray(), "stderr": bytearray()}
     deadline = time.monotonic() + timeout
     try:
@@ -65,13 +69,17 @@ def bounded(argv: list[str], timeout: int) -> subprocess.CompletedProcess[str]:
             raise cleanup_error
 
 
-def execute(prepared: str) -> dict[str, Any]:
+def execute(prepared: str, *, suite: str = "reflection") -> dict[str, Any]:
+    if suite not in {"reflection", "durable"}:
+        raise ValueError("unknown GEPA suite")
     base = Path(prepared).absolute()
     if any(c in str(path) for path in (base, ROOT) for c in (":", ",", "\n")):
         raise ValueError("unsafe GEPA mount path")
     runtime.verify_prepared(base)
     from tools.test_gepa_reflection import source_hashes, validate
 
+    if suite == "durable":
+        from tools.test_gepa_durable import source_hashes, validate_report
     sources = source_hashes()
     inspected = bounded(["docker", "image", "inspect", runtime.IMAGE], 30)
     if inspected.returncode:
@@ -127,7 +135,9 @@ def execute(prepared: str) -> dict[str, Any]:
     argv += [
         runtime.IMAGE,
         "/usr/local/bin/python3.13",
-        "tools/test_gepa_reflection.py",
+        "tools/test_gepa_reflection.py"
+        if suite == "reflection"
+        else "tools/test_gepa_durable.py",
     ]
     try:
         result = bounded(argv, 120)
@@ -155,6 +165,11 @@ def execute(prepared: str) -> dict[str, Any]:
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("GEPA native qualification failed")
     value = json.loads(result.stdout)
+    if suite == "durable":
+        validate_report(value)
+        if source_hashes() != sources:
+            raise ValueError("GEPA source changed during execution")
+        return cast(dict[str, Any], value)
     if (
         type(value) is not dict
         or value.get("status") != "passed"
@@ -171,7 +186,7 @@ def execute(prepared: str) -> dict[str, Any]:
         validate(run)
     if source_hashes() != sources:
         raise ValueError("GEPA source changed during execution")
-    return value
+    return cast(dict[str, Any], value)
 
 
 def main() -> None:
@@ -182,10 +197,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--prepared", required=True)
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--suite", choices=("reflection", "durable"), default="reflection"
+    )
     args = parser.parse_args()
     # Refuse overwrite before any runtime execution. No auto-acceptance of evidence.
     with args.report.open("x") as output:
-        report = execute(args.prepared)
+        report = execute(args.prepared, suite=args.suite)
         output.write(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))
 

@@ -1,0 +1,210 @@
+{
+  "adopted_manifest_canonical_json_sha256": "2f439085e18c57e109144d40bb8eab300597d88de6127fad13afc218590fdc1f",
+  "base_unchanged": true,
+  "config": "sha256:261deca7b4c0ee17ae67a04a5499437a5dc4dd52ea501a2f9da02eb6c475537b",
+  "elapsed_guest_seconds": 192.38677612499998,
+  "evidence_class": "actual_framework_adversarial_component",
+  "exact_adopted_manifest_match": true,
+  "guest_exit_code": 0,
+  "guest_timeout_seconds": 900,
+  "host_cleanup": "guest exited and no matching QEMU process remained",
+  "image": "sha256:0e58fc4a4575979bfce26735236422a48b38dae99d72b9d72a15e8e3fe0f7f93",
+  "input_sha256": {
+    "adversarial-corrected-transport.iso": "12043b5b05dcd581ce8bd36784568812e27ff756b352c336d1ca46b20f217bef",
+    "native-wheelhouse-v2.udf.iso": "241dc8e276f8c3f3e5395f9b853edcd13e690439f1a50bde5f036e1937a69671",
+    "ubuntu-arm64.img": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  },
+  "internal_runs_per_launcher": 2,
+  "launcher_cleanup": "unchanged launcher requires named container absent after cleanup",
+  "launcher_report_stdout_sha256": [
+    "40b8fdfd9da9f456ad574aa32762902376ee0fa2acb996977bb226e1b2501369",
+    "40b8fdfd9da9f456ad574aa32762902376ee0fa2acb996977bb226e1b2501369"
+  ],
+  "launcher_reports_identical": true,
+  "launcher_runs": 2,
+  "launcher_timeout_seconds": 120,
+  "native_target": "Linux aarch64",
+  "network": "guest_no_NIC_and_container_network_none",
+  "prior_observations": [
+    {
+      "outcome": "framework_attempt_failed_strict_oracle",
+      "result_log_sha256": "00d1b0acc94bd6649dfe366ff511a1468267ce5e5f1afe48520ff1777cb907b3",
+      "source": "70c41cdcbcda2a1c2f47dbed8b327e8aabe1bbbd"
+    },
+    {
+      "case": "provider_failure",
+      "dispatches": 1,
+      "durable_reason": "provider_unknown",
+      "network_attempts": 0,
+      "optimizer_reason": "dispatch_binding_changed",
+      "outcome": "diagnostic_failed_same_oracle",
+      "result_log_sha256": "5fc8153cbdcb5824a00ac42acf723dd4b893bce7c153dc8928d98ac70876601d",
+      "source": "f56987d2294895adc2a83d7347c319e25bd9c5cb",
+      "unresolved_calls": 1
+    }
+  ],
+  "report": {
+    "cases": [
+      {
+        "attempt_outcomes": [
+          "unknown"
+        ],
+        "attempts_sha256": "47d5f1ea21e1254beca7cd4698e052708ce3c62add0634f5ceb2529a5b06107a",
+        "candidate": null,
+        "candidate_sha256": null,
+        "case": "cancel",
+        "compile_entries": 1,
+        "ledger": {
+          "calls": 1,
+          "cost_microunits": null,
+          "elapsed_ms": 0,
+          "reason": "cancelled",
+          "tokens": null,
+          "unresolved_calls": 1
+        },
+        "ledger_sha256": "460d1d50a4372818cde911ac3ada709814c3bd31eee3dd27baf8068a816c8c4c",
+        "network_attempts": 0,
+        "new_dispatches": 0,
+        "reason": "cancelled",
+        "retry_reason": "cancelled",
+        "status": "blocked",
+        "train_only": true
+      },
+      {
+        "attempt_outcomes": [
+          "settled"
+        ],
+        "attempts_sha256": "129f1701f3db1f77526c739c84bf0438e2c743cfbe4c5d8b8f2fac59e74c0675",
+        "candidate": null,
+        "candidate_sha256": null,
+        "case": "exhaustion",
+        "compile_entries": 1,
+        "ledger": {
+          "calls": 1,
+          "cost_microunits": 1,
+          "elapsed_ms": 1,
+          "reason": "calls_exhausted",
+          "tokens": 1,
+          "unresolved_calls": 0
+        },
+        "ledger_sha256": "f491df1e0bf9fc9ce28781d9f07d904b490a6f61d036f7a66bbdd690a5a14dcf",
+        "network_attempts": 0,
+        "new_dispatches": 1,
+        "reason": "calls_exhausted",
+        "retry_reason": "calls_exhausted",
+        "status": "blocked",
+        "train_only": true
+      },
+      {
+        "attempt_outcomes": [
+          "unknown"
+        ],
+        "attempts_sha256": "4ab5768e9e25fd874133a03ebdc364d3aea9836038932813bc761c6358750595",
+        "candidate": null,
+        "candidate_sha256": null,
+        "case": "unknown_tokens",
+        "compile_entries": 1,
+        "ledger": {
+          "calls": 1,
+          "cost_microunits": null,
+          "elapsed_ms": 1,
+          "reason": "unknown_or_invalid_usage",
+          "tokens": null,
+          "unresolved_calls": 1
+        },
+        "ledger_sha256": "cdbccaa5fad51555d5393411a5a5aeabe78feb841d458704023adb1d55abf8d2",
+        "network_attempts": 0,
+        "new_dispatches": 1,
+        "reason": "unknown_or_invalid_usage",
+        "retry_reason": "unknown_or_invalid_usage",
+        "status": "blocked",
+        "train_only": true
+      },
+      {
+        "attempt_outcomes": [
+          "unknown"
+        ],
+        "attempts_sha256": "4f7e713d94ca98a907f1b0986de7e1cc92cc3c1e65c1ba3f78d92a02f5724500",
+        "candidate": null,
+        "candidate_sha256": null,
+        "case": "unknown_cost",
+        "compile_entries": 1,
+        "ledger": {
+          "calls": 1,
+          "cost_microunits": null,
+          "elapsed_ms": 1,
+          "reason": "unknown_or_invalid_usage",
+          "tokens": null,
+          "unresolved_calls": 1
+        },
+        "ledger_sha256": "a072c14e9ef403df8de1622dc80e1b1076b761a8fe8624d19bcdbe45eade524f",
+        "network_attempts": 0,
+        "new_dispatches": 1,
+        "reason": "unknown_or_invalid_usage",
+        "retry_reason": "unknown_or_invalid_usage",
+        "status": "blocked",
+        "train_only": true
+      },
+      {
+        "attempt_outcomes": [
+          "unknown"
+        ],
+        "attempts_sha256": "a5baa330b08b3d9fa6b6a1038ede0312e0b8057af19273787cb1e658d103e19f",
+        "candidate": null,
+        "candidate_sha256": null,
+        "case": "provider_failure",
+        "compile_entries": 1,
+        "ledger": {
+          "calls": 1,
+          "cost_microunits": null,
+          "elapsed_ms": 0,
+          "reason": "provider_unknown",
+          "tokens": null,
+          "unresolved_calls": 1
+        },
+        "ledger_sha256": "3b1e784c633aa162974b736f3cc2d78e96436c8f9c9cc8b88538bee4ce0e5c6a",
+        "network_attempts": 0,
+        "new_dispatches": 1,
+        "reason": "provider_unknown",
+        "retry_reason": "provider_unknown",
+        "status": "blocked",
+        "train_only": true
+      }
+    ],
+    "concurrency": "not_qualified",
+    "evidence_class": "actual_framework_adversarial_component",
+    "live_provider": "not_run",
+    "promotion": "not_authorized",
+    "repeat_runs": 2,
+    "source_sha256": {
+      "offline/dependencies.json": "84477d54127b86bc47b5d2323fd40715ec1b67d4a260e174ad9c60161a313a8c",
+      "offline/dependency-adoption.json": "e01ba2440ef2317ba85c911d4ce8ce44724b63ed374272cab8f94c84511fd206",
+      "refinery/dspy_optimizer.py": "8a5d519cebc906cee1bc6f4790c0dd83cfa149c54292d3b29ab6e87a007dc1c6",
+      "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+      "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+      "refinery/storage.py": "0d322718b1597654a9507f25823d5aea47cc5557c1fbe8a4eaba9586a356b10b",
+      "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+      "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+      "tools/offline_dspy.py": "c0693ff96c5e264de0f47ee4ffc4441dc3b862e9c29defb93a6cb694989c4f62",
+      "tools/test_dspy_adversarial.py": "2ec675550454a4445e68b887bdebee4e980ae8fba7102b7d57e88d6f63c3fe86"
+    },
+    "status": "passed"
+  },
+  "retained_private_raw_evidence_sha256": {
+    "adversarial-report.json": "0b119bde2d8381921c92b73db14ebb4212ba6d11464dde7bd94fdaeb6182b670",
+    "guest-receipt.json": "4aae2c36302e841fa7ebaa278e71b012559d4912a987bca24f5fcb1df93479fe",
+    "host-receipt.json": "69bb15183a3d19a91b99ef3f4c6679e6e6d80ce428a1aa05a0712e2d01e0b4eb",
+    "result.log": "2aac1492aa5ac5c40513943466d90acd39cea6039b49cb48b96316d56aecc9a8"
+  },
+  "schema": "runspindle.native-dspy-adversarial-qualification.v1",
+  "scope_limits": [
+    "synthetic local adversarial component only",
+    "concurrency ownership not qualified",
+    "no live provider, model quota, promotion or deployment",
+    "same retained sealed wheelhouse; distribution and reconstruction not established"
+  ],
+  "source": "d1ca35f9cfa712d38eba74e32bd3463fa5745b69",
+  "source_tree": "4eee9fe75d728516196faad225cb0f6a6cacb666",
+  "status": "passed",
+  "strict_oracle_AST_unchanged_from_original": true
+}

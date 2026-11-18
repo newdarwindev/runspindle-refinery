@@ -4,17 +4,21 @@ import hashlib
 import json
 import unittest
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / "offline/linux-native-candidate"
 
 
-def read(name):
-    return json.loads((DIRECTORY / name).read_text())
+def read(name: str) -> dict[str, Any]:
+    value = json.loads((DIRECTORY / name).read_text())
+    if not isinstance(value, dict):
+        raise ValueError("candidate evidence must be a JSON object")
+    return value
 
 
 class LinuxNativeCandidateTests(unittest.TestCase):
-    def test_manifest_digest_and_rights(self):
+    def test_manifest_digest_and_rights(self) -> None:
         new = read("dependencies.json")
         old = json.loads((ROOT / "offline/dependencies.json").read_text())
         digest = hashlib.sha256(
@@ -25,7 +29,7 @@ class LinuxNativeCandidateTests(unittest.TestCase):
         self.assertEqual(len(new["installed_files"]), 11877)
         self.assertEqual(new["execution"], "not_run")
 
-    def test_bounded_actual_delta(self):
+    def test_bounded_actual_delta(self) -> None:
         new = read("dependencies.json")["installed_files"]
         old = json.loads((ROOT / "offline/dependencies.json").read_text())[
             "installed_files"
@@ -43,7 +47,7 @@ class LinuxNativeCandidateTests(unittest.TestCase):
             {"added": added, "changed": changed, "missing": []},
         )
 
-    def test_recipe_is_native_and_bound(self):
+    def test_recipe_is_native_and_bound(self) -> None:
         recipe = read("recipe.json")
         self.assertEqual(recipe["interpreter"], "/usr/local/bin/python3.14")
         self.assertEqual(recipe["python_version"], "Python 3.14.0")
@@ -56,7 +60,7 @@ class LinuxNativeCandidateTests(unittest.TestCase):
             read("receipt.json")["input_hashes"]["native-wheelhouse-v2.udf.iso"],
         )
 
-    def test_no_execution_or_promotion_claim(self):
+    def test_no_execution_or_promotion_claim(self) -> None:
         receipt = read("receipt.json")
         self.assertEqual(receipt["status"], "review_required_not_execution_authority")
         self.assertFalse(receipt["canonical_changed"])

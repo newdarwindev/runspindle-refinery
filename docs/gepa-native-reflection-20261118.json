@@ -1,0 +1,168 @@
+{
+  "base_unchanged": true,
+  "candidate_manifest_sha256": "c5b544140cea3fc03dce784765e76bcdcfa3ae621fe68e1a2724e466edd8515e",
+  "classification": "bounded_actual_framework_process_local_synthetic_reflection",
+  "cleanup": "guest cleanly powered off; named containers checked absent by unchanged launcher",
+  "config": "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+  "host_exit": 0,
+  "image": "sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+  "internal_repeats_per_launcher": 2,
+  "isolation": "no NIC; network-none containers; unchanged120s launcher/900s guest bounds",
+  "launcher_reports_identical": true,
+  "launcher_runs": 2,
+  "limits": [
+    "Synthetic task/reflection completions; no live provider or model quota",
+    "Process-local only; no durable GEPA recovery, heldout quality, promotion or production qualification",
+    "Exact retained sealed UDF; rebuild/distribution not qualified",
+    "Original Python3.14 lane preserved"
+  ],
+  "preceding_failures": [
+    {
+      "host_receipt_sha256": "2bd5408d3ec5a0b3b3222f18fc387a896d003e1bff1f8bde8d61f4f3f95b1fae",
+      "result_log_sha256": "e18c288ac4f097fda549a34dbc66151558bde8476d0fbfa90bac791d8ab3f8db",
+      "source": "d0b95bf7b10b828661442cf408c47400203ddc27"
+    },
+    {
+      "host_receipt_sha256": "1dccbf01219d1568cd2c1df8a397669ccec67b3cd6690f269b838eb8978033a1",
+      "result_log_sha256": "60eee62cc05928d31a45e4443ac542d4334d1d02cdf5cf09e280b764a693781d",
+      "source": "2bcf357694a52fbf2389ea0d02d14af7a8ae6f6d"
+    },
+    {
+      "host_receipt_sha256": "700e1f6cad2fdc74a26971616b83fe44ff79d0bddab057049436896c35d3f93f",
+      "result_log_sha256": "20bd0367cbc7f39530e93c28719b744af29ecc6bd76ccd5071b54f0f8d2e0b5c",
+      "source": "d9c16f8914ecf6fa10d50c56ca94f1cc3dc86ab1"
+    },
+    {
+      "host_receipt_sha256": "c7399c5f523335051da5d81bdf0728cc4f8e48738bd507f4a9da57caecc067cc",
+      "result_log_sha256": "61339275dbd30883dbbc93c83b3e9e5b2f727b0d2829465510c18a17ecacfe21",
+      "source": "9784e8a2fea8a13654292d8a54d900c064cea361"
+    },
+    {
+      "host_receipt_sha256": "23bf38178e56b7d6c7e677fcbddb00559cf72db8b4a71193df7a6edf4ebcacd9",
+      "result_log_sha256": "9382b3717d5caffc2ce39ab5fd7813a0bc5cc712bbd4e3b7dd10098828e9e8ef",
+      "source": "98e935e9e111e72183024ad13a3d1a244683afdd"
+    }
+  ],
+  "prepared_full_mode_inventory_sha256": "4c25670fbae99b20edd2be99796e33cae43bb8f2740c94f5da99b7cb83459dd8",
+  "raw_evidence_sha256": {
+    "gepa-report.json": "2d74a3c9072a9abeac73dd6a29c1b9a7106b1124ade522c51c286d295dbd9ea2",
+    "guest-receipt.json": "474c0482de4cebb75d94764f34eb16c429fb673c140c5c60adabd663bf284d84",
+    "host-receipt.json": "bd19e7b468a278d7c892645e15c5e852bba18c181ae419428b40211cf455d4f4",
+    "result.log": "254a58bb9053f9909e9d59eca6408c70f673dc26d68309c09e0d80552f06aa20"
+  },
+  "report": {
+    "adoption_sha256": "e7e7f997c79024dbfde658e3825a4786743e1b249005112cb6598c87ed2e79ae",
+    "repeat_equal": true,
+    "runs": [
+      {
+        "attempts_sha256": "51ec0402938f2f91805a23474db742d963d839918e28c84b115abfe0a16f39b9",
+        "candidate_sha256": "f894499bbe78f77aa55f8e70688ea6a1ae1af7eb07cb65dbec0c79590a7a80fc",
+        "changed_task_successes": 2,
+        "compile_entries": 1,
+        "configuration_sha256": "eaba0d6b409b50cc94785ee18a71bd80eba45ae4f3dcc6f89b55ac00c627539f",
+        "initial_task_failures": 2,
+        "network_attempts": 0,
+        "new_dispatches": 5,
+        "observations_match_receipts": true,
+        "reason": null,
+        "reflection_output_matches_selected": true,
+        "reflection_predict_entries": 1,
+        "runtime_identity": "aab556b60058361e8af1d0003ac84d677699b8752bce4ceca1560e0ed79cd6b7",
+        "selected_changed_instruction": true,
+        "stages": [
+          "optimization",
+          "optimization",
+          "reflection",
+          "optimization",
+          "optimization"
+        ],
+        "status": "compiled",
+        "train_only": true,
+        "usage": {
+          "calls": 5,
+          "cost_microunits": 5,
+          "elapsed_ms": 0,
+          "reason": null,
+          "tokens": 5,
+          "unresolved_calls": 0
+        }
+      },
+      {
+        "attempts_sha256": "51ec0402938f2f91805a23474db742d963d839918e28c84b115abfe0a16f39b9",
+        "candidate_sha256": "f894499bbe78f77aa55f8e70688ea6a1ae1af7eb07cb65dbec0c79590a7a80fc",
+        "changed_task_successes": 2,
+        "compile_entries": 1,
+        "configuration_sha256": "eaba0d6b409b50cc94785ee18a71bd80eba45ae4f3dcc6f89b55ac00c627539f",
+        "initial_task_failures": 2,
+        "network_attempts": 0,
+        "new_dispatches": 5,
+        "observations_match_receipts": true,
+        "reason": null,
+        "reflection_output_matches_selected": true,
+        "reflection_predict_entries": 1,
+        "runtime_identity": "aab556b60058361e8af1d0003ac84d677699b8752bce4ceca1560e0ed79cd6b7",
+        "selected_changed_instruction": true,
+        "stages": [
+          "optimization",
+          "optimization",
+          "reflection",
+          "optimization",
+          "optimization"
+        ],
+        "status": "compiled",
+        "train_only": true,
+        "usage": {
+          "calls": 5,
+          "cost_microunits": 5,
+          "elapsed_ms": 0,
+          "reason": null,
+          "tokens": 5,
+          "unresolved_calls": 0
+        }
+      }
+    ],
+    "schema": "runspindle.gepa313-native.v1",
+    "scope": "process-local synthetic GEPA reflection; no durable, heldout or production claim",
+    "sources": {
+      "refinery/__init__.py": "2a372055baae947e8aaca1df614eefd95755a18654d9db8ca93b73fb86008c61",
+      "refinery/dspy_local.py": "64dfca3fb0419641fa88ee60b87c3f545c3e7d70492f4f5d758e59db1353cb06",
+      "refinery/dspy_optimizer.py": "360be4f958a14eff6ce956b53069649b77714ac83a158aa1f586201421cb51db",
+      "refinery/durable_dspy.py": "576fab6aea97c8858c29ca007d2923625c6cb196c152b0f69a3a189122e54b98",
+      "refinery/durable_evaluation.py": "653b035c9a5b9eb8ada9864100d306d92ae4e791ebe036996fc784b9beaed022",
+      "refinery/durable_optimization.py": "79129f220bc5ca6d4c400852f98d226d9c4df982cb9eca1644f0b90f88dcfe4e",
+      "refinery/evaluation.py": "894ddd568de03c779b8f24b0d7a34f14c453c95d40b5d7c2b3b91cf66f088896",
+      "refinery/feedback_collection.py": "111fb5d29bda7e51a854ddf2b66a48be4996fab407ac9d7c729e2d2de72b288e",
+      "refinery/feedback_use.py": "151b8ef14eebf4256dc31f57bcc2b3ab920172148f3a429d82189bbcf4673dc1",
+      "refinery/gepa_codec.py": "b55ac8d2deeac5d2852e0fa592b0df35ab26b0a1a7e4f7e7ba609e3706e7c2e4",
+      "refinery/gepa_optimizer.py": "9bd50e3972e4a813a8a1e991a34981ee67e4d1d0e20c60c61823ffb9d6ea8294",
+      "refinery/gepa_runtime.py": "af0be54c6679d1176fec6abd08a3db0ff6f888cfe7ede185819eb0a15badf50b",
+      "refinery/heldout_policy.py": "5dfafcbff850d21812c1c73099e5e9b80d5fdb4a04488ec25a4c3323fc0d7dd1",
+      "refinery/lineage.py": "62fa2d0ec194a0bd76578d1f78ca45c0a5d3b0e2319c99386c05e92414b8a553",
+      "refinery/optimization.py": "221fb8a547e7670ebda598811e96197b79e6567b6d31e841701edffd8466eba2",
+      "refinery/schema.py": "e7f4dff84a79c9af4995f1f5dd0a54238baf618490d414e4cf0cfbddee23d138",
+      "refinery/serving.py": "c94110587390a5dc6dad9bbb89ae271bb2f652c8280ee98b451a69e012d279c2",
+      "refinery/source_feedback.py": "f9ff4938d32bae14b42e892064568d7090fdd02fcbc8b0db0ede7248bf181f5f",
+      "refinery/storage.py": "ddaa0c64424c87cc03c7c925bf346665ed865faeebc0bbfa2fd33edb875ee6a4",
+      "refinery/tether_dependency.py": "6d48f52fb819785be35b5fc12135ed22aeec3a8f6cbc1ad357d630871cd8d15f",
+      "tests/test_durable.py": "7972e6c9e798c6ccc1c5008f7b25d02c235e7462361288f7ecf4084846007877",
+      "tests/test_lineage.py": "71d16735e02913aeda255783259acdb13d4a76d87574262b285cfa55303c1e44",
+      "tools/offline_gepa.py": "e866410d812147395fc3de5ffcc6066914a3536ce0281eb3e4f74c5ed1d0fec7",
+      "tools/test_gepa_reflection.py": "e44644a73b4ecdb8e5cc4a75289a26fc7e2ce7f09902485c420f426a60746591"
+    },
+    "status": "passed"
+  },
+  "schema": "runspindle.gepa313-native-evidence.v1",
+  "sealed_inputs_sha256": {
+    "gepa313-store-transport.iso": "c1083594c79da9c3b61580fa78dc1edb25cc2dac2687d51981af20ab2d7dbd0e",
+    "python313-wheelhouse.udf.iso": "745bcba6a09f146e993ae45c1787db4e72a1783cb868909e69b01c47c9c6b350",
+    "ubuntu-arm64.img": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  },
+  "seconds": 195.54002675,
+  "source": "eb136c49d600c8b6845d6e53ac448deaf29409ea",
+  "source_tree": "0d764e119eaf9520bdec52cc89e4d71e343e6eec",
+  "status": "passed",
+  "stdout_sha256": [
+    "44afd65319e63adaabbc98242a6aad593ce80ae0a734ad73d51c7e2e511fad07",
+    "44afd65319e63adaabbc98242a6aad593ce80ae0a734ad73d51c7e2e511fad07"
+  ]
+}

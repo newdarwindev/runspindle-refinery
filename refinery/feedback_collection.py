@@ -4,7 +4,15 @@ from dataclasses import dataclass
 from threading import Event
 from typing import Any, Callable
 
-from .lineage import Feedback, GoldRule, OutputRevision, SourceRevision, _token, digest
+from .lineage import (
+    THUMBS_UP_GOLD_RULE,
+    Feedback,
+    GoldRule,
+    OutputRevision,
+    SourceRevision,
+    _token,
+    digest,
+)
 from .source_feedback import SourceFeedbackGuard, require_no_guarded_identity
 from .storage import VERSION, Store, pack
 from .tether_dependency import TetherDependency
@@ -195,7 +203,9 @@ def collect(
             output.output_id,
             output.revision,
             output.sha256,
-            selected.rule_id,
+            THUMBS_UP_GOLD_RULE
+            if event["judgment"] == "thumbs_up"
+            else selected.rule_id,
             event["judgment"],
             event["correction"].encode() if event["judgment"] == "correction" else None,
             target_available=active,

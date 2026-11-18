@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import copy
+import importlib
+import sqlite3
 import subprocess
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch
 
@@ -179,3 +183,93 @@ class DurableHarnessTests(unittest.TestCase):
         ):
             launch.execute("/unused", suite="other")
         verify.assert_not_called()
+
+
+class RecoveryBoundaryTests(unittest.TestCase):
+    def test_swallowed_constructor_provider_entry_is_still_rejected(self) -> None:
+        fixture: Any = importlib.import_module("test_durable")
+
+        from refinery.durable_dspy import Session
+        from refinery.storage import Store
+
+        entries: list[bool] = []
+
+        def construct(*args: Any, **kwargs: Any) -> Any:
+            entries.append(True)
+            try:
+                kwargs["provider"].complete(None)
+            except ValueError:
+                pass  # A swallowed forbidden entry must still invalidate recovery.
+            return SimpleNamespace(compile=lambda: object())
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            with Store(path / "store.sqlite") as store:
+                snapshot, _, _ = fixture.setup(store)
+                first = {"snapshot": snapshot, "persisted": h.persisted(store)}
+            with (
+                patch("refinery.durable_dspy.Session", side_effect=construct),
+                patch.object(h, "identity", return_value={}),
+                self.assertRaisesRegex(ValueError, "recovery attempted effects/import"),
+            ):
+                h.recover_child(path, first, [])
+        self.assertEqual(entries, [True])
+        # The patch must restore the actual constructor after the negative fixture.
+        from refinery import durable_dspy
+
+        self.assertIs(durable_dspy.Session, Session)
+
+    def test_checkpoint_digest_covers_every_retained_table(self) -> None:
+        tables = (
+            "objects",
+            "families",
+            "budgets",
+            "experiments",
+            "attempts",
+            "environments",
+            "activations",
+        )
+        with closing(sqlite3.connect(":memory:")) as db:
+            for table in tables:
+                db.execute("CREATE TABLE " + table + " (identity TEXT, payload TEXT)")
+            store = SimpleNamespace(db=db)
+            baseline = h.persisted(store)
+            for table in tables:
+                with self.subTest(table=table):
+                    db.execute(
+                        "INSERT INTO " + table + " VALUES(?,?)", ("row", "changed")
+                    )
+                    self.assertNotEqual(h.persisted(store), baseline)
+                    db.execute("DELETE FROM " + table)
+                    self.assertEqual(h.persisted(store), baseline)
+
+    def test_identity_hashes_real_sqlite_witness_rows_as_supported_tuples(self) -> None:
+        from refinery.gepa_evidence import GEPACompiled
+
+        # Serialization fixture only, deliberately not a valid optimization proof.
+        result = GEPACompiled(
+            "compiled", None, "config", b"candidate", "candidate", (), (("calls", 5),)
+        )
+        with closing(sqlite3.connect(":memory:")) as db:
+            db.execute(
+                "CREATE TABLE objects(kind TEXT, identity TEXT, digest TEXT, payload BLOB)"
+            )
+            for number in range(5):
+                db.execute(
+                    "INSERT INTO objects VALUES(?,?,?,?)",
+                    ("gepa_request_witness", str(number), "digest", b"payload"),
+                )
+            session = SimpleNamespace(
+                store=SimpleNamespace(db=db),
+                snapshot_sha256="snapshot",
+                config="config",
+                binding_sha256="binding",
+                clock=lambda: 0,
+            )
+            before = h.identity(session, result)
+            db.execute(
+                "UPDATE objects SET payload=? WHERE identity=?", (b"changed", "0")
+            )
+            self.assertNotEqual(
+                h.identity(session, result)["witnesses"], before["witnesses"]
+            )

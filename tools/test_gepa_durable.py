@@ -45,10 +45,18 @@ def persisted(store: Any) -> str:
 
     # Logical exact stored bytes, not physical SQLite/WAL layout.
     tables = {}
-    for table in ("objects", "budgets", "experiments", "attempts"):
-        tables[table] = store.db.execute(
-            "SELECT * FROM " + table + " ORDER BY 1,2"
-        ).fetchall()
+    for table in (
+        "objects",
+        "families",
+        "budgets",
+        "experiments",
+        "attempts",
+        "environments",
+        "activations",
+    ):
+        tables[table] = tuple(
+            store.db.execute("SELECT * FROM " + table + " ORDER BY 1,2").fetchall()
+        )
     return digest(pack(tables))
 
 
@@ -67,7 +75,7 @@ def identity(session: Any, result: Any) -> dict[str, Any]:
         "candidate": result.candidate_sha256,
         "result": digest(pack(result)),
         "attempts": digest(pack(result.attempts)),
-        "witnesses": digest(pack(witnesses)),
+        "witnesses": digest(pack(tuple(witnesses))),
         "usage": dict(result.usage),
         "clock_ms": session.clock(),
     }
@@ -290,7 +298,10 @@ def recover_child(
 
     sys.meta_path.insert(0, reject)
     try:
-        with Store(path / "store.sqlite") as store:
+        with (
+            patch.object(ev.ScriptedProvider, "complete", deny_complete),
+            Store(path / "store.sqlite") as store,
+        ):
             before = persisted(store)
             require(before == first["persisted"], "checkpoint changed before recovery")
             dataset, split = store.lineage(first["snapshot"])
@@ -325,8 +336,7 @@ def recover_child(
                 training_output_id=train.output.output_id,
                 synthetic_fixture=True,
             )
-            with patch.object(ev.ScriptedProvider, "complete", deny_complete):
-                result = session.compile()
+            result = session.compile()
             require(
                 not calls and not reject.attempts, "recovery attempted effects/import"
             )

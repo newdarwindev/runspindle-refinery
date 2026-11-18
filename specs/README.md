@@ -97,3 +97,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Linux-native preparation candidate](linux-native-preparation-candidate.md): historical preparation-only evidence, twice reproduced from one sealed wheelhouse. Subsequent [reviewed active closure adoption](reviewed-linux-dependency-adoption.md) and [native execution](dspy-native-qualification.md) have separate receipts.
 
 - [Reviewed Linux dependency adoption proposal](reviewed-linux-dependency-adoption.md): explicit active closure selection with preserved history; actual framework qualification remains separate.
+
+- [GEPA reflection stage 1](gepa-reflection-stage1.md): process-local adapter and separate instruction codec source; supported runtime adoption and native/durable qualification pending.

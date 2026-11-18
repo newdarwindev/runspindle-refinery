@@ -16,12 +16,13 @@ host must explicitly authorize the new `feedback_projection` use purpose and a
 separate destination-bound projection policy. A copied remote JSON object cannot
 enter this bridge. `use_allowed` is additionally checked against existing local
 optimization-use authority. These projection flags never replace the optimizer's
-own fresh exact-run authority check.
+own fresh exact-run authority check. The complete projection policy is read again
+after use callbacks; any policy change rejects the observation before persistence.
 
 Only opaque hashes, revision, state and policy-derived booleans enter the outbox.
 The fresh policy authorizer receives the opaque feedback identity and explicit
 adapter destination binding. It must actually establish permission to disclose
-that metadata to the configured project/trace; neither a thumbs-up nor existing
+that metadata to the configured HTTPS origin/project/trace; neither a thumbs-up nor existing
 collection consent supplies export permission. No raw prompt/output, actor ID,
 channel identifier, credentials or error diagnostics are persisted by this ledger.
 Source/content materialization is not implemented or implicitly permitted.
@@ -66,7 +67,11 @@ name, API source, boolean value and projection metadata. HTTP errors are not
 absence; an empty list is merely not yet visible. No deprecated-v2 fallback.
 [Official public API documentation](https://langfuse.com/docs/api-and-data-platform/features/public-api).
 
-The host supplies an explicitly authorized transport. No credential loading,
+The host supplies an explicitly authorized transport whose declared canonical
+HTTPS origin must match the adapter before and after every request. Origin is
+bound into the destination alongside project and trace, preventing distinct
+self-hosted instances with identical identifiers from sharing export authority.
+The injected transport remains trusted to route requests to that declared origin. No credential loading,
 network client defaults, live requests, services, Temporal dependency or SDK
 installation occur here. Synthetic tests use the real retained-feedback bridge
 and local stores with a fake HTTP transport. They do not qualify a live Langfuse

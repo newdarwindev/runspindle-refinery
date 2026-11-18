@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from typing import Any, Protocol
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from . import feedback_contract as contract
 
@@ -24,6 +24,8 @@ class Response:
 
 
 class HTTP(Protocol):
+    origin: str
+
     def request(
         self,
         method: str,
@@ -40,21 +42,46 @@ class LangfuseProjection:
     http: HTTP
     project_id: str
     trace_id: str
+    origin: str
 
     def __post_init__(self) -> None:
+        parsed = urlsplit(self.origin)
+        if (
+            parsed.scheme != "https"
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path
+            or parsed.query
+            or parsed.fragment
+            or self.origin != "https://" + parsed.netloc.lower()
+            or parsed.port == 443
+        ):
+            raise ValueError("explicit canonical HTTPS origin required")
+        self._check_origin()
         contract.text(self.project_id)
         contract.text(self.trace_id)
+
+    def _check_origin(self) -> None:
+        if self.http.origin != self.origin:
+            raise ValueError("Langfuse transport origin changed")
 
     @property
     def destination(self) -> str:
         return "langfuse-v3:" + contract.digest(
             contract.canonical(
-                {"project_id": self.project_id, "trace_id": self.trace_id}
+                {
+                    "origin": self.origin,
+                    "project_id": self.project_id,
+                    "trace_id": self.trace_id,
+                }
             )
         )
 
     def _request(self, method: str, path: str, body: bytes | None) -> tuple[int, Any]:
+        self._check_origin()
         result = self.http.request(method, path, body, timeout=10, max_bytes=MAX_BYTES)
+        self._check_origin()
         if (
             type(result) is not Response
             or type(result.status) is not int

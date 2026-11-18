@@ -89,6 +89,7 @@ class RetainedSource:
             event["target"],
         )
         authority = contract.policy(self.authorize_projection(key, destination))
+        admitted_policy = dict(authority)
         state = "active"
         if original["state"] in {"invalidated", "deleted"}:
             state = "revoked"
@@ -127,6 +128,11 @@ class RetainedSource:
                     )
                 except ValueError:
                     authority = dict(authority, use_allowed=False)
+        if (
+            contract.policy(self.authorize_projection(key, destination))
+            != admitted_policy
+        ):
+            raise ValueError("projection policy changed during authority checks")
         if (
             contract.canonical(
                 self.use.tether_store.evidence(

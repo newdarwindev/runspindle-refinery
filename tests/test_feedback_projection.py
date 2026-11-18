@@ -6,6 +6,7 @@ import copy
 import importlib
 import json
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlsplit
@@ -18,6 +19,7 @@ from refinery.langfuse_projection import LangfuseProjection, Response
 
 class HTTP:
     def __init__(self) -> None:
+        self.origin = "https://langfuse.example"
         self.scores: dict[str, dict[str, Any]] = {}
         self.posts = 0
         self.outage = False
@@ -91,7 +93,9 @@ class ProjectionTests(unittest.TestCase):
             current_target=True,
         )
         self.http = HTTP()
-        self.adapter = LangfuseProjection(self.http, "project", "trace")
+        self.adapter = LangfuseProjection(
+            self.http, "project", "trace", self.http.origin
+        )
         use = RetainedFeedbackUse(
             self.h.dep,
             self.h.app.store,
@@ -112,6 +116,34 @@ class ProjectionTests(unittest.TestCase):
         self.path = self.h.root / "projection.sqlite"
         self.ledger = ProjectionLedger(self.path, self.adapter.destination)
         self.addCleanup(self.ledger.close)
+
+    def test_consent_changed_inside_use_callback_denied_before_commit(self) -> None:
+        def approve(request: Any) -> bool:
+            self.authority["export_allowed"] = False
+            return True
+
+        source = replace(self.source, use=replace(self.source.use, approve_use=approve))
+        with self.assertRaisesRegex(ValueError, "policy changed"):
+            self.ledger.dispatch(source, self.adapter)
+        self.assertEqual(self.http.posts, 0)
+        self.assertEqual(
+            self.ledger.db.execute(
+                "SELECT COUNT(*) FROM projection_revisions"
+            ).fetchone()[0],
+            0,
+        )
+
+    def test_distinct_instances_and_transport_origin_mutation_denied(self) -> None:
+        other = HTTP()
+        other.origin = "https://other.example"
+        adapter = LangfuseProjection(other, "project", "trace", other.origin)
+        self.assertNotEqual(adapter.destination, self.adapter.destination)
+        with self.assertRaisesRegex(ValueError, "destination"):
+            self.ledger.dispatch(self.source, adapter)
+        self.http.on_get = lambda: setattr(self.http, "origin", "https://other.example")
+        with self.assertRaisesRegex(ValueError, "origin changed"):
+            self.ledger.dispatch(self.source, self.adapter)
+        self.assertEqual(self.http.posts, 0)
 
     def test_atomic_capture_delivery_duplicate_and_metadata_only(self) -> None:
         first = self.ledger.capture(self.source)
@@ -211,7 +243,8 @@ class ProjectionTests(unittest.TestCase):
             row[key] = saved
         with self.assertRaises(ValueError):
             self.ledger.dispatch(
-                self.source, LangfuseProjection(self.http, "other", "trace")
+                self.source,
+                LangfuseProjection(self.http, "other", "trace", self.http.origin),
             )
 
     def test_schema_guard_and_transaction_rollback(self) -> None:

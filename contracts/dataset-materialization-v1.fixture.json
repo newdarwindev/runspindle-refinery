@@ -1,0 +1,20 @@
+{
+  "input": {
+    "prompt": "\u043f\u0435\u043a\u0430\u0440\u043d\u044f \ud83d\udc4d"
+  },
+  "output_utf8": "\u0425\u043b\u0435\u0431 \u0433\u043e\u0442\u043e\u0432 \ud83d\udc4d",
+  "source_identity_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "family_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "dataset": "synthetic",
+  "split": "train",
+  "binding": {
+    "version": "runspindle.dataset-materialization.v1",
+    "dataset": "synthetic",
+    "source_identity_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "input_sha256": "944c4e9fd8eaa6bbaa6cb6d6927aeb8a3c1acc27cfaed8492797963891ec2f40",
+    "output_sha256": "62d20a4b1a7e11423c1f9e56f20f8428466a7ab9c1c108767bca2a97f5c9ac16",
+    "family_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "split": "train",
+    "item_id": "e33dc668ac2b4b6dc84db539109a6ad3950b956b80ab56aea87a113bc0556411"
+  }
+}

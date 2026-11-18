@@ -8,9 +8,12 @@ issue #16 or establish durable Session, heldout or production acceptance.
 The fixed SHA-256 in `refinery/gepa_runtime.py` binds
 `offline/python313/gepa-adoption.json`. That receipt binds the exact existing
 recipe, 76-distribution dependency inventory, full 14,480-path byte/type/mode
-inventory (11,877 files), requirements, input provenance and independently
+inventory (11,877 files), requirements, exact Python 3.13 image license and its
+verified OCI-layer provenance, input provenance and independently
 reviewed four-install/two-guest preparation evidence. Both inventory file digests
-and canonical JSON digests are checked. Original candidate files remain unchanged.
+and canonical JSON digests are checked. Original candidate files remain unchanged. The separately retained 3.13 license
+is 13,809 bytes, SHA-256 `78b12c3a81360b357002334f0e70ea0e92eebf7a9b358805c03c48484945f3bb`;
+it differs from the preserved 3.14 notice and is not substituted by that notice.
 The recipe's image/config, interpreter, uv archive/binary/checksum and sealed UDF
 provenance remain the existing reviewed values. Native preparation establishes
 this sealed input realization, not arbitrary wheelhouse rebuild/distribution.

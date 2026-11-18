@@ -13,7 +13,7 @@ from typing import Any
 
 from tools.offline_dspy import source_bytes as source_bytes
 
-ADOPTION_SHA256 = "e3abfed6281ec861fcdd42918f8a6c6ff881c128e20f989cca7cbeb6d36c5aa7"
+ADOPTION_SHA256 = "d125ce97be59f074080af87a1038ed5596018db593e92e239a5574eaf58f8e78"
 IMAGE = "python@sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f"
 IMAGE_CONFIG = "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b"
 FILES = frozenset(
@@ -24,7 +24,8 @@ FILES = frozenset(
         "offline/requirements.lock",
         "docs/python313-input-evidence.json",
         "docs/python313-native-preparation.json",
-        "offline/python-LICENSE",
+        "offline/python313/python-LICENSE",
+        "docs/python313-license-provenance.json",
     }
 )
 ROOT = Path(__file__).resolve().parents[1]

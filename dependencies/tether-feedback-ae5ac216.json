@@ -1,0 +1,19 @@
+{
+  "repository": "newdarwindev/runspindle-tether",
+  "commit": "ae5ac216b45ca413283e4200c0a4a61054998b58",
+  "files": {
+    "tether/__init__.py": "8c7f563517f58350d1bd45b95b8ea03f5cadbdd98df399c9f9b17b176075d11e",
+    "tether/admission.py": "1b2f2e778bd23e5f956ff8e0e69d46a00d5ea42454a09d3930537d11568373ca",
+    "tether/feedback.py": "017f1d2c463282ef4fbd845c0aafe921ea10ea525e4b1cb5adb5331f6512baff",
+    "tether/journal.py": "c98eeac8d818d6f51eac13bb378dfa9fb93cb1424281479f3224a9ba096ad426",
+    "tether/native_testing.py": "d92efe289d54fe66c5157ccb2d2ea2fd3bf15a2470e8ff35ffe154a1f07ca755",
+    "tether/sanitization.py": "7c0b5e6fae5eb0e00e43667a447213d8268007588cd42d5fb56e6449a2eb064d",
+    "tether/schema.py": "ebd7544018096f02394c637d70dd1570baab66ea844232a1963c8318d0a3d3a1",
+    "tether/slack_feedback.py": "2a1592bbb3e5c88fa33945d122bc6679123e48a2d20c2f9328ddaf6dace434cf",
+    "tether/slack_ingress.py": "846582ffca135c5e3d39538b592269d55c87000b483d02231c05d94e6becb791",
+    "tether/slack_wire.py": "0de192e858962cce3110d28682fe03329649d5341fcad06e6d75cac0797515b8",
+    "tether/testing.py": "2b84de229c6aff62ec48b52c6decb8dd369e20bade2b0b3d16003ed14ff046c9",
+    "tether/feedback_schema.py": "d26f76629f4b0cd1e2bcabc589cb215817f209f1279b563b091aa86472e7f03f",
+    "tether/source_observation.py": "8b96b00233057e37b378cf27a6977c9345bf25c20c994321bd562e44369e6421"
+  }
+}

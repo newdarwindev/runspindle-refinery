@@ -86,6 +86,31 @@ class RevalidationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(json.loads(result.stdout), [True, 1])
 
+    def test_prior_ae5_pin_requires_fresh_consent_and_preserves_bytes(self) -> None:
+        with patch(__name__ + ".OLD", "ae5ac216b45ca413283e4200c0a4a61054998b58"):
+            old = self.historical()
+        before = pack(self.store.get("lineage", old))
+        with self.assertRaises(ValueError):
+            self.migrate(old, approve_training=lambda *args: False)
+        new = self.migrate(old)
+        self.assertNotEqual(new, old)
+        self.assertEqual(pack(self.store.get("lineage", old)), before)
+        self.assertEqual(self.store.lineage(old), self.store.lineage(new))
+
+    def test_prior_ae5_manifest_tampering_denies_revalidation(self) -> None:
+        with patch(__name__ + ".OLD", "ae5ac216b45ca413283e4200c0a4a61054998b58"):
+            old = self.historical()
+        dependency = importlib.import_module("refinery.tether_dependency")
+        original = dependency.bounded_file
+
+        def altered(path: Path, *args: Any) -> bytes:
+            raw: bytes = original(path, *args)
+            return raw + b" " if path.name == "tether-feedback-ae5ac216.json" else raw
+
+        with patch.object(dependency, "bounded_file", altered):
+            with self.assertRaisesRegex(ValueError, "historical Tether manifest"):
+                self.migrate(old)
+
     def test_old_receipt_does_not_gain_use_permission(self) -> None:
         old = self.historical()
         self.migrate(old)

@@ -4,10 +4,18 @@ from dataclasses import dataclass
 from threading import Event
 from typing import Any, Callable
 
-from .lineage import Feedback, GoldRule, OutputRevision, SourceRevision, _token, digest
+from .lineage import (
+    THUMBS_UP_GOLD_RULE,
+    Feedback,
+    GoldRule,
+    OutputRevision,
+    SourceRevision,
+    _token,
+    digest,
+)
 from .source_feedback import SourceFeedbackGuard, require_no_guarded_identity
 from .storage import VERSION, Store, pack
-from .tether_dependency import TetherDependency
+from .tether_dependency import TetherDependency, verify_ae5_historical_pin
 
 
 @dataclass(frozen=True)
@@ -92,10 +100,23 @@ def collect(
             digest(prior_bytes) != prior_snapshot_sha256
             or digest(prior_receipt_bytes) != prior["collection_evidence"]
             or prior_receipt.get("dependency_commit")
-            != "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d"
-            or dependency.pin["commit"] != "ae5ac216b45ca413283e4200c0a4a61054998b58"
+            not in {
+                "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
+                "ae5ac216b45ca413283e4200c0a4a61054998b58",
+            }
+            or dependency.pin["commit"] != "1e8d2091c55dfad47fdc64ec2e73fcd946da9921"
         ):
             raise ValueError("unsupported feedback revalidation transition")
+
+    def check_historical_pin() -> None:
+        if (
+            prior_receipt is not None
+            and prior_receipt["dependency_commit"]
+            == "ae5ac216b45ca413283e4200c0a4a61054998b58"
+        ):
+            verify_ae5_historical_pin()
+
+    check_historical_pin()
     resolve: Any = resolve_material
     verify: Any = verify_material
     collection: Any = approve_collection
@@ -195,7 +216,9 @@ def collect(
             output.output_id,
             output.revision,
             output.sha256,
-            selected.rule_id,
+            THUMBS_UP_GOLD_RULE
+            if event["judgment"] == "thumbs_up"
+            else selected.rule_id,
             event["judgment"],
             event["correction"].encode() if event["judgment"] == "correction" else None,
             target_available=active,
@@ -258,6 +281,7 @@ def collect(
 
     def check_evidence() -> None:
         check_cancel()
+        check_historical_pin()
         dependency.check(tether_store)
         check_cancel()
         if source_guard is None:

@@ -14,7 +14,7 @@ from types import ModuleType
 from typing import Any
 
 PIN = Path(__file__).resolve().parents[1] / "dependencies/tether-feedback.json"
-COMMIT = "ae5ac216b45ca413283e4200c0a4a61054998b58"
+COMMIT = "1e8d2091c55dfad47fdc64ec2e73fcd946da9921"
 ORDER = (
     "__init__",
     "sanitization",
@@ -59,6 +59,16 @@ def bounded_file(path: Path, limit: int = SOURCE_FILE_LIMIT) -> bytes:
     finally:
         if descriptor is not None:
             os.close(descriptor)
+
+
+def verify_ae5_historical_pin() -> None:
+    """Admit only the preserved prior manifest, never treat old/current as equal."""
+    raw = bounded_file(PIN.parent / "tether-feedback-ae5ac216.json")
+    if (
+        hashlib.sha256(raw).hexdigest()
+        != "480116946e7d1aeaf95aeb4f666dc3aeb58dc12bdbab0fe94287b0e7a5325b86"
+    ):
+        raise ValueError("historical Tether manifest changed")
 
 
 def bounded_head(root: Path) -> str:

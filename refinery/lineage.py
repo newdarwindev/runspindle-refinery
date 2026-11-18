@@ -1,4 +1,5 @@
 """Bounded, process-local lineage logic. Not an authentication or provider adapter."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -63,13 +64,22 @@ class OutputRevision:
     complete: bool = True
 
     def __post_init__(self):
-        for value in (self.output_id, self.revision, self.task_type, self.source_id, self.source_revision):
+        for value in (
+            self.output_id,
+            self.revision,
+            self.task_type,
+            self.source_id,
+            self.source_revision,
+        ):
             _token(value)
         _bytes(self.content)
         _hash(self.source_sha256)
         _hash(self.sha256)
         if type(self.complete) is not bool or digest(self.content) != self.sha256:
             raise ValueError("invalid output bytes or completeness")
+
+
+THUMBS_UP_GOLD_RULE = "authenticated-thumbs-up.v1"
 
 
 @dataclass(frozen=True)
@@ -80,16 +90,26 @@ class Feedback:
     output_revision: str
     output_sha256: str
     rule_id: str
-    kind: str  # positive, negative, correction; rules explicitly allow each gold kind
+    kind: (
+        str  # thumbs_up is an authenticated automatic label; other gold kinds use rules
+    )
     correction: bytes | None = None
     target_available: bool = True
 
     def __post_init__(self):
-        for value in (self.feedback_id, self.actor_id, self.output_id, self.output_revision, self.rule_id):
+        for value in (
+            self.feedback_id,
+            self.actor_id,
+            self.output_id,
+            self.output_revision,
+            self.rule_id,
+        ):
             _token(value)
         _hash(self.output_sha256)
-        if self.kind not in {"positive", "negative", "correction"}:
+        if self.kind not in {"positive", "negative", "correction", "thumbs_up"}:
             raise ValueError("unsupported feedback kind")
+        if self.kind == "thumbs_up" and self.rule_id != THUMBS_UP_GOLD_RULE:
+            raise ValueError("invalid automatic thumbs-up rule")
         if type(self.target_available) is not bool:
             raise ValueError("invalid target availability")
         if self.kind == "correction":
@@ -107,7 +127,11 @@ class GoldRule:
     def __post_init__(self):
         _token(self.task_type)
         _token(self.rule_id)
-        if not isinstance(self.kinds, tuple) or not self.kinds or not set(self.kinds) <= {"positive", "correction"}:
+        if (
+            not isinstance(self.kinds, tuple)
+            or not self.kinds
+            or not set(self.kinds) <= {"positive", "correction"}
+        ):
             raise ValueError("invalid task gold rule")
 
 
@@ -160,20 +184,31 @@ def _bounded(records: Iterable, expected: type) -> tuple:
     return tuple(result)
 
 
-def build_dataset(sources: Iterable[SourceRevision], outputs: Iterable[OutputRevision],
-                  feedback: Iterable[Feedback], rules: Iterable[GoldRule], *,
-                  verify_actor: Verifier | None = None) -> Dataset:
+def build_dataset(
+    sources: Iterable[SourceRevision],
+    outputs: Iterable[OutputRevision],
+    feedback: Iterable[Feedback],
+    rules: Iterable[GoldRule],
+    *,
+    verify_actor: Verifier | None = None,
+) -> Dataset:
     """Construct exact-revision examples; never collect, transmit, execute or deploy.
 
     `verify_actor` must verify an immutable event observation independently of its
     actor_id, then return the authenticated actor. Without it every row is denied.
     This function neither implements nor establishes that trust boundary.
+    A verified thumbs_up event labels exact output bytes without a task whitelist;
+    it does not grant collection/training permission or model promotion.
     """
     sources = _bounded(sources, SourceRevision)
     outputs = _bounded(outputs, OutputRevision)
     feedback = _bounded(feedback, Feedback)
     rules = _bounded(rules, GoldRule)
-    if sum(len(x.content) for x in sources + outputs) + sum(len(f.correction or b"") for f in feedback) > MAX_TOTAL_BYTES:
+    if (
+        sum(len(x.content) for x in sources + outputs)
+        + sum(len(f.correction or b"") for f in feedback)
+        > MAX_TOTAL_BYTES
+    ):
         raise ValueError("dataset byte limit exceeded")
     source_map = {}
     output_map = {}
@@ -188,7 +223,10 @@ def build_dataset(sources: Iterable[SourceRevision], outputs: Iterable[OutputRev
     for output in outputs:
         source = source_map.get((output.source_id, output.source_revision))
         if source:
-            for identity in (("source", source.source_id), ("output", output.output_id)):
+            for identity in (
+                ("source", source.source_id),
+                ("output", output.output_id),
+            ):
                 if identity in families and families[identity] != source.family_id:
                     raise ValueError("related revisions must share one family")
                 families[identity] = source.family_id
@@ -207,16 +245,28 @@ def build_dataset(sources: Iterable[SourceRevision], outputs: Iterable[OutputRev
             duplicates += 1
             if unique[f.feedback_id] != f:
                 conflicting_ids.add(f.feedback_id)
-                conflicting_targets.update(((f.output_id, f.output_revision),
-                                            (unique[f.feedback_id].output_id, unique[f.feedback_id].output_revision)))
+                conflicting_targets.update(
+                    (
+                        (f.output_id, f.output_revision),
+                        (
+                            unique[f.feedback_id].output_id,
+                            unique[f.feedback_id].output_revision,
+                        ),
+                    )
+                )
         unique[f.feedback_id] = f
     quarantine = []
     candidates = {}
     excluded_targets = conflicting_targets
+    ineligible_positive_targets = set()
     for f in sorted(unique.values(), key=lambda f: f.feedback_id):
         key = (f.output_id, f.output_revision)
         output = output_map.get(key)
-        source = source_map.get((output.source_id, output.source_revision)) if output else None
+        source = (
+            source_map.get((output.source_id, output.source_revision))
+            if output
+            else None
+        )
         rule = rule_map.get((output.task_type, f.rule_id)) if output else None
         reason = None
         if f.feedback_id in conflicting_ids:
@@ -239,6 +289,8 @@ def build_dataset(sources: Iterable[SourceRevision], outputs: Iterable[OutputRev
                 reason = "missing_or_changed_source"
             elif not source.complete or not output.complete:
                 reason = "incomplete_context"
+            elif f.kind == "thumbs_up":
+                pass  # Authenticated exact reaction is sufficient; no bespoke task whitelist.
             elif rule is None:
                 reason = "unknown_gold_rule"
             elif f.kind == "negative":
@@ -250,35 +302,80 @@ def build_dataset(sources: Iterable[SourceRevision], outputs: Iterable[OutputRev
             # A distinct unverified event cannot veto verified observations.
             # Conflicting reuse of an immutable ID conservatively quarantines
             # both targets before actor verification.
-            if reason not in {"unverified_actor", "conflicting_feedback_id"}:
+            if f.kind == "positive" and reason in {
+                "unknown_gold_rule",
+                "unsupported_gold_kind",
+            }:
+                # Noncontradictory approvals remain quarantined, but cannot veto
+                # an independently verified exact thumbs-up. Defer until all
+                # events are validated; no order-dependent trust shortcut.
+                ineligible_positive_targets.add(key)
+            elif reason not in {"unverified_actor", "conflicting_feedback_id"}:
                 excluded_targets.add(key)
             continue
         gold = f.correction if f.kind == "correction" else output.content
         candidates.setdefault(key, []).append((f, source, output, gold))
     examples = []
     for key, group in sorted(candidates.items()):
-        if key in excluded_targets or len({(item[3], item[0].rule_id) for item in group}) != 1:
-            quarantine.extend(Quarantine(item[0].feedback_id, "conflicting_feedback") for item in group)
+        automatic = any(item[0].kind == "thumbs_up" for item in group)
+        if (
+            key in excluded_targets
+            or (key in ineligible_positive_targets and not automatic)
+            or len({item[3] for item in group}) != 1
+            or (not automatic and len({item[0].rule_id for item in group}) != 1)
+        ):
+            quarantine.extend(
+                Quarantine(item[0].feedback_id, "conflicting_feedback")
+                for item in group
+            )
             continue
         first = group[0]
-        examples.append(Example(first[1], first[2], first[3], first[0].rule_id,
-                                tuple(item[0] for item in group)))
-    return Dataset(tuple(examples), tuple(sorted(quarantine, key=lambda q: q.feedback_id)),
-                   len(feedback), duplicates)
+        examples.append(
+            Example(
+                first[1],
+                first[2],
+                first[3],
+                THUMBS_UP_GOLD_RULE if automatic else first[0].rule_id,
+                tuple(item[0] for item in group),
+            )
+        )
+    return Dataset(
+        tuple(examples),
+        tuple(sorted(quarantine, key=lambda q: q.feedback_id)),
+        len(feedback),
+        duplicates,
+    )
 
 
 def _example_identity(example: Example) -> dict:
-    return {"source_id": example.source.source_id, "source_revision": example.source.revision,
-            "source_sha256": example.source.sha256, "family_id": example.source.family_id,
-            "output_id": example.output.output_id, "output_revision": example.output.revision,
-            "output_sha256": example.output.sha256, "task_type": example.output.task_type,
-            "gold_sha256": digest(example.gold), "rule_id": example.rule_id,
-            "feedback": [{"feedback_id": f.feedback_id, "actor_id": f.actor_id,
-                          "output_id": f.output_id, "output_revision": f.output_revision,
-                          "output_sha256": f.output_sha256, "rule_id": f.rule_id,
-                          "kind": f.kind, "target_available": f.target_available,
-                          "correction_sha256": digest(f.correction) if f.correction is not None else None}
-                         for f in example.feedback]}
+    return {
+        "source_id": example.source.source_id,
+        "source_revision": example.source.revision,
+        "source_sha256": example.source.sha256,
+        "family_id": example.source.family_id,
+        "output_id": example.output.output_id,
+        "output_revision": example.output.revision,
+        "output_sha256": example.output.sha256,
+        "task_type": example.output.task_type,
+        "gold_sha256": digest(example.gold),
+        "rule_id": example.rule_id,
+        "feedback": [
+            {
+                "feedback_id": f.feedback_id,
+                "actor_id": f.actor_id,
+                "output_id": f.output_id,
+                "output_revision": f.output_revision,
+                "output_sha256": f.output_sha256,
+                "rule_id": f.rule_id,
+                "kind": f.kind,
+                "target_available": f.target_available,
+                "correction_sha256": digest(f.correction)
+                if f.correction is not None
+                else None,
+            }
+            for f in example.feedback
+        ],
+    }
 
 
 def _json_digest(value) -> str:
@@ -288,6 +385,7 @@ def _json_digest(value) -> str:
 @dataclass(frozen=True)
 class LockedSplit:
     """Immutable in-process holdout snapshot, not a persisted experiment registry."""
+
     dataset_sha256: str
     seed: str
     assignments: tuple[tuple[str, str], ...]
@@ -313,12 +411,27 @@ def lock_split(dataset: Dataset, *, seed: str) -> LockedSplit:
         raise ValueError("invalid dataset")
     identities = [_example_identity(e) for e in dataset.examples]
     identities.sort(key=lambda e: (e["output_id"], e["output_revision"]))
-    assignments = tuple((family, "heldout" if int(_json_digest([seed, family]), 16) % 10 < 2 else "train")
-                        for family in sorted({e.source.family_id for e in dataset.examples}))
-    dataset_hash = _json_digest({"examples": identities,
-                                 "quarantine": sorted((q.feedback_id, q.reason) for q in dataset.quarantine),
-                                 "observed_feedback": dataset.observed_feedback,
-                                 "duplicate_feedback": dataset.duplicate_feedback})
-    manifest_hash = _json_digest({"version": "refinery-lineage-local.v1", "dataset_sha256": dataset_hash,
-                                  "seed": seed, "assignments": assignments})
+    assignments = tuple(
+        (
+            family,
+            "heldout" if int(_json_digest([seed, family]), 16) % 10 < 2 else "train",
+        )
+        for family in sorted({e.source.family_id for e in dataset.examples})
+    )
+    dataset_hash = _json_digest(
+        {
+            "examples": identities,
+            "quarantine": sorted((q.feedback_id, q.reason) for q in dataset.quarantine),
+            "observed_feedback": dataset.observed_feedback,
+            "duplicate_feedback": dataset.duplicate_feedback,
+        }
+    )
+    manifest_hash = _json_digest(
+        {
+            "version": "refinery-lineage-local.v1",
+            "dataset_sha256": dataset_hash,
+            "seed": seed,
+            "assignments": assignments,
+        }
+    )
     return LockedSplit(dataset_hash, seed, assignments, manifest_hash)

@@ -108,3 +108,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Durable GEPA worker integration](durable-gepa-worker-integration.md): compile-only reconciliation with real-worker authority/witness fixtures; actual framework and fresh-process qualification pending.
 - [Durable GEPA native qualification](gepa-durable-native-qualification.md): separate actual compile/fresh-process import-forbidden recovery harness; native evidence pending, no heldout claim.
 - [Authoritative feedback projections and Langfuse outbox](feedback-projection-outbox.md): local consent/revocation, immutable revisions and bounded metadata-only delivery/readback; synthetic transport qualification, no live vendor or dataset upload claim.
+
+- [Ephemeral Langfuse score qualification](langfuse-ephemeral-qualification.md): bounded HTTPS transport and explicit real-server runner contract; actual execution pending.

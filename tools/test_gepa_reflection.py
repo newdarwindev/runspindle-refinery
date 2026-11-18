@@ -147,20 +147,105 @@ def compile_diagnostic(exc: BaseException) -> dict[str, Any]:
     }
 
 
-def observe_compile(original: Any, instance: Any, *args: Any, **kwargs: Any) -> Any:
+def safe_compile_diagnostic(exc: BaseException) -> dict[str, Any]:
     try:
-        return original(instance, *args, **kwargs)
+        return compile_diagnostic(exc)
+    except BaseException:
+        return {"diagnostic_capture_failed": True}
+
+
+def observe_compile(
+    original: Any,
+    instance: Any,
+    *args: Any,
+    observations: list[dict[str, Any]] | None = None,
+    **kwargs: Any,
+) -> Any:
+    if observations is not None:
+        retain_observation(observations, {"stage": "original_compile_entry"})
+    try:
+        result = original(instance, *args, **kwargs)
+        if observations is not None:
+            retain_observation(observations, {"stage": "original_compile_return"})
+        return result
     except BaseException as exc:
+        if observations is not None:
+            retain_observation(
+                observations,
+                {
+                    "stage": "original_compile_exception",
+                    "exception": safe_compile_diagnostic(exc),
+                },
+            )
         # Diagnostics cannot authorize success or replace the original failure.
         try:
             print(
                 "GEPA_COMPILE_EXCEPTION "
-                + json.dumps(compile_diagnostic(exc), sort_keys=True),
+                + json.dumps(safe_compile_diagnostic(exc), sort_keys=True),
                 file=sys.__stderr__,
             )
         except BaseException:
             pass
         raise
+
+
+def retain_observation(
+    observations: list[dict[str, Any]], value: dict[str, Any]
+) -> None:
+    if len(observations) == 12:
+        del observations[0]
+    observations.append(value)
+
+
+def inspect_compile_result(result: Any, observations: list[dict[str, Any]]) -> Any:
+    try:
+        instruction = result.predict.signature.instructions
+    except BaseException as exc:
+        retain_observation(
+            observations,
+            {
+                "stage": "wrapper_inspection_exception",
+                "exception": safe_compile_diagnostic(exc),
+            },
+        )
+        raise
+    retain_observation(observations, {"stage": "wrapper_inspection_return"})
+    return instruction
+
+
+@contextlib.contextmanager
+def observe_optimizer_exceptions(
+    function: Any, observations: list[dict[str, Any]]
+) -> Any:
+    """Observe only this exact optimize code's exception events; never inspect locals."""
+    code = function.__code__
+    filename = str(ROOT / "refinery" / "gepa_optimizer.py")
+    require(
+        code.co_name == "optimize" and code.co_filename == filename,
+        "unexpected optimizer trace target",
+    )
+    previous = sys.gettrace()
+
+    def trace(frame: Any, event: str, arg: Any) -> Any:
+        if frame.f_code is not code or frame.f_code.co_filename != filename:
+            return None
+        if event == "exception":
+            _, exc, _ = arg
+            retain_observation(
+                observations,
+                {
+                    "stage": "optimizer_exception_event",
+                    "line": frame.f_lineno,
+                    "exception": safe_compile_diagnostic(exc),
+                },
+            )
+        return trace
+
+    try:
+        sys.settrace(trace)
+        yield
+    finally:
+        sys.settrace(previous)
 
 
 def once(forbidden: list[str]) -> dict[str, Any]:
@@ -178,6 +263,8 @@ def once(forbidden: list[str]) -> dict[str, Any]:
     compiled_instructions: list[str] = []
     reflected_instructions: list[str] = []
     compile_entries: list[bool] = []
+    compile_observations: list[dict[str, Any]] = []
+    optimizer_exceptions: list[dict[str, Any]] = []
     reflection_entries: list[bool] = []
     observed: list[tuple[ev.Request, str | None]] = []
     original_compile = dspy.GEPA.compile
@@ -186,8 +273,16 @@ def once(forbidden: list[str]) -> dict[str, Any]:
 
     def compile_call(instance: Any, *args: Any, **kwargs: Any) -> Any:
         compile_entries.append(True)
-        result = observe_compile(original_compile, instance, *args, **kwargs)
-        compiled_instructions.append(result.predict.signature.instructions)
+        result = observe_compile(
+            original_compile,
+            instance,
+            *args,
+            observations=compile_observations,
+            **kwargs,
+        )
+        compiled_instructions.append(
+            inspect_compile_result(result, compile_observations)
+        )
         return result
 
     def predict_call(instance: Any, *args: Any, **kwargs: Any) -> Any:
@@ -238,6 +333,7 @@ def once(forbidden: list[str]) -> dict[str, Any]:
             patch.object(dspy.GEPA, "compile", compile_call),
             patch.object(dspy.Predict, "forward", predict_call),
             patch.object(ev.ScriptedProvider, "complete", provider_call),
+            observe_optimizer_exceptions(opt.optimize, optimizer_exceptions),
         ):
             result = opt.optimize(
                 dataset,
@@ -305,7 +401,15 @@ def once(forbidden: list[str]) -> dict[str, Any]:
         except ValueError:
             # Bounded synthetic-only observations survive failure, never a success receipt.
             print(
-                "GEPA_DIAGNOSTIC " + json.dumps(report, sort_keys=True),
+                "GEPA_DIAGNOSTIC "
+                + json.dumps(
+                    {
+                        **report,
+                        "compile_observations": compile_observations,
+                        "optimizer_exceptions": optimizer_exceptions,
+                    },
+                    sort_keys=True,
+                ),
                 file=sys.__stderr__,
             )
             raise

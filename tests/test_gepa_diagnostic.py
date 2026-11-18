@@ -6,6 +6,8 @@ import io
 import json
 import sys
 import unittest
+from types import SimpleNamespace
+from typing import Any
 from unittest.mock import patch
 
 from tools import test_gepa_reflection as harness
@@ -62,3 +64,139 @@ class CompileDiagnosticTests(unittest.TestCase):
 
         report = harness.compile_diagnostic(ValueError(Hostile()))
         self.assertEqual(report["message"], "")
+
+
+class MemoryObservationTests(unittest.TestCase):
+    def test_compile_return_and_inspection_are_distinct(self) -> None:
+        events: list[dict[str, Any]] = []
+        result = SimpleNamespace(
+            predict=SimpleNamespace(signature=SimpleNamespace(instructions="synthetic"))
+        )
+        returned = harness.observe_compile(
+            lambda _: result, object(), observations=events
+        )
+        self.assertIs(returned, result)
+        self.assertEqual(harness.inspect_compile_result(returned, events), "synthetic")
+        self.assertEqual(
+            [e["stage"] for e in events],
+            [
+                "original_compile_entry",
+                "original_compile_return",
+                "wrapper_inspection_return",
+            ],
+        )
+        broken: list[dict[str, Any]] = []
+        returned = harness.observe_compile(
+            lambda _: None, object(), observations=broken
+        )
+        with self.assertRaises(AttributeError):
+            harness.inspect_compile_result(returned, broken)
+        self.assertEqual(
+            [e["stage"] for e in broken],
+            [
+                "original_compile_entry",
+                "original_compile_return",
+                "wrapper_inspection_exception",
+            ],
+        )
+
+    def test_memory_survives_unavailable_stderr(self) -> None:
+        events: list[dict[str, Any]] = []
+        failure = ValueError("synthetic failure")
+
+        def original(_: Any) -> Any:
+            raise failure
+
+        with patch("builtins.print", side_effect=OSError("closed sink")):
+            with self.assertRaises(ValueError) as raised:
+                harness.observe_compile(original, object(), observations=events)
+        self.assertIs(raised.exception, failure)
+        self.assertEqual(
+            [e["stage"] for e in events],
+            ["original_compile_entry", "original_compile_exception"],
+        )
+        self.assertEqual(events[-1]["exception"]["message"], "synthetic failure")
+
+    def test_diagnostic_capture_failure_does_not_replace_original(self) -> None:
+        failure = ValueError("synthetic failure")
+
+        def original(_: Any) -> Any:
+            raise failure
+
+        events: list[dict[str, Any]] = []
+        with (
+            patch.object(
+                harness,
+                "compile_diagnostic",
+                side_effect=RuntimeError("capture failed"),
+            ),
+            patch("builtins.print"),
+        ):
+            with self.assertRaises(ValueError) as raised:
+                harness.observe_compile(original, object(), observations=events)
+        self.assertIs(raised.exception, failure)
+        self.assertEqual(events[-1]["exception"], {"diagnostic_capture_failed": True})
+
+    @staticmethod
+    def synthetic_function(source: str) -> Any:
+        namespace: dict[str, Any] = {}
+        # A diagnostic-helper fixture, not a replacement framework or optimizer run.
+        exec(
+            compile(
+                source, str(harness.ROOT / "refinery" / "gepa_optimizer.py"), "exec"
+            ),
+            namespace,
+        )
+        return namespace["optimize"]
+
+    def test_exact_scope_catches_swallowed_exceptions_with_bounded_memory(self) -> None:
+        function = self.synthetic_function(
+            "def optimize():\n for i in range(30):\n  try: raise ValueError('synthetic')\n  except ValueError: pass\n return 17\n"
+        )
+        events: list[dict[str, Any]] = []
+        previous = sys.gettrace()
+        with harness.observe_optimizer_exceptions(function, events):
+            self.assertEqual(function(), 17)
+        self.assertIs(sys.gettrace(), previous)
+        self.assertEqual(len(events), 12)
+        self.assertTrue(all(e["stage"] == "optimizer_exception_event" for e in events))
+        self.assertTrue(
+            all(e["exception"]["exception_type"] == "ValueError" for e in events)
+        )
+        self.assertLess(len(json.dumps(events)), 32768)
+
+    def test_previous_trace_restored_on_exception_and_other_frames_ignored(
+        self,
+    ) -> None:
+        function = self.synthetic_function(
+            "def optimize(callback):\n callback()\n return 23\n"
+        )
+
+        def unrelated() -> None:
+            try:
+                raise ValueError("unrelated")
+            except ValueError:
+                pass
+
+        def previous(frame: Any, event: str, arg: Any) -> Any:
+            return previous
+
+        saved = sys.gettrace()
+        events: list[dict[str, Any]] = []
+        try:
+            sys.settrace(previous)
+            with self.assertRaisesRegex(RuntimeError, "outside"):
+                with harness.observe_optimizer_exceptions(function, events):
+                    self.assertEqual(function(unrelated), 23)
+                    raise RuntimeError("outside")
+            self.assertIs(sys.gettrace(), previous)
+            self.assertEqual(events, [])
+        finally:
+            sys.settrace(saved)
+
+    def test_wrong_trace_target_rejected_without_changing_trace(self) -> None:
+        previous = sys.gettrace()
+        with self.assertRaisesRegex(ValueError, "trace target"):
+            with harness.observe_optimizer_exceptions(lambda: None, []):
+                self.fail("unexpected target admitted")
+        self.assertIs(sys.gettrace(), previous)

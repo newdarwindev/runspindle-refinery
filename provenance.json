@@ -225,5 +225,15 @@
     "specification": "specs/automatic-thumbs-up-gold.md",
     "live_capture": "not_run",
     "scope": "exact attributable gold labels; collection/use consent remains separate"
+  },
+  "local_dataset_materialization": {
+    "classification": "original local registry and synthetic tests; shared original provider-neutral contract",
+    "shared_contract_repository": "newdarwindev/runspindle-next-experiment",
+    "shared_contract_commit": "58245e60fc7af62cb180323e8d96d39687a78a18",
+    "shared_fixture_sha256": "c8e0f7ea2d7ca6a8724dee27e213636d6553ce7601d22eed1f6f220f99407c98",
+    "source_selection": "contracts/dataset-materialization-v1.md and fixture; codec adapted with local imports/types",
+    "specification": "specs/local-dataset-materialization.md",
+    "remote_dataset_export": "not_implemented",
+    "actual_user_content": "not_used"
   }
 }

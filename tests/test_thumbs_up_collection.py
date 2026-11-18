@@ -36,8 +36,13 @@ class ReactionCollectionTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+        task_text = getattr(self, "task_text", "Synthetic task")
         self.route = ingress.Route(
-            "ASYNTHETIC", "TSYNTHETIC", "USYNTHETIC", "CSYNTHETIC", "1900000000.000001"
+            "ASYNTHETIC",
+            "TSYNTHETIC",
+            getattr(self, "actor_id", "USYNTHETIC"),
+            "CSYNTHETIC",
+            "1900000000.000001",
         )
         self.admission = ingress.SignedSlackIngress(
             str(self.root / "ingress.sqlite"),
@@ -54,7 +59,7 @@ class ReactionCollectionTests(unittest.TestCase):
                 "type": "message",
                 "channel": self.route.channel_id,
                 "user": self.route.actor_id,
-                "text": "Synthetic task",
+                "text": task_text,
                 "ts": "1900000000.000002",
                 "thread_ts": self.route.thread_ts,
             },
@@ -62,7 +67,7 @@ class ReactionCollectionTests(unittest.TestCase):
         )
         self.admission.ingest(raw, self.headers(raw))
         self.source = SourceRevision(
-            "source", "1", "family", b"Synthetic task", digest(b"Synthetic task")
+            "source", "1", "family", task_text.encode(), digest(task_text.encode())
         )
         self.output = OutputRevision(
             "artifact",

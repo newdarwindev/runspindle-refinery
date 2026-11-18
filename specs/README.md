@@ -110,3 +110,6 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Authoritative feedback projections and Langfuse outbox](feedback-projection-outbox.md): local consent/revocation, immutable revisions and bounded metadata-only delivery/readback; synthetic transport qualification, no live vendor or dataset upload claim.
 
 - [Ephemeral Langfuse score qualification](langfuse-ephemeral-qualification.md): bounded HTTPS transport and explicit real-server runner contract; actual execution pending.
+- [Local consented dataset materialization](local-dataset-materialization.md)
+
+- [Guarded materialized dataset batches](materialized-dataset-batches.md)

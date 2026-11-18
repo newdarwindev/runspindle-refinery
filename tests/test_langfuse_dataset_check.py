@@ -1,7 +1,9 @@
 """Source-only client/config negatives with synthetic injected protocol peer."""
 
+import contextlib
 import hashlib
 import importlib
+import io
 import json
 import os
 import subprocess
@@ -289,3 +291,60 @@ class DatasetClientTests(unittest.TestCase):
                     check.qualify(dict(config, **changes))
                 transport.assert_not_called()
                 fixture.assert_not_called()
+
+    def test_cleanup_false_never_writes_cli_success_receipt(self) -> None:
+        fixture_type = importlib.import_module("test_dataset_export").DatasetExportTests
+        original = fixture_type.doCleanups
+        calls = []
+
+        def cleaned_but_failed(fixture: Any) -> bool:
+            calls.append(original(fixture))
+            return False
+
+        remote = self.remote()
+        output = self.root / "cleanup-report.json"
+        stderr = io.StringIO()
+        with (
+            patch.object(fixture_type, "doCleanups", cleaned_but_failed),
+            patch.object(check, "DatasetHTTP", return_value=remote),
+            patch.object(sys, "argv", ["client", str(self.path), str(output)]),
+            patch.object(os, "getpgrp", return_value=os.getpid()),
+            patch.object(os, "getsid", return_value=os.getpid()),
+            contextlib.redirect_stderr(stderr),
+        ):
+            status = check.main()
+        self.assertEqual(calls, [True])
+        self.assertEqual(status, 1)
+        self.assertFalse(output.exists())
+        diagnostic = json.loads(
+            stderr.getvalue()
+            .splitlines()[0]
+            .removeprefix("DATASET_QUALIFICATION_FAILURE ")
+        )
+        self.assertEqual(diagnostic["stage"], "fixture_cleanup")
+        self.assertEqual(diagnostic["qualification"], "failed")
+        self.assertNotIn(str(self.root), stderr.getvalue())
+
+    def test_cleanup_false_preserves_original_failure_diagnostic(self) -> None:
+        config = check.configuration(self.path)
+        fixture_type = importlib.import_module("test_dataset_export").DatasetExportTests
+        original = fixture_type.doCleanups
+        calls = []
+
+        def cleaned_but_failed(fixture: Any) -> bool:
+            calls.append(original(fixture))
+            return False
+
+        remote = self.remote()
+        remote.wrong = True
+        with (
+            patch.object(fixture_type, "doCleanups", cleaned_but_failed),
+            patch.object(check, "DatasetHTTP", return_value=remote),
+            self.assertRaises(check.QualificationFailure) as caught,
+        ):
+            check.qualify(config)
+        self.assertEqual(calls, [True])
+        self.assertEqual(caught.exception.receipt["stage"], "initial_export")
+        self.assertEqual(caught.exception.receipt["error_class"], "ValueError")
+        self.assertTrue(caught.exception.receipt["fixture_cleanup_failed"])
+        self.assertEqual(caught.exception.receipt["post_entries"], 0)

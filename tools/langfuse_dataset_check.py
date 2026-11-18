@@ -179,6 +179,7 @@ class ObservedHTTP:
 FAILURE_STAGES = frozenset(
     {
         "fixture_setup",
+        "fixture_cleanup",
         "fixture_admission",
         "initial_export",
         "reopen_readback",
@@ -279,6 +280,7 @@ def qualify(config: dict[str, Any]) -> dict[str, Any]:
     )
     fixture: Any = importlib.import_module("test_dataset_export").DatasetExportTests()
     stage = "fixture_setup"
+    primary: QualificationFailure | None = None
     try:
         fixture.setUp()
         stage = "fixture_admission"
@@ -438,11 +440,27 @@ def qualify(config: dict[str, Any]) -> dict[str, Any]:
         )
         if time.monotonic() >= http.deadline:
             raise TimeoutError("dataset workflow deadline exceeded")
-        return receipt
     except Exception as exc:
-        raise QualificationFailure(stage, exc, http) from None
+        primary = QualificationFailure(stage, exc, http)
     finally:
-        fixture.doCleanups()
+        # unittest cleanup records failures and may return False without raising.
+        # Never let a captured cleanup error turn into a success receipt.
+        active_exception = sys.exc_info()[0] is not None
+        try:
+            cleaned = fixture.doCleanups() is True
+        except Exception:
+            cleaned = False
+        if not cleaned:
+            if primary is not None:
+                primary.receipt["fixture_cleanup_failed"] = True
+            elif not active_exception:
+                raise QualificationFailure(
+                    "fixture_cleanup", ValueError("fixture cleanup failed"), http
+                ) from None
+    if primary is not None:
+        raise primary from None
+    receipt["fixture_cleanup"] = "passed"
+    return receipt
 
 
 def main() -> int:

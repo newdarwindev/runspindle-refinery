@@ -75,3 +75,10 @@ not blindly relaunch this client against the same uncertain backend state; abort
 and retain failure evidence, then clean up the entire disposable namespace under
 its approved lifecycle. Any new campaign requires a separately fresh empty
 project/dataset. Ordinary production outbox persistence semantics are unchanged.
+
+Fixture cleanup must explicitly return True before a success receipt is emitted.
+A captured cleanup failure produces a fixed `fixture_cleanup` failure stage. If
+another failure already occurred, its primary stage/class is preserved and a
+`fixture_cleanup_failed` flag is added instead of replacing the original cause.
+The cleanup regressions perform real cleanup first, then report False; they do
+not deliberately leak resources to simulate failure.

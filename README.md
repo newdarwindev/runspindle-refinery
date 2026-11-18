@@ -30,6 +30,7 @@ or Temporal dependency in this local path.
 | Authenticate feedback | [Tether-pinned collection](refinery/feedback_collection.py) binds verified feedback to the exact actor, source and output revision; ambiguous/conflicting material is not silently promoted. |
 | Retain authorized examples | [DatasetRegistry](refinery/dataset_materialization.py) materializes exact bytes only with current permission, original provenance and family/split fences. Withdrawal remains effective for subsequent use. |
 | Freeze phase selections | [Batch capture](refinery/dataset_batch.py) produces immutable hash-bound train/evaluation selections, not a saved permission grant. |
+| Admit the complete learning run | [Session.materialized_learning](specs/materialized-learning-admission.md) preflights both current phase batches before a new run spends budget; evaluation resume never reopens training. Admission is not a cached permission grant. |
 | Compile and evaluate | The existing [durable Session](refinery/durable_dspy.py) owns the candidate, heldout seal and cumulative budget. [GEPA](specs/gepa-heldout.md) reflects on train-only evidence and evaluates the locked instruction without reopening training. |
 | Recover or project | Completed replay rechecks current authority without new model effects. [Langfuse projection](specs/feedback-projection-outbox.md) is a separately authorized observability output, not training authority or a prerequisite for local learning. |
 

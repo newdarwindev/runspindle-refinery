@@ -121,3 +121,7 @@ incompatible component stores and rolls back invalid transaction changes.
 - [GEPA locked heldout extension](gepa-heldout.md): strict component implementation and proposed actual 5/2/0 qualification; not a native receipt.
 
 - [Proposed materialized GEPA heldout qualification](gepa-heldout-qualification.md): separate bounded actual-framework compile/evaluate/replay lane; native execution pending.
+
+The [explicit materialized learning admission](materialized-learning-admission.md)
+preflights a new GEPA run or admits evaluation-only recovery using the existing
+Session owner; it does not create another coordinator or cache permission.

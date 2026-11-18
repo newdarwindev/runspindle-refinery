@@ -1,8 +1,9 @@
 # Bounded DSPy BootstrapFewShot component
 
-Issue #16 remains open. This is source implementation of a real DSPy optimizer
-adapter, not completed framework qualification, model-quality evidence, live
-provider integration, durable optimizer ownership, or promotion authority.
+Issue #16 remains open. The implemented optimizer now has [actual pinned offline
+qualification](dspy-native-qualification.md), [adverse-path evidence](dspy-native-adversarial-qualification.md)
+and [two-process ownership evidence](dspy-native-ownership-qualification.md). These
+are synthetic component results, not live model quality, provider integration or promotion authority.
 
 ## Implemented path
 
@@ -74,12 +75,14 @@ produce identical candidate/report/configuration digests. The command fails, not
 skips, on missing/mismatched dependencies or target. Do not run it where Docker or
 runtime access has been denied.
 
-On the source-development cloud executor, Python 3.12/x86_64 has no DSPy installed.
-Actual DSPy execution is therefore **blocked/not run**, not passed. The reviewed
-arm64 dependency closure and image remain unchanged. See the exact validation
-status in `docs/dspy-bootstrap-tests.json`. Framework failure/recovery, adversarial
-framework retry/cancellation campaigns, cross-process ownership, and global locked
-held-out policy remain required before closing #16. Live providers remain #9.
+The original source-development cloud executor lacked the reviewed runtime; its
+historical `docs/dspy-bootstrap-tests.json` remains unchanged. Subsequent native
+receipts linked above qualify actual compilation, locked evaluation, fresh-process
+restart, bounded adverse paths and same-identity ownership. The [capacity
+campaign](dspy-native-capacity-qualification.md) separately covers controlled
+in-flight overlap, not simultaneous acquisition fairness. Reflection is still
+unsupported; live providers remain #9. Actual-framework integrity/mutation
+qualification is tracked separately and must not be inferred from source-unit tests.
 
 Primary API references used in this implementation:
 - https://github.com/stanfordnlp/dspy/blob/3.1.0/dspy/teleprompt/bootstrap.py
@@ -91,6 +94,6 @@ was copied into this repository.
 A separate [durable lifecycle wrapper](durable-dspy-lifecycle.md) now adds SQLite
 ownership, recovery and store-scoped family holdout seals. Those guarantees belong
 to that wrapper, not these direct process-local functions. Its actual framework
-execution/restart qualification remains unrun. Held-out reports now retain
+execution/restart qualification is recorded in the linked native receipt. Held-out reports now retain
 per-example prediction digests, and parsed answer bytes must match the final raw
 completion receipt; adapter transformations or whitespace changes fail closed.

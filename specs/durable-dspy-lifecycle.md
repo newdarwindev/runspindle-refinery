@@ -1,8 +1,9 @@
 # Durable DSPy lifecycle and family holdout seals
 
-Partial issue #16 implementation. The actual optimizer runtime remains unqualified
-on the source-development executor. Real SQLite lifecycle tests and handwritten
-result fixtures are not evidence that DSPy compiled or improved a program.
+Partial issue #16 implementation with [actual native framework/restart evidence](dspy-native-qualification.md)
+and [two-process ownership evidence](dspy-native-ownership-qualification.md). The
+source-only SQLite tests still use handwritten result fixtures and do not themselves
+prove framework execution or model-quality improvement.
 
 ## Storage and ownership
 
@@ -40,7 +41,8 @@ The caller must preserve the virtual clock epoch; a fresh clock behind the
 checkpoint is rejected. The same original budget identity is mandatory, unresolved
 or cancelled shared usage blocks evaluation, and optimizer/provider/candidate
 configuration cannot drift. Actual framework restart through that transition is
-still not qualified; direct SQLite transition tests do not establish it.
+now separately qualified by the native receipt; direct SQLite transition tests
+alone do not establish it.
 
 ## Store-scoped family policy
 
@@ -101,8 +103,8 @@ The existing bounded pinned-runtime command also includes the durable adapter:
 python3 tools/offline_dspy.py --suite optimizer --prepared local/python-deps --report local/dspy-optimizer.json
 ```
 
-No pins or isolation controls change. That lane must actually run successfully
-before claiming real optimizer/durable framework qualification. It remains
-blocked/not-run here because the reviewed Python 3.14/linux-arm64 DSPy closure is
-unavailable. Live execution remains a separate issue. See
-`docs/durable-dspy-tests.json` for exact source-only evidence and remaining limits.
+The reviewed adopted Python 3.14.0/Linux ARM64 lane has now run successfully; see
+the exact native receipts linked above. Original `docs/durable-dspy-tests.json`
+retains its source-only evidence and historical limits unchanged. Live execution,
+authenticated external feedback and reflection remain separate; no production
+readiness or automatic promotion follows from these offline results.

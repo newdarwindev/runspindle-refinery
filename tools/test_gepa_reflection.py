@@ -11,6 +11,7 @@ import re
 import socket
 import sys
 import tempfile
+import threading
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -248,6 +249,39 @@ def observe_optimizer_exceptions(
         sys.settrace(previous)
 
 
+def observe_worker_wrapper(
+    original_wrap: Any,
+    instance: Any,
+    user_function: Any,
+    observations: list[dict[str, Any]],
+    lock: Any,
+) -> Any:
+    """Keep original safe_func/executor handling; observe immediately before it catches."""
+
+    def record(value: dict[str, Any]) -> None:
+        with lock:
+            retain_observation(observations, value)
+
+    def observed_user(item: Any) -> Any:
+        worker = threading.current_thread() is not threading.main_thread()
+        record({"stage": "worker_user_entry", "worker_thread": worker})
+        try:
+            result = user_function(item)
+        except BaseException as exc:
+            record(
+                {
+                    "stage": "worker_user_exception",
+                    "worker_thread": worker,
+                    "exception": safe_compile_diagnostic(exc),
+                }
+            )
+            raise
+        record({"stage": "worker_user_return", "worker_thread": worker})
+        return result
+
+    return original_wrap(instance, observed_user)
+
+
 def once(forbidden: list[str]) -> dict[str, Any]:
     from refinery import evaluation as ev
     from refinery import gepa_codec as codec
@@ -265,6 +299,16 @@ def once(forbidden: list[str]) -> dict[str, Any]:
     compile_entries: list[bool] = []
     compile_observations: list[dict[str, Any]] = []
     optimizer_exceptions: list[dict[str, Any]] = []
+    worker_observations: list[dict[str, Any]] = []
+    worker_lock = threading.Lock()
+    parallelizer: Any = importlib.import_module("dspy.utils.parallelizer")
+    original_wrap = parallelizer.ParallelExecutor._wrap_function
+
+    def worker_wrap(instance: Any, user_function: Any) -> Any:
+        return observe_worker_wrapper(
+            original_wrap, instance, user_function, worker_observations, worker_lock
+        )
+
     reflection_entries: list[bool] = []
     observed: list[tuple[ev.Request, str | None]] = []
     original_compile = dspy.GEPA.compile
@@ -331,6 +375,7 @@ def once(forbidden: list[str]) -> dict[str, Any]:
         )
         with (
             patch.object(dspy.GEPA, "compile", compile_call),
+            patch.object(parallelizer.ParallelExecutor, "_wrap_function", worker_wrap),
             patch.object(dspy.Predict, "forward", predict_call),
             patch.object(ev.ScriptedProvider, "complete", provider_call),
             observe_optimizer_exceptions(opt.optimize, optimizer_exceptions),
@@ -407,6 +452,7 @@ def once(forbidden: list[str]) -> dict[str, Any]:
                         **report,
                         "compile_observations": compile_observations,
                         "optimizer_exceptions": optimizer_exceptions,
+                        "worker_observations": worker_observations,
                     },
                     sort_keys=True,
                 ),

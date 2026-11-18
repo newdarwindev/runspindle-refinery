@@ -5,7 +5,9 @@ from __future__ import annotations
 import io
 import json
 import sys
+import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch
@@ -200,3 +202,94 @@ class MemoryObservationTests(unittest.TestCase):
             with harness.observe_optimizer_exceptions(lambda: None, []):
                 self.fail("unexpected target admitted")
         self.assertIs(sys.gettrace(), previous)
+
+
+class WorkerObservationTests(unittest.TestCase):
+    def test_original_safe_wrapper_receives_identical_worker_exception(self) -> None:
+        # Helper fixture only: this does not qualify or replace actual DSPy.
+        seen: list[Any] = []
+        instance = object()
+        item = object()
+        failure = ValueError("synthetic worker /private/path failure")
+
+        def original_wrap(owner: Any, user: Any) -> Any:
+            self.assertIs(owner, instance)
+
+            def safe(value: Any) -> Any:
+                try:
+                    return user(value)
+                except Exception as exc:
+                    seen.append(exc)
+                    return exc
+
+            return safe
+
+        def original_user(value: Any) -> Any:
+            self.assertIs(value, item)
+            raise failure
+
+        events: list[dict[str, Any]] = []
+        wrapped = harness.observe_worker_wrapper(
+            original_wrap, instance, original_user, events, threading.Lock()
+        )
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            result = executor.submit(wrapped, item).result(timeout=5)
+        self.assertIs(result, failure)
+        self.assertEqual(seen, [failure])
+        self.assertEqual(
+            [e["stage"] for e in events], ["worker_user_entry", "worker_user_exception"]
+        )
+        self.assertTrue(all(e["worker_thread"] for e in events))
+        self.assertNotIn("/private", json.dumps(events))
+
+    def test_success_passthrough_and_bounded_shared_observations(self) -> None:
+        token = object()
+        item = object()
+        events: list[dict[str, Any]] = []
+
+        def original_wrap(_: Any, user: Any) -> Any:
+            return user
+
+        wrapped = harness.observe_worker_wrapper(
+            original_wrap,
+            object(),
+            lambda value: token if value is item else None,
+            events,
+            threading.Lock(),
+        )
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(wrapped, item) for _ in range(30)]
+            self.assertTrue(all(f.result(timeout=5) is token for f in futures))
+        self.assertEqual(len(events), 12)
+        self.assertTrue(all(e["worker_thread"] for e in events))
+        self.assertTrue(
+            all(
+                e["stage"] in {"worker_user_entry", "worker_user_return"}
+                for e in events
+            )
+        )
+
+    def test_wrapper_patch_is_restored_after_failure(self) -> None:
+        class Owner:
+            def wrap(self, user: Any) -> Any:
+                return user
+
+        original = Owner.wrap
+        events: list[dict[str, Any]] = []
+
+        def replacement(instance: Any, user: Any) -> Any:
+            return harness.observe_worker_wrapper(
+                original, instance, user, events, threading.Lock()
+            )
+
+        failure = KeyboardInterrupt("synthetic")
+
+        def user(_: Any) -> Any:
+            raise failure
+
+        with self.assertRaises(KeyboardInterrupt) as raised:
+            with patch.object(Owner, "wrap", replacement):
+                Owner().wrap(user)(None)
+        self.assertIs(raised.exception, failure)
+        self.assertIs(Owner.wrap, original)
+        self.assertEqual(events[-1]["exception"]["exception_type"], "KeyboardInterrupt")

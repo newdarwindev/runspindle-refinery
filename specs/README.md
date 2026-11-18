@@ -94,6 +94,6 @@ incompatible component stores and rolls back invalid transaction changes.
   preparations and actual framework qualification remain unrun.
 
 - [Prepared dependency file types](offline-dependency-file-types.md): reject aliases and special nodes before execution admission; no canonical adoption.
-- [Linux-native preparation candidate](linux-native-preparation-candidate.md): twice reproduced from one sealed wheelhouse; explicit review proposal, not canonical adoption or DSPy execution.
+- [Linux-native preparation candidate](linux-native-preparation-candidate.md): historical preparation-only evidence, twice reproduced from one sealed wheelhouse. Subsequent [reviewed active closure adoption](reviewed-linux-dependency-adoption.md) and [native execution](dspy-native-qualification.md) have separate receipts.
 
 - [Reviewed Linux dependency adoption proposal](reviewed-linux-dependency-adoption.md): explicit active closure selection with preserved history; actual framework qualification remains separate.

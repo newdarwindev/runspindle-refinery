@@ -214,6 +214,8 @@ def run() -> dict[str, Any]:
                         "durable result recovery replayed or changed output",
                     )
                 check(not forbidden, "forbidden durable network effect attempted")
+                fresh_process: Any = importlib.import_module("tools.dspy_fresh_process")
+                fresh_report = fresh_process.run()
                 return {
                     "status": "passed",
                     "evidence_class": "isolated_offline_dspy_optimizer_component",
@@ -232,11 +234,16 @@ def run() -> dict[str, Any]:
                     "durable_report_sha256": optimizer.digest(
                         storage.pack(durable_report)
                     ),
-                    "framework_restart_after_compile": "not_run",
+                    "framework_restart_after_compile": "fresh_interpreter_evaluation_and_zero_dispatch_replay",
+                    "fresh_process": fresh_report,
                     "promotion": "not_authorized",
                     "source_sha256": {
                         p: optimizer.digest((ROOT / p).read_bytes())
                         for p in (
+                            "tools/test_dspy_optimizer.py",
+                            "tools/dspy_fresh_process.py",
+                            "tools/offline_dspy.py",
+                            "offline/dependency-adoption.json",
                             "refinery/dspy_optimizer.py",
                             "refinery/durable_dspy.py",
                             "refinery/heldout_policy.py",

@@ -281,10 +281,6 @@ class RejectFramework(importlib.abc.MetaPathFinder):
 def recover_child(
     path: Path, first: dict[str, Any], forbidden: list[str]
 ) -> dict[str, Any]:
-    from refinery import evaluation as ev
-    from refinery.durable_dspy import Session
-    from refinery.storage import VERSION, Store
-
     require(
         not any(n.split(".")[0] in {"dspy", "gepa"} for n in sys.modules),
         "fresh interpreter required",
@@ -298,6 +294,10 @@ def recover_child(
 
     sys.meta_path.insert(0, reject)
     try:
+        from refinery import evaluation as ev
+        from refinery.durable_dspy import Session
+        from refinery.storage import VERSION, Store
+
         with (
             patch.object(ev.ScriptedProvider, "complete", deny_complete),
             Store(path / "store.sqlite") as store,

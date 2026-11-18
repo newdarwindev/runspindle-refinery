@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import builtins
 import copy
 import importlib
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import closing
@@ -273,3 +275,40 @@ class RecoveryBoundaryTests(unittest.TestCase):
             self.assertNotEqual(
                 h.identity(session, result)["witnesses"], before["witnesses"]
             )
+
+    def test_swallowed_component_import_attempt_is_observed_and_guard_restored(
+        self,
+    ) -> None:
+        fixture: Any = importlib.import_module("test_durable")
+        from refinery.storage import Store
+
+        original_import = builtins.__import__
+        attempted: list[bool] = []
+        previous = tuple(sys.meta_path)
+
+        def importing(name: str, *args: Any, **kwargs: Any) -> Any:
+            if name == "refinery.durable_dspy" and not attempted:
+                attempted.append(True)
+                try:
+                    original_import("dspy")
+                except (ValueError, ImportError):
+                    pass  # A component cannot hide a forbidden import attempt.
+            return original_import(name, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            with Store(path / "store.sqlite") as store:
+                snapshot, _, _ = fixture.setup(store)
+                first = {"snapshot": snapshot, "persisted": h.persisted(store)}
+            with (
+                patch(
+                    "refinery.durable_dspy.Session",
+                    return_value=SimpleNamespace(compile=lambda: object()),
+                ),
+                patch.object(h, "identity", return_value={}),
+                patch.object(builtins, "__import__", importing),
+                self.assertRaisesRegex(ValueError, "recovery attempted effects/import"),
+            ):
+                h.recover_child(path, first, [])
+        self.assertEqual(attempted, [True])
+        self.assertEqual(tuple(sys.meta_path), previous)

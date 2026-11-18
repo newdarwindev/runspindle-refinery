@@ -1,15 +1,20 @@
 """Actual disposable registry/loader; synthetic approval authority only."""
 
 import importlib
+import inspect
 import json
 import subprocess
 import sys
+import textwrap
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
-from refinery.serving import Registry
+from refinery import serving
+from refinery.lineage import digest
+from refinery.serving import Approval, Registry
 from refinery.storage import VERSION, pack
 
 fixtures = importlib.import_module("test_durable")
@@ -29,6 +34,140 @@ class DispatchAuthorityTests(unittest.TestCase):
         adapter = self.adapter()
         registry.begin(VERSION, "activation", key, approval, expected_generation=0)
         return registry, key, approval, adapter
+
+    def test_admission_callback_cannot_change_any_approval_binding(self) -> None:
+        registry, key, original = self.candidate()
+        before = tuple(self.store.db.iterdump())
+        for field, changed in (
+            ("environment", "other"),
+            ("actor", "other-reviewer"),
+            ("evidence", "different-proof"),
+            ("candidate_sha256", "0" * 64),
+            ("evaluation_sha256", "0" * 64),
+            ("policy_sha256", "0" * 64),
+        ):
+            approval = replace(original)
+
+            def authority(value: Any) -> str:
+                object.__setattr__(value, field, changed)
+                return str(value.actor)
+
+            registry.verify_approval = authority
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                registry.begin(
+                    VERSION, "redirected", key, approval, expected_generation=0
+                )
+            self.assertEqual(tuple(self.store.db.iterdump()), before)
+
+        script = """
+import json, sqlite3, sys
+connection = sqlite3.connect('file:' + sys.argv[1] + '?mode=ro', uri=True)
+try:
+ print(json.dumps([connection.execute('SELECT count(*) FROM ' + table).fetchone()[0]
+                   for table in ('activations','environments')]))
+finally:
+ connection.close()
+"""
+        result = subprocess.run(
+            [sys.executable, "-O", "-c", script, str(self.path)],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
+        )
+        self.assertEqual(json.loads(result.stdout), [0, 0])
+
+    def test_removed_admission_snapshot_guard_detects_invalid_persistence(self) -> None:
+        source = textwrap.dedent(inspect.getsource(Registry.begin))
+        needle = "or pack(approval) != approval_bytes"
+        self.assertEqual(source.count(needle), 1)
+        namespace = dict(vars(serving))
+        exec(
+            compile(source.replace(needle, "or False"), "<admission-mutant>", "exec"),
+            namespace,
+        )
+        with patch.object(Registry, "begin", namespace["begin"]):
+            result = unittest.TestResult()
+            DispatchAuthorityTests(
+                "test_admission_callback_cannot_change_any_approval_binding"
+            ).run(result)
+        self.assertEqual(result.errors, [], repr(result.errors))
+        self.assertTrue(result.failures, "removed admission binding guard escaped")
+
+    def test_admission_does_not_invoke_foreign_approval_hooks(self) -> None:
+        registry, key, original = self.candidate()
+        before = tuple(self.store.db.iterdump())
+        calls: list[str] = []
+
+        class ForeignApproval(Approval):
+            def __post_init__(self) -> None:
+                calls.append("post-init")
+
+        foreign = object.__new__(ForeignApproval)
+        with self.assertRaisesRegex(ValueError, "unsupported approval type"):
+            registry.begin(VERSION, "foreign", key, foreign, expected_generation=0)
+        self.assertEqual(calls, [])
+        self.assertEqual(tuple(self.store.db.iterdump()), before)
+
+    def test_admission_ignores_shadowed_instance_validation_hook(self) -> None:
+        registry, key, approval = self.candidate()
+        calls: list[str] = []
+        object.__setattr__(
+            approval, "__post_init__", lambda: calls.append("foreign-hook")
+        )
+        registry.begin(VERSION, "valid", key, approval, expected_generation=0)
+        self.assertEqual(calls, [])
+        self.assertEqual(registry.state("local")["pending"], "valid")
+
+    def test_admission_rechecks_retained_candidate_after_callback(self) -> None:
+        registry, key, approval = self.candidate()
+        after_callback: list[Any] = []
+
+        def authority(value: Any) -> str:
+            candidate = self.store.get("candidate", key)
+            candidate["environment"] = "other"
+            payload = pack(candidate)
+            with self.store.transaction() as tx:
+                trigger = tx.execute(
+                    "SELECT sql FROM sqlite_master WHERE name='objects_UPDATE'"
+                ).fetchone()[0]
+                tx.execute("DROP TRIGGER objects_UPDATE")
+                tx.execute(
+                    "UPDATE objects SET digest=?,payload=? WHERE kind='candidate' AND identity=?",
+                    (digest(payload), payload, key),
+                )
+                tx.execute(trigger)
+            after_callback.extend(self.store.db.iterdump())
+            return str(value.actor)
+
+        registry.verify_approval = authority
+        with self.assertRaisesRegex(ValueError, "candidate changed during approval"):
+            registry.begin(VERSION, "replaced", key, approval, expected_generation=0)
+        self.assertEqual(tuple(self.store.db.iterdump()), tuple(after_callback))
+        self.assertEqual(
+            self.store.db.execute("SELECT count(*) FROM activations").fetchone(), (0,)
+        )
+
+    def test_admission_callback_cannot_replace_store_or_verifier(self) -> None:
+        registry, key, approval = self.candidate()
+        before = tuple(self.store.db.iterdump())
+        original_store = self.store
+        for change in ("store", "verifier"):
+
+            def authority(value: Any) -> str:
+                if change == "store":
+                    registry.store = object()
+                else:
+                    registry.verify_approval = lambda approval: approval.actor
+                return str(value.actor)
+
+            registry.verify_approval = authority
+            with self.assertRaisesRegex(ValueError, "approval denied"):
+                registry.begin(
+                    VERSION, "redirected", key, approval, expected_generation=0
+                )
+            registry.store = original_store
+            self.assertEqual(tuple(original_store.db.iterdump()), before)
 
     def test_revocation_before_dispatch_denies_without_state_or_load_effect(
         self,
@@ -172,7 +311,9 @@ import json, socket, sys
 from pathlib import Path
 from unittest.mock import patch
 from refinery.storage import Store, VERSION
-from refinery.serving import Registry, LocalServing
+from refinery import serving
+from refinery.lineage import digest
+from refinery.serving import Approval, Registry, LocalServing
 root=Path(sys.argv[1])
 store=Store(root/'refinery.sqlite'); adapter=LocalServing(root/'serving.sqlite')
 try:

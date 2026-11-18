@@ -1,0 +1,20 @@
+{
+  "schema": "runspindle.python313-image-observation.v1",
+  "source": "d0b95bf7b10b828661442cf408c47400203ddc27",
+  "classification": "pre-framework launcher failure; no GEPA execution",
+  "original_result_log_sha256": "e18c288ac4f097fda549a34dbc66151558bde8476d0fbfa90bac791d8ab3f8db",
+  "docker29_inspect_sha256": "e3dfea2b05af89671d55fee61dc14aa96ae2390f1f6cd8704b1598188a60c68c",
+  "raw_blobs": {
+    "manifest": {
+      "sha256": "2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+      "bytes": 1754,
+      "raw_imported_containerd_bytes_match_official_blob": true
+    },
+    "config": {
+      "sha256": "03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+      "bytes": 5545,
+      "raw_imported_containerd_bytes_match_official_blob": true
+    }
+  },
+  "note": "Full image inspect contains only official image metadata plus guest tag timestamp; GPG_KEY is the public upstream release verification key fingerprint, not a credential. No runtime retry performed."
+}

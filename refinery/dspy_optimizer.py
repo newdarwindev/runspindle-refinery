@@ -186,6 +186,11 @@ class Dispatch:
             self.split.sha256,
             self.counts[value],
         )
+        reply = self._complete(request, messages)
+        return framed(reply, "answer")
+
+    def _complete(self, request: ev.Request, messages: Any) -> ev.Completion:
+        """Shared settlement only; framing and request admission belong to callers."""
         self.guard()
         ticket = self.budget.reserve(self.per_call, request=request)
         self.guard()
@@ -247,16 +252,25 @@ class Dispatch:
         self.guard()
         if reply.content is None:
             raise ev.Halt("malformed_reply")
-        text = (
-            "[[ ## answer ## ]]\n"
-            + reply.content.decode("utf-8")
-            + "\n[[ ## completed ## ]]"
-        )
-        return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=text))],
-            usage={"prompt_tokens": 0, "completion_tokens": reply.tokens},
-            model="synthetic/local",
-        )
+        return reply
+
+
+def framed(reply: ev.Completion, output: str) -> Any:
+    """Format a previously settled response for a sealed output field."""
+    if output not in {"answer", "instruction"} or reply.content is None:
+        raise ValueError("invalid settled output")
+    text = (
+        "[[ ## "
+        + output
+        + " ## ]]\n"
+        + reply.content.decode("utf-8")
+        + "\n[[ ## completed ## ]]"
+    )
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=text))],
+        usage={"prompt_tokens": 0, "completion_tokens": reply.tokens},
+        model="synthetic/local",
+    )
 
 
 def framework() -> Any:

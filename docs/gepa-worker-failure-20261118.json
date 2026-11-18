@@ -1,0 +1,559 @@
+{
+  "base_unchanged": true,
+  "candidate_manifest_sha256": "c5b544140cea3fc03dce784765e76bcdcfa3ae621fe68e1a2724e466edd8515e",
+  "classification": "failed_actual_framework_diagnostic_not_qualification",
+  "cleanup": "clean guest poweroff; host process exited",
+  "config": "sha256:03c6d4b159949d4769a04152b3fe56da0a54476214f025bb0358c4b496785d6b",
+  "diagnostic": {
+    "attempts_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "candidate_sha256": null,
+    "changed_task_successes": 0,
+    "compile_entries": 1,
+    "compile_observations": [
+      {
+        "stage": "original_compile_entry"
+      },
+      {
+        "stage": "original_compile_return"
+      },
+      {
+        "stage": "wrapper_inspection_return"
+      }
+    ],
+    "configuration_sha256": "f76c351f160c9da5c3adbb3b7e9b7e344ba58f7a292a5092852144e728f1a8b4",
+    "initial_task_failures": 0,
+    "network_attempts": 0,
+    "new_dispatches": 0,
+    "observations_match_receipts": true,
+    "optimizer_exceptions": [
+      {
+        "exception": {
+          "exception_type": "ValueError",
+          "frames": [
+            {
+              "file": "gepa_optimizer.py",
+              "function": "optimize",
+              "line": 438
+            }
+          ],
+          "message": "optimizer changed fixed program or omitted reflection",
+          "trace_truncated": false
+        },
+        "line": 438,
+        "stage": "optimizer_exception_event"
+      }
+    ],
+    "reason": "gepa_optimizer_failure",
+    "reflection_output_matches_selected": false,
+    "reflection_predict_entries": 0,
+    "runtime_identity": "35467cd81b2ee95f491cabf5ced8090e445c368e80418bd772e012594a43a172",
+    "selected_changed_instruction": false,
+    "stages": [],
+    "status": "blocked",
+    "train_only": true,
+    "usage": {
+      "calls": 0,
+      "cost_microunits": 0,
+      "elapsed_ms": 0,
+      "reason": "gepa_optimizer_failure",
+      "tokens": 0,
+      "unresolved_calls": 0
+    },
+    "worker_observations": [
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535962796416.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      },
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535954342272.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      },
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535954342272.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      },
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535945888128.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      },
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535945888128.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      },
+      {
+        "stage": "worker_user_entry",
+        "worker_thread": true
+      },
+      {
+        "exception": {
+          "exception_type": "ProgrammingError",
+          "frames": [
+            {
+              "file": "callback.py",
+              "function": "sync_wrapper",
+              "line": 326
+            },
+            {
+              "file": "base_lm.py",
+              "function": "__call__",
+              "line": 91
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "forward",
+              "line": 356
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "forward",
+              "line": 169
+            },
+            {
+              "file": "gepa_optimizer.py",
+              "function": "_forward",
+              "line": 183
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "_complete",
+              "line": 194
+            },
+            {
+              "file": "dspy_optimizer.py",
+              "function": "guard",
+              "line": 147
+            },
+            {
+              "file": "evaluation.py",
+              "function": "guard_use",
+              "line": 482
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "check",
+              "line": 288
+            },
+            {
+              "file": "durable_evaluation.py",
+              "function": "_apply",
+              "line": 173
+            },
+            {
+              "file": "<external>",
+              "function": "<external>",
+              "line": 141
+            },
+            {
+              "file": "storage.py",
+              "function": "transaction",
+              "line": 194
+            }
+          ],
+          "message": "SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 251536307867680 and this is thread id 251535954342272.",
+          "trace_truncated": true
+        },
+        "stage": "worker_user_exception",
+        "worker_thread": true
+      }
+    ]
+  },
+  "elapsed_seconds": 165.197033666,
+  "framework_qualification": false,
+  "host_exit": 0,
+  "image": "sha256:2d99ba6dc6a89d9a85e278d418f6cfbbf27a389482b69706019392dd22c4285f",
+  "isolation": "no NIC and container network none; unchanged120s launcher/900s guest bounds",
+  "launcher_exit": 1,
+  "launcher_runs": 1,
+  "preceding_failures": [
+    {
+      "host_receipt_sha256": "2bd5408d3ec5a0b3b3222f18fc387a896d003e1bff1f8bde8d61f4f3f95b1fae",
+      "result_log_sha256": "e18c288ac4f097fda549a34dbc66151558bde8476d0fbfa90bac791d8ab3f8db",
+      "source": "d0b95bf7b10b828661442cf408c47400203ddc27"
+    },
+    {
+      "host_receipt_sha256": "1dccbf01219d1568cd2c1df8a397669ccec67b3cd6690f269b838eb8978033a1",
+      "result_log_sha256": "60eee62cc05928d31a45e4443ac542d4334d1d02cdf5cf09e280b764a693781d",
+      "source": "2bcf357694a52fbf2389ea0d02d14af7a8ae6f6d"
+    },
+    {
+      "host_receipt_sha256": "700e1f6cad2fdc74a26971616b83fe44ff79d0bddab057049436896c35d3f93f",
+      "result_log_sha256": "20bd0367cbc7f39530e93c28719b744af29ecc6bd76ccd5071b54f0f8d2e0b5c",
+      "source": "d9c16f8914ecf6fa10d50c56ca94f1cc3dc86ab1"
+    },
+    {
+      "host_receipt_sha256": "c7399c5f523335051da5d81bdf0728cc4f8e48738bd507f4a9da57caecc067cc",
+      "result_log_sha256": "61339275dbd30883dbbc93c83b3e9e5b2f727b0d2829465510c18a17ecacfe21",
+      "source": "9784e8a2fea8a13654292d8a54d900c064cea361"
+    }
+  ],
+  "raw_evidence_sha256": {
+    "diagnostic.json": "0f78dd0352d24b03ce4e53a58d1331d3ab12c261f6023332a7f0661043baa727",
+    "guest-receipt.json": "5675b417330a3ca85afced7e2c7e925d9ee91a619e434076c7f3378467bcb35b",
+    "host-receipt.json": "23bf38178e56b7d6c7e677fcbddb00559cf72db8b4a71193df7a6edf4ebcacd9",
+    "result.log": "9382b3717d5caffc2ce39ab5fd7813a0bc5cc712bbd4e3b7dd10098828e9e8ef"
+  },
+  "schema": "runspindle.gepa-worker-diagnostic.v1",
+  "scope": "No provider/network effects; no qualification, canonical change, retry or oracle relaxation. Thread IDs in diagnostic are observed synthetic guest process identifiers.",
+  "sealed_inputs_sha256": {
+    "gepa313-worker-transport.iso": "9f06faf0e0d0091bb1d39d3d5052e3015936f0dd7fae92ed0aeb901ea7665958",
+    "python313-wheelhouse.udf.iso": "745bcba6a09f146e993ae45c1787db4e72a1783cb868909e69b01c47c9c6b350",
+    "ubuntu-arm64.img": "50e24e1fb79e89116e939d90aa7738f7af48c442fa1bc2510131e0b39c50348e"
+  },
+  "source": "98e935e9e111e72183024ad13a3d1a244683afdd",
+  "source_tree": "20b1e7e6fb674fbccdd2e742b2523821e3d8eba7"
+}

@@ -118,3 +118,81 @@ class BatchTests(unittest.TestCase):
         with patch.object(self.h.registry, "read", side_effect=altered):
             with self.assertRaises(Halt):
                 self.capture()
+
+    def second(self, *, same_input: bool = False) -> Selection:
+        from refinery.feedback_projection import RetainedSource
+        from refinery.feedback_use import RetainedFeedbackUse
+        from refinery.dataset_materialization import prepare
+
+        h: Any = importlib.import_module(
+            "test_thumbs_up_collection"
+        ).ReactionCollectionTests()
+        h.actor_id = "USECOND"
+        h.task_text = "Synthetic task" if same_input else "Second signed task"
+        h.setUp()
+        self.addCleanup(h.doCleanups)
+        selected = h.select()
+        use = RetainedFeedbackUse(
+            h.dep,
+            h.app.store,
+            verify_material=lambda target, material: target == h.target
+            and material == h.material,
+            approve_use=lambda _: True,
+        )
+        for number in range(100):
+            snapshot = h.collect(selected, seed=f"batch-{number}")
+            source = RetainedSource(
+                h.store,
+                snapshot,
+                selected,
+                use,
+                lambda key, destination: dict(self.h.h.authority),
+            )
+            if prepare(source, "synthetic").descriptor["split"] == self.item["split"]:
+                break
+        else:
+            self.fail("matching synthetic split unavailable")
+        item = self.h.registry.materialize(
+            source,
+            "synthetic",
+            approve=self.h.approve,
+            permission_ref="explicit-test-grant",
+        )
+        return Selection(item["item_id"], source)
+
+    def test_two_items_reordered_have_same_manifest_and_content_order(self) -> None:
+        second = self.second()
+        selections = self.selections + (second,)
+        left = capture(self.h.registry, selections, **self.kwargs)
+        right = capture(self.h.registry, tuple(reversed(selections)), **self.kwargs)
+        self.assertEqual(left, right)
+        self.assertEqual(len(left[1]), 2)
+        self.assertEqual(
+            {row[0] for row in left[1]}, {"Synthetic task", "Second signed task"}
+        )
+
+    def test_later_item_permission_withdraws_earlier_item(self) -> None:
+        second = self.second()
+        selections = tuple(sorted(self.selections + (second,), key=lambda s: s.item_id))
+        calls = []
+
+        def approve(descriptor: Any, purpose: str, reference: str) -> bool:
+            calls.append(descriptor["item_id"])
+            if descriptor["item_id"] == selections[1].item_id:
+                self.h.registry.withdraw(
+                    selections[0].item_id,
+                    approve=self.h.approve,
+                    permission_ref="explicit-test-grant",
+                )
+            return self.h.approve(descriptor, purpose, reference)
+
+        with self.assertRaises(ValueError):
+            capture(self.h.registry, selections, **dict(self.kwargs, approve=approve))
+        self.assertEqual(
+            calls, [selections[0].item_id] * 2 + [selections[1].item_id] * 2
+        )
+
+    def test_two_independent_occurrences_with_same_input_are_denied(self) -> None:
+        second = self.second(same_input=True)
+        with self.assertRaisesRegex(ValueError, "duplicate batch occurrence or input"):
+            capture(self.h.registry, self.selections + (second,), **self.kwargs)

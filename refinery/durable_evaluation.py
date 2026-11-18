@@ -164,6 +164,8 @@ class SQLiteBudget(Budget):
             raise ValueError("reservation attempt conflict")
 
     def _apply(self, method: str, *args: Any, **kwargs: Any) -> Any:
+        witness = kwargs.pop("gepa_witness", None)
+        witness_bytes = pack(witness)
         failure = None
         result = None
         owner = (self.identity, self.experiment)
@@ -205,6 +207,7 @@ class SQLiteBudget(Budget):
                 or self.clock_ms is not clock
                 or pack(self.limits) != limits
                 or pack((args, kwargs)) != arguments
+                or pack(witness) != witness_bytes
                 or tx.execute(
                     "SELECT payload FROM budgets WHERE identity=?", (owner[0],)
                 ).fetchone()
@@ -242,6 +245,17 @@ class SQLiteBudget(Budget):
                     "INSERT INTO attempts VALUES(?,?,?,'unknown',NULL)",
                     (self.experiment, result, pack(request)),
                 )
+                if witness is not None:
+                    from .gepa_evidence import validate_shape
+
+                    validate_shape(witness, request)
+                    cast(Any, self.store).put(
+                        tx,
+                        "gepa_request_witness",
+                        self.experiment + ":" + str(result),
+                        witness,
+                    )
+
             if method == "settle" and self.experiment is not None:
                 ticket = args[0]
                 receipt = kwargs.get("receipt")
@@ -261,6 +275,14 @@ class SQLiteBudget(Budget):
         if failure:
             raise failure
         return result
+
+    def reserve_gepa(self, maximum: Reservation, *, request: Any, witness: Any) -> Any:
+        from .gepa_evidence import validate_shape
+
+        validate_shape(witness, request)
+        if self.experiment is None:
+            raise ValueError("GEPA witness requires durable owner")
+        return self._apply("reserve", maximum, request=request, gepa_witness=witness)
 
     def reserve(self, maximum: Reservation, *, request=None):
         return self._apply("reserve", maximum, request=request)

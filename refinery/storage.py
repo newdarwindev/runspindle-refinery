@@ -19,6 +19,7 @@ from typing import Any, Protocol, cast
 from . import evaluation as ev
 from . import lineage as lin
 from .dspy_optimizer import Compiled
+from .gepa_evidence import GEPACompiled
 from .optimization import Selection
 
 VERSION = "runspindle.maintained-evidence.v1"
@@ -46,6 +47,7 @@ TYPES: dict[str, type[Any]] = {
         ev.Metrics,
         Selection,
         Compiled,
+        GEPACompiled,
     )
 }
 
@@ -56,7 +58,7 @@ def version(value):
 
 
 def _encode(value: Any) -> Any:
-    if is_dataclass(value) and type(value).__name__ in TYPES:
+    if is_dataclass(value) and TYPES.get(type(value).__name__) is type(value):
         return {
             "type": type(value).__name__,
             "fields": {f.name: _encode(getattr(value, f.name)) for f in fields(value)},

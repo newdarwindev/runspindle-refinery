@@ -169,6 +169,7 @@ def encode(
             "instruction": instruction,
             "proposal": data,
             "reflection_attempt": asdict(reflection),
+            "attempts_sha256": digest(canonical([asdict(a) for a in attempts])),
         }
     )
 

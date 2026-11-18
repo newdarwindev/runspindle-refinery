@@ -30,7 +30,9 @@ unknown usage, cancellation and cursor changes cannot produce a candidate.
 
 `refinery.gepa_codec` defines a new `refinery.gepa.instruction.v1` format. Decoding
 requires exact candidate/configuration digests and the retained complete attempt
-history. It verifies training lineage, the failed parent trace, metered reflection
+history. The candidate binds a canonical digest of every ordered full attempt,
+including final task usage and latency; changed or appended history is rejected.
+It verifies training lineage, the failed parent trace, metered reflection
 output, request order, no foreign effects, and successful post-proposal task
 execution. It does not widen the old demonstration codec or durable Session.
 Instructions remain data in a fixed signature, never executable code or authority.

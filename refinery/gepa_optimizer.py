@@ -14,7 +14,8 @@ from typing import Any, Callable
 from . import evaluation as ev
 from . import gepa_codec as codec
 from .dspy_optimizer import Dispatch, canonical, case, framed, framework
-from .lineage import Dataset, Example, LockedSplit, digest
+from .durable_evaluation import SQLiteBudget
+from .lineage import Dataset, Example, LockedSplit, _token, digest
 from .optimization import validate_dataset
 
 
@@ -87,7 +88,14 @@ class Transport(Dispatch):
             or len(self.proposals) > 1
         ):
             self.budget.stop("gepa_binding_changed")
-            raise ev.Halt("gepa_binding_changed")
+            reason = self.budget.snapshot().get("reason")
+            if type(reason) is not str:
+                reason = "gepa_binding_changed"
+            try:
+                _token(reason)
+            except ValueError:
+                reason = "gepa_binding_changed"
+            raise ev.Halt(reason)
 
     def task(self, predict: Any, value: str) -> Any:
         if (
@@ -134,6 +142,7 @@ class Transport(Dispatch):
             a
             for parent, answer, a in self.trace
             if parent == codec.INITIAL
+            and answer != self.example.gold.decode()
             and codec.proposal_payload(
                 self.config,
                 self.training_case,
@@ -182,6 +191,30 @@ class Transport(Dispatch):
         if stage == "optimization":
             self.trace.append((instruction, answer, self.attempts[-1]))
         return framed(reply, "answer" if stage == "optimization" else "instruction")
+
+    def metric_feedback(
+        self, value: Any, gold: Any, answer: Any, name: Any
+    ) -> tuple[float, str]:
+        self.guard()
+        if (
+            value != self.training_case
+            or gold != self.example.gold.decode()
+            or name not in {None, codec.COMPONENT}
+            or not self.trace
+            or not self.attempts
+        ):
+            raise ValueError("unattributable metric")
+        _, observed, attempt = self.trace[-1]
+        if (
+            type(answer) is not str
+            or answer != observed
+            or attempt != self.attempts[-1]
+            or attempt.request.stage != "optimization"
+            or attempt.content_sha256 != digest(answer.encode())
+        ):
+            raise ValueError("metric does not match latest task receipt")
+        correct = answer == gold
+        return float(correct), "correct" if correct else "incorrect"
 
     def propose(
         self,
@@ -250,6 +283,27 @@ def optimize(
     per_call: ev.Reservation,
     check_use: Callable[[], None],
 ) -> Result:
+    # Reject unknown adapters before reading properties or invoking their code.
+    if (
+        type(provider) is not ev.ScriptedProvider
+        or type(budget) not in {ev.Budget, SQLiteBudget}
+        or type(per_call) is not ev.Reservation
+    ):
+        raise ValueError("explicit offline adapters required")
+    if (
+        type(provider.clock) is not ev.VirtualClock
+        or budget.clock_ms is not provider.clock
+        or type(budget.limits) is not ev.Limits
+        or type(provider.calls) is not list
+    ):
+        raise ValueError("reservation or clock binding changed")
+    ev.Reservation(per_call.tokens, per_call.cost_microunits)
+    ev.Limits(
+        budget.limits.calls,
+        budget.limits.tokens,
+        budget.limits.time_ms,
+        budget.limits.cost_microunits,
+    )
     train, _ = validate_dataset(dataset, split)
     selected = [e for e in train if e.output.output_id == training_output_id]
     if len(selected) != 1 or provider.calls or not 1 <= budget.limits.calls <= 16:
@@ -331,18 +385,10 @@ def optimize(
         pred_name: Any = None,
         pred_trace: Any = None,
     ) -> Any:
-        dispatch.guard()
-        if (
-            gold.case != case(e)
-            or gold.answer != e.gold.decode()
-            or pred_name not in {None, codec.COMPONENT}
-            or not any(answer == pred.answer for _, answer, _ in dispatch.trace)
-        ):
-            raise ValueError("unattributable metric")
-        correct = pred.answer == gold.answer
-        return dspy.Prediction(
-            score=float(correct), feedback="correct" if correct else "incorrect"
+        score, feedback = dispatch.metric_feedback(
+            gold.case, gold.answer, pred.answer, pred_name
         )
+        return dspy.Prediction(score=score, feedback=feedback)
 
     def proposer(
         candidate: Any, reflective_dataset: Any, components_to_update: Any

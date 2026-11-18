@@ -99,3 +99,4 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Reviewed Linux dependency adoption proposal](reviewed-linux-dependency-adoption.md): explicit active closure selection with preserved history; actual framework qualification remains separate.
 
 - [GEPA reflection stage 1](gepa-reflection-stage1.md): process-local adapter and separate instruction codec source; supported runtime adoption and native/durable qualification pending.
+- [Bounded GEPA reflection proposal](bounded-gepa-reflection-proposal.md): docs-only design for a distinct train-only, metered instruction adapter and durable strategy contract; not implemented or qualified.

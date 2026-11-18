@@ -18,8 +18,8 @@ class Selection:
     source: RetainedSource
 
 
-def final_fence(registry: DatasetRegistry, selection: Selection, purpose: str) -> None:
-    """No callbacks after the last use-authority callback in the batch."""
+def source_fence(selection: Selection) -> None:
+    """Callback-free retained feedback/source fence, never positive permission."""
     source = selection.source
     value = source.store.get("lineage", source.snapshot)
     receipt = source.store.get("feedback_collection", value["collection_evidence"])
@@ -36,6 +36,13 @@ def final_fence(registry: DatasetRegistry, selection: Selection, purpose: str) -
             observed = row["source_observation"]
             if guard is None or guard.reread(observed) != observed:
                 raise ValueError("batch source changed")
+
+
+def final_fence(registry: DatasetRegistry, selection: Selection, purpose: str) -> None:
+    """No callbacks after the last use-authority callback in the batch."""
+    source_fence(selection)
+    source = selection.source
+    value = source.store.get("lineage", source.snapshot)
     # The exact configuration is irrelevant with owner=None: enrolled or sealed
     # cohorts always deny. Never borrow an optimizer's policy owner here.
     from .heldout_policy import check

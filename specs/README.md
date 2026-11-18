@@ -113,3 +113,5 @@ incompatible component stores and rolls back invalid transaction changes.
 - [Local consented dataset materialization](local-dataset-materialization.md)
 
 - [Guarded materialized dataset batches](materialized-dataset-batches.md)
+
+- [Materialized durable ownership](materialized-durable-ownership.md)

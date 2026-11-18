@@ -307,15 +307,8 @@ class DatasetRegistry:
             self.db.execute("ROLLBACK")
             raise
 
-    def read(
-        self,
-        item_id: str,
-        source: RetainedSource,
-        *,
-        purpose: str,
-        approve: Authority,
-        permission_ref: str,
-    ) -> tuple[Any, bytes]:
+    def _bound_item(self, item_id: str, source: RetainedSource) -> Prepared:
+        """Integrity mapping only; callers must enforce current purpose authority."""
         self.available(item_id)
         row = self.db.execute(
             "SELECT descriptor,input,output FROM items WHERE item_id=?", (item_id,)
@@ -330,6 +323,18 @@ class DatasetRegistry:
             item.output_bytes,
         ):
             raise ValueError("dataset source/content binding changed")
+        return item
+
+    def read(
+        self,
+        item_id: str,
+        source: RetainedSource,
+        *,
+        purpose: str,
+        approve: Authority,
+        permission_ref: str,
+    ) -> tuple[Any, bytes]:
+        item = self._bound_item(item_id, source)
         if {"optimization": "train", "evaluation": "heldout"}.get(
             purpose
         ) != item.descriptor["split"]:
@@ -337,7 +342,7 @@ class DatasetRegistry:
         authorize(approve, item, purpose, permission_ref)
         verify_use(source, item, purpose)
         authorize(approve, item, purpose, permission_ref)
-        if prepare(source, descriptor["dataset"]) != item:
+        if prepare(source, item.descriptor["dataset"]) != item:
             raise ValueError("dataset source changed during use")
         cohort_check(source, item, purpose)
         self.available(item_id)

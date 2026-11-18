@@ -35,6 +35,7 @@ def reject_unsafe_paths(base: Path) -> None:
     absolute = base.absolute()
     if ".." in absolute.parts:
         raise ValueError("noncanonical prepared dependency path")
+
     def unreadable(error: OSError) -> None:
         raise ValueError("unreadable prepared dependency directory") from error
 
@@ -42,7 +43,9 @@ def reject_unsafe_paths(base: Path) -> None:
         for parent in (*reversed(absolute.parents), absolute):
             if not stat.S_ISDIR(parent.lstat().st_mode):
                 raise ValueError("prepared root and ancestors must be real directories")
-        for directory, names, files in os.walk(absolute, followlinks=False, onerror=unreadable):
+        for directory, names, files in os.walk(
+            absolute, followlinks=False, onerror=unreadable
+        ):
             for name in names + files:
                 mode = (Path(directory) / name).lstat().st_mode
                 if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):

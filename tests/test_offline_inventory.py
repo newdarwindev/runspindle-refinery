@@ -105,7 +105,9 @@ class InventoryTests(unittest.TestCase):
             self.assert_rejected_without_dispatch(self.prepared)
 
     def test_unreadable_walk_is_not_silently_omitted(self) -> None:
-        with patch.object(engine.os, "scandir", side_effect=PermissionError("synthetic")):
+        with patch.object(
+            engine.os, "scandir", side_effect=PermissionError("synthetic")
+        ):
             self.assert_rejected_without_dispatch(self.prepared)
 
     def test_file_type_guard_mutation_exposes_false_inventory_match(self) -> None:

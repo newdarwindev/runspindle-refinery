@@ -2,7 +2,7 @@
 
 Improve a defined operation, not an unbounded agent.
 
-**Status: Durable offline feedback/evaluation components; actual-framework and live serving qualification remain incomplete.**
+**Status: Durable authorized datasets and bounded synthetic DSPy/GEPA compile, heldout evaluation and recovery are implemented. Live model-quality and production serving qualification remain incomplete.**
 
 Normal text describes implemented boundaries; *italic text marks upcoming work or qualification*. Neither is permission to activate services or use live accounts.
 
@@ -17,6 +17,26 @@ DSPy supplies optimization machinery. **REFINERY** supplies the operation signat
 **CANDIDATE SELECTION** preserves dataset, split, provider and content identity. It does not turn a cached result into authority, a teacher answer into verified gold, or an uncertain budget reservation into free spending.
 
 *Upcoming qualification includes representative real-data evaluation, actual provider cost/quality measurement and approved production serving. Collection, training use, evaluation and deployment remain separate decisions; there is no automatic production improvement claim.*
+
+## CURRENT LEARNING DATA FLOW
+
+An explicitly authorized caller starts collection and learning. A thumbs-up can
+mark an exactly attributed answer as gold; it does not itself authorize private
+content retention, training, export or deployment. There is no background trainer
+or Temporal dependency in this local path.
+
+| Step | Current component and boundary |
+| --- | --- |
+| Authenticate feedback | [Tether-pinned collection](refinery/feedback_collection.py) binds verified feedback to the exact actor, source and output revision; ambiguous/conflicting material is not silently promoted. |
+| Retain authorized examples | [DatasetRegistry](refinery/dataset_materialization.py) materializes exact bytes only with current permission, original provenance and family/split fences. Withdrawal remains effective for subsequent use. |
+| Freeze phase selections | [Batch capture](refinery/dataset_batch.py) produces immutable hash-bound train/evaluation selections, not a saved permission grant. |
+| Compile and evaluate | The existing [durable Session](refinery/durable_dspy.py) owns the candidate, heldout seal and cumulative budget. [GEPA](specs/gepa-heldout.md) reflects on train-only evidence and evaluates the locked instruction without reopening training. |
+| Recover or project | Completed replay rechecks current authority without new model effects. [Langfuse projection](specs/feedback-projection-outbox.md) is a separately authorized observability output, not training authority or a prerequisite for local learning. |
+
+The [actual-framework heldout harness](specs/gepa-heldout-qualification.md)
+distinguishes synthetic compile/evaluation/replay effects from live model calls.
+*Representative real data, paid-provider quality/cost evaluation and approved
+production promotion remain separate acceptance work.*
 
 ## FROM A CORRECTION TO AN EVALUATED CANDIDATE
 
@@ -63,7 +83,7 @@ This repository is one boundary of [Runspindle](https://github.com/newdarwindev/
 - Read [specifications](specs/README.md), [agent guidance](AGENTS.md), [provenance](provenance.json), [status](STATUS.json) and [legal status](LEGAL.md).
 - Run `python3 tools/check_scaffold.py` for structural validation only.
 - Run `python3.13 -m unittest discover -s tests -v` for synthetic lineage behavior tests (Python >=3.11 required). See [evidence and limits](docs/IMPLEMENTATION_EVIDENCE.md).
-- Operational entrypoints and acceptance gates deliberately fail closed until implemented.
+- Unimplemented operational entrypoints and live acceptance gates remain fail-closed; the implemented local APIs and qualification harnesses above have narrower explicit contracts.
 - GitHub Actions use isolated **self-hosted local runners only**. No GitHub-hosted fallback. Runner capacity is not established by publishing workflows.
 - No credentials, real sessions, messages, datasets, browser profiles or live host inventory belong here.
 
@@ -77,7 +97,7 @@ The [pinned shared fixture consumer](docs/SHARED_FIXTURES.md) tests refinery fee
 
 ## Implemented validation
 
-Run `python3 tools/validate.py` for all implemented structural, language, fixture, artifact and mutation checks in this repository. The same entrypoint runs on trusted `main` and `ci/*` pushes and manual qualification using disposable Strix x64 guests. Logs include the checkout SHA, image/tool identities, command results and applicable artifact checksums. Unimplemented builds and product acceptance remain explicit in `STATUS.json`; blocked acceptance workflows retain their failing conclusions. ARM64 and native macOS qualification remain pending.
+Run `python3 tools/validate.py` for all implemented structural, language, fixture, artifact and mutation checks in this repository. The same entrypoint runs on trusted `main` and `ci/*` pushes and manual qualification using disposable Strix x64 guests. Logs include the checkout SHA, image/tool identities, command results and applicable artifact checksums. Unimplemented builds and product acceptance remain explicit in `STATUS.json`; blocked acceptance workflows retain their failing conclusions. Selected Linux ARM64 DSPy/GEPA campaigns have separate exact-source synthetic receipts; this does not qualify every ARM64 or native macOS workload.
 
 
 The [issue #1 acceptance map](specs/issue1-acceptance.md) identifies offline criteria and the separate pinned DSPy prerequisite.

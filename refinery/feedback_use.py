@@ -182,7 +182,9 @@ class RetainedFeedbackUse:
                 output.output_id,
                 output.revision,
                 output.sha256,
-                selection.rule_id,
+                lin.THUMBS_UP_GOLD_RULE
+                if event["judgment"] == "thumbs_up"
+                else selection.rule_id,
                 event["judgment"],
                 event["correction"].encode()
                 if event["judgment"] == "correction"

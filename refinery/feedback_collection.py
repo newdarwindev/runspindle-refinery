@@ -100,8 +100,11 @@ def collect(
             digest(prior_bytes) != prior_snapshot_sha256
             or digest(prior_receipt_bytes) != prior["collection_evidence"]
             or prior_receipt.get("dependency_commit")
-            != "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d"
-            or dependency.pin["commit"] != "ae5ac216b45ca413283e4200c0a4a61054998b58"
+            not in {
+                "c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d",
+                "ae5ac216b45ca413283e4200c0a4a61054998b58",
+            }
+            or dependency.pin["commit"] != "1e8d2091c55dfad47fdc64ec2e73fcd946da9921"
         ):
             raise ValueError("unsupported feedback revalidation transition")
     resolve: Any = resolve_material

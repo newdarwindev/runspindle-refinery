@@ -213,5 +213,17 @@
     "dependencies": "existing_versions_and_hashes_preserved_separate_wheel_selection",
     "third_party_payloads": "retained_only_in_ignored_local_inputs_not_published",
     "qualification": "native_preparation_and_framework_not_run"
+  },
+  "automatic_thumbs_up_gold": {
+    "classification": "original_label_policy_and_dependency_integration",
+    "source_repository": "newdarwindev/runspindle-tether",
+    "source_commit": "1e8d2091c55dfad47fdc64ec2e73fcd946da9921",
+    "source_pin": "dependencies/tether-feedback.json",
+    "historical_pin": "dependencies/tether-feedback-ae5ac216.json",
+    "historical_pin_sha256": "480116946e7d1aeaf95aeb4f666dc3aeb58dc12bdbab0fe94287b0e7a5325b86",
+    "source_copy": "verified external checkout only; no vendored implementation or license change",
+    "specification": "specs/automatic-thumbs-up-gold.md",
+    "live_capture": "not_run",
+    "scope": "exact attributable gold labels; collection/use consent remains separate"
   }
 }

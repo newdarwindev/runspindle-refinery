@@ -58,6 +58,15 @@ the existing closure gate and record that review. No dependency download, pin
 update, vendored third-party implementation or license conclusion is proposed.
 Use published APIs through original adapter code; preserve upstream notices.
 
+Subsequent read-only review of retained wheel files found an important runtime
+constraint: GEPA 0.0.22 declares Python `>=3.10,<3.14`, while the existing canonical
+Bootstrap lane uses Python 3.14.0. DSPy 3.1.0 itself requires GEPA 0.0.22. Do not
+ignore the declared range, silently change canonical pins, or label that combination
+upstream-supported. Reflection needs a separately reviewed supported pinned
+runtime, or an explicitly scoped experimental compatibility investigation whose
+limitations remain visible. Earlier Bootstrap receipts keep their original scope.
+Source implementation can proceed independently of that unresolved runtime gate.
+
 ## Train-only proposal boundary
 
 Both GEPA's training set and its adaptive validation set must consist solely of

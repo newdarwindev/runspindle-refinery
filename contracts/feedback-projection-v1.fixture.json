@@ -1,0 +1,73 @@
+{
+  "identity_input": {
+    "namespace": "fixture",
+    "feedback_id": "reaction",
+    "actor_id": "actor",
+    "target": {
+      "task_id": "task",
+      "task_revision": 1,
+      "artifact_id": "artifact",
+      "artifact_revision": 1,
+      "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "delivery_operation_id": "delivery",
+      "message_id": "message",
+      "payload_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "workspace_id": "workspace",
+      "channel_id": "channel",
+      "thread_id": "thread"
+    }
+  },
+  "identity_sha256": "e8f32a0a25ecb06be4a0ccccafe59fed8cd707357a3723c8d06ddb94f44c05be",
+  "authority": {
+    "revision": "policy1",
+    "collection_allowed": true,
+    "use_allowed": true,
+    "export_allowed": true,
+    "current_target": true
+  },
+  "active": {
+    "version": "runspindle.feedback-projection.v1",
+    "identity_sha256": "e8f32a0a25ecb06be4a0ccccafe59fed8cd707357a3723c8d06ddb94f44c05be",
+    "revision": 1,
+    "provenance_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "policy_sha256": "7740d0a967d4d3aa4449552a2529b2a93c381ad133f674d4e470fdf453f8694d",
+    "state": "active",
+    "gold": true,
+    "training_eligible": true,
+    "export_allowed": true,
+    "deployment_authority": false,
+    "projection_id": "cab67ffcf61ff9c632920528fd56a53405e1fc10ea6ea5dc76c413bd7bb850ca"
+  },
+  "revoked": {
+    "version": "runspindle.feedback-projection.v1",
+    "identity_sha256": "e8f32a0a25ecb06be4a0ccccafe59fed8cd707357a3723c8d06ddb94f44c05be",
+    "revision": 2,
+    "provenance_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "policy_sha256": "7740d0a967d4d3aa4449552a2529b2a93c381ad133f674d4e470fdf453f8694d",
+    "state": "revoked",
+    "gold": false,
+    "training_eligible": false,
+    "export_allowed": true,
+    "deployment_authority": false,
+    "projection_id": "5fb90630451d105046cfd18bf2dc61b829654405664e7a98a07d4a07d3c432aa"
+  },
+  "unicode_identity_input": {
+    "namespace": "\u043f\u0435\u043a\u0430\u0440\u043d\u044f\ud83d\udc4d",
+    "feedback_id": "reaction",
+    "actor_id": "actor",
+    "target": {
+      "task_id": "task",
+      "task_revision": 1,
+      "artifact_id": "artifact",
+      "artifact_revision": 1,
+      "artifact_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "delivery_operation_id": "delivery",
+      "message_id": "message",
+      "payload_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "workspace_id": "workspace",
+      "channel_id": "channel",
+      "thread_id": "thread"
+    }
+  },
+  "unicode_identity_sha256": "e352f9c00de527636d0c782aa77bfec0aa7bfcaa27f61b3bca86fcf7fb06b5a8"
+}

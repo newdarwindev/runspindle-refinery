@@ -7,15 +7,18 @@ Authority callbacks are trusted pure snapshots, not cross-service atomic locks.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sqlite3
+import stat
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
 from . import dataset_contract as c
 from .feedback_projection import Observation, RetainedSource
-from .feedback_use import UseRequest
+from .feedback_use import use_guard
+from .heldout_policy import check as check_holdout
 
 Authority = Callable[[dict[str, Any], str, str], bool]
 
@@ -70,18 +73,46 @@ def prepare(source: RetainedSource, dataset: str) -> Prepared:
     return Prepared(descriptor, c.canonical(input_value), output, observation)
 
 
-def verify_use(source: RetainedSource, item: Prepared, purpose: str) -> None:
+def cohort_check(source: RetainedSource, item: Prepared, purpose: str) -> None:
     value = source.store.get("lineage", source.snapshot)
-    source.use.verify(
+    check_holdout(
         source.store,
-        UseRequest(
-            source.snapshot,
-            value["batch_sha256"],
-            value["collection_evidence"],
-            purpose,
-            item.descriptor["item_id"],
-            item.observation.key,
-        ),
+        value["dataset"],
+        value["split"],
+        purpose=purpose,
+        configuration_sha256=item.descriptor["item_id"],
+        owner=None,
+    )
+
+
+def verify_use(source: RetainedSource, item: Prepared, purpose: str) -> None:
+    use_guard(
+        source.store,
+        source.snapshot,
+        purpose=purpose,
+        configuration_sha256=item.descriptor["item_id"],
+        run_sha256=item.observation.key,
+        retained_use=source.use,
+        synthetic_fixture=False,
+        policy_owner=None,
+    )()
+
+
+def provenance_receipt(source: RetainedSource, item: Prepared, reference: str) -> bytes:
+    value = source.store.get("lineage", source.snapshot)
+    return c.canonical(
+        dict(
+            version="refinery.materialization-receipt.v1",
+            item_id=item.descriptor["item_id"],
+            snapshot_sha256=source.snapshot,
+            collection_receipt_sha256=value["collection_evidence"],
+            batch_sha256=value["batch_sha256"],
+            selected_event_sha256=source.selection.event_sha256,
+            source_observation_sha256=item.observation.provenance,
+            permission_reference_sha256=c.digest(reference.encode("ascii")),
+            purpose="materialize",
+            permission_scope="historical_not_current_authority",
+        )
     )
 
 
@@ -97,7 +128,7 @@ def authorize(check: Authority, item: Prepared, purpose: str, reference: str) ->
 
 
 SCHEMA = """
-CREATE TABLE items(item_id TEXT PRIMARY KEY,dataset TEXT NOT NULL,source TEXT NOT NULL,family TEXT NOT NULL,input_hash TEXT NOT NULL,split TEXT NOT NULL,descriptor BLOB NOT NULL,input BLOB NOT NULL,output BLOB NOT NULL,receipt TEXT NOT NULL);
+CREATE TABLE items(item_id TEXT PRIMARY KEY,dataset TEXT NOT NULL,source TEXT NOT NULL,family TEXT NOT NULL,input_hash TEXT NOT NULL,split TEXT NOT NULL,descriptor BLOB NOT NULL,input BLOB NOT NULL,output BLOB NOT NULL,receipt BLOB NOT NULL);
 CREATE TABLE withdrawals(item_id TEXT PRIMARY KEY,receipt TEXT NOT NULL);
 CREATE TRIGGER immutable_items_update BEFORE UPDATE ON items BEGIN SELECT RAISE(ABORT,'immutable item'); END;
 CREATE TRIGGER immutable_items_delete BEFORE DELETE ON items BEGIN SELECT RAISE(ABORT,'immutable item'); END;
@@ -106,18 +137,51 @@ CREATE TRIGGER immutable_withdrawal_delete BEFORE DELETE ON withdrawals BEGIN SE
 """
 
 
+MAX_ITEMS = 10000
+
+
+def private_file(path: Path) -> tuple[int, int]:
+    info = path.lstat()
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or stat.S_IMODE(info.st_mode) != 0o600
+        or info.st_uid != os.geteuid()
+        or info.st_nlink != 1
+    ):
+        raise ValueError("private owned regular dataset file required")
+    return info.st_dev, info.st_ino
+
+
 class DatasetRegistry:
     def __init__(self, path: Path) -> None:
-        self.db = sqlite3.connect(path, isolation_level=None, timeout=5)
+        self.path = Path(path)
+        parent = self.path.parent
+        if not self.path.is_absolute() or parent.resolve(strict=True) != parent:
+            raise ValueError("canonical private dataset directory required")
+        info = parent.stat()
+        if (
+            not stat.S_ISDIR(info.st_mode)
+            or stat.S_IMODE(info.st_mode) & 0o077
+            or info.st_uid != os.geteuid()
+        ):
+            raise ValueError("private owned dataset directory required")
+        # Reject existing unsafe files; never chmod someone else's database or
+        # globally change umask. The owned private directory excludes other users.
         try:
-            self.db.execute("PRAGMA journal_mode=WAL")
-            self.db.execute("PRAGMA synchronous=FULL")
-            self.db.execute("PRAGMA max_page_count=32768")
+            fd = os.open(
+                self.path, os.O_CREAT | os.O_EXCL | os.O_RDWR | os.O_NOFOLLOW, 0o600
+            )
+        except FileExistsError:
+            pass
+        else:
+            os.close(fd)
+        self.file_identity = private_file(self.path)
+        self.check_files()
+        self.db = sqlite3.connect(self.path, isolation_level=None, timeout=5)
+        try:
+            self.check_files()
             existing = self.db.execute("SELECT name FROM sqlite_master").fetchall()
             version = self.db.execute("PRAGMA user_version").fetchone()[0]
-            if not existing and version == 0:
-                self.db.executescript(SCHEMA)
-                self.db.execute("PRAGMA user_version=1")
             reference = sqlite3.connect(":memory:")
             try:
                 reference.executescript(SCHEMA)
@@ -128,15 +192,39 @@ class DatasetRegistry:
                 )
             finally:
                 reference.close()
+            if not existing and version == 0:
+                self.db.executescript(SCHEMA)
+                self.db.execute("PRAGMA user_version=1")
             self.check()
+            # Only an admitted schema receives writable journaling settings.
+            self.db.execute("PRAGMA journal_mode=WAL")
+            self.db.execute("PRAGMA synchronous=FULL")
+            self.db.execute("PRAGMA max_page_count=32768")
+            self.check_files()
         except BaseException:
             self.db.close()
             raise
+
+    def check_files(self) -> None:
+        parent = self.path.parent
+        info = parent.stat()
+        if (
+            parent.resolve(strict=True) != parent
+            or stat.S_IMODE(info.st_mode) & 0o077
+            or info.st_uid != os.geteuid()
+            or private_file(self.path) != self.file_identity
+        ):
+            raise ValueError("dataset private storage identity changed")
+        for suffix in ("-wal", "-shm", "-journal"):
+            sidecar = Path(str(self.path) + suffix)
+            if sidecar.exists() or sidecar.is_symlink():
+                private_file(sidecar)
 
     def close(self) -> None:
         self.db.close()
 
     def check(self) -> None:
+        self.check_files()
         if (
             self.db.execute("PRAGMA user_version").fetchone() != (1,)
             or tuple(
@@ -182,12 +270,16 @@ class DatasetRegistry:
                 ),
             ).fetchone():
                 raise ValueError("dataset family/input/source crosses split")
-            if self.db.execute("SELECT COUNT(*) FROM items").fetchone()[0] >= 10000:
-                raise ValueError("dataset registry full")
             old = self.db.execute(
                 "SELECT descriptor,input,output FROM items WHERE item_id=?",
                 (d["item_id"],),
             ).fetchone()
+            if (
+                old is None
+                and self.db.execute("SELECT COUNT(*) FROM items").fetchone()[0]
+                >= MAX_ITEMS
+            ):
+                raise ValueError("dataset registry full")
             expected = (c.canonical(d), item.input_bytes, item.output_bytes)
             if old is not None and old != expected:
                 raise ValueError("stored dataset bytes changed")
@@ -201,14 +293,13 @@ class DatasetRegistry:
                     d["input_sha256"],
                     d["split"],
                     *expected,
-                    c.digest(
-                        c.canonical({"item": d, "permission_ref": permission_ref})
-                    ),
+                    provenance_receipt(source, item, permission_ref),
                 ),
             )
             authorize(approve, item, "materialize", permission_ref)
             if prepare(source, dataset) != item:
                 raise ValueError("dataset source changed during materialization")
+            cohort_check(source, item, "dataset_materialization")
             self.available(d["item_id"])
             self.db.execute("COMMIT")
             return dict(d)
@@ -248,6 +339,7 @@ class DatasetRegistry:
         authorize(approve, item, purpose, permission_ref)
         if prepare(source, descriptor["dataset"]) != item:
             raise ValueError("dataset source changed during use")
+        cohort_check(source, item, purpose)
         self.available(item_id)
         return json.loads(item.input_bytes), item.output_bytes
 

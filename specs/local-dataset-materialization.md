@@ -19,8 +19,14 @@ JSON types, string keys, finite numbers, depth and text limits. Computing an ite
 identifier is not permission to copy content. Exact artifact, canonical input,
 occurrence, family, dataset and locked split participate in immutable identity.
 
-An isolated SQLite sidecar retains exact input/output, descriptor and a historical
-permission-reference hash in one transaction. Current permission and retained
+A canonical owner-private directory and regular owner-only (0600), single-link
+file are required; unsafe existing paths are rejected without chmod. SQLite
+sidecar identity/permissions are checked as well. Existing schemas are admitted
+before writable journaling settings are changed. No global umask or trust setting
+is modified. An isolated SQLite sidecar retains exact input/output, descriptor and a historical
+bounded historical receipt in one transaction. The receipt binds the exact original
+lineage snapshot, collection receipt, selected event, Tether observation and
+permission-reference hash; none grants current authority. Current permission and retained
 source validity are checked again before commit. Immutable triggers prevent
 normal update/deletion. Empty versioned databases are not silently recreated.
 Family, input hash and source occurrence cannot cross splits within one registry
@@ -30,8 +36,13 @@ or coordination across independently copied registries.
 Every `read` revalidates current retained lineage and material, exact stored bytes,
 current item/purpose permission and original use authority. Only train items may
 be used for optimization; heldout items are accessible only for evaluation.
-Materialization does not itself invoke either. Projection eligibility flags and
-historical receipts never replace the separate purpose-bound use check.
+Materialization does not itself invoke either. The established `use_guard` and
+callback-free final cohort check enforce upstream DSPy enrollment/heldout seals
+with no policy owner: enrolled cohorts are not independently reopened here. Projection eligibility flags and
+historical receipts never replace the separate purpose-bound use check. The
+projection `use_allowed` indication may be reduced by an optimization probe and
+therefore does not veto separately authorized heldout evaluation. Global use
+denials must be represented in the original use/material/collection authority.
 
 Authorized `withdraw` appends a permanent local tombstone. Re-materialization and
 reads then deny; retained bytes are **not erased**. Signed source removal or target

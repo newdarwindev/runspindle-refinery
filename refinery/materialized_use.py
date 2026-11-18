@@ -98,6 +98,25 @@ class BoundBatch:
                     "permission_ref_sha256": c.digest(
                         batch.permission_ref.encode("ascii")
                     ),
+                    "registry_storage": self.storage_binding(self.registry),
+                    "feedback_storage": self.storage_binding(self.feedback),
+                    "source_storage": None
+                    if self.source is None
+                    else self.storage_binding(self.source),
+                }
+            )
+        )
+
+    @staticmethod
+    def storage_binding(view: ReadView) -> str:
+        # Resume must use the same actual local authorities, not a stale copied
+        # registry or feedback database. Only the digest enters ownership bytes.
+        return c.digest(
+            c.canonical(
+                {
+                    "path": str(view.path),
+                    "device": view.file_identity[0],
+                    "inode": view.file_identity[1],
                 }
             )
         )

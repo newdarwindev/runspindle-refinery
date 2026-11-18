@@ -6,10 +6,15 @@ supplied. No runtime or historical evidence is removed.
 
 `Session(materialized_batches=(AuthorizedBatch(...), ...))` binds the exact
 canonical batch manifest hash, explicit phase and opaque permission-reference hash
-into the existing experiment ownership bytes alongside original lineage, optimizer
+and digests of the actual local registry/feedback/source file identities
+(canonical path, device and inode) into the existing experiment ownership bytes alongside original lineage, optimizer
 configuration and budget identity. A permission-reference hash remains historical,
 not a reusable grant. Resuming the same run with a different batch or removing the
-materialization binding conflicts with its retained owner record.
+materialization binding conflicts with its retained owner record. A stale copied
+registry or feedback database cannot silently resume that owner. Moving/restoring
+authority files requires a separately authorized new run; no automatic migration
+or hostile same-owner rollback protection is claimed. Raw paths are not stored
+in the ownership record.
 
 Every phase requires its exact manifest: optimization and GEPA reflection use the
 train manifest; evaluation requires a separate evaluation manifest. Missing
@@ -44,7 +49,13 @@ There is no new database, coordinator, Temporal dependency, remote content uploa
 credential discovery, paid provider or production activation.
 
 Tests include real signed synthetic lineage and SQLite claims/dispatch receipts,
-fresh Session recovery, withdrawal, manifest substitution, generic-read denial
+fresh Session and fresh-process checkpoint recovery, withdrawal, manifest substitution, generic-read denial
 after enrollment, actual worker threads, private sidecar refusal, replaced files
 and handle cleanup. Such fixture dispatch tests are not a claim that DSPy ran.
 Actual pinned framework and fresh-process qualification remain a separate gate.
+
+The regression suite also uses two independently signed targets retained in one
+actual Tether store and a locked mixed-family snapshot: exact evaluation batch
+claim/guard under the compiled candidate owner passes; another owner, swapped
+split and extra phase examples deny. A later item callback can withdraw an
+already-read item through another connection; final checks observe the WAL change.

@@ -250,3 +250,301 @@ class MaterializedDurableTests(unittest.TestCase):
         with self.assertRaises(ev.Halt):
             session.guard("optimization")
         self.assertEqual(session.provider.calls, [])
+
+    def mixed_batches(
+        self, *, second_train: bool = False
+    ) -> tuple[AuthorizedBatch, AuthorizedBatch]:
+        from refinery.feedback_collection import collect
+        from refinery.feedback_projection import RetainedSource
+        from refinery.feedback_use import RetainedFeedbackUse
+
+        second: Any = importlib.import_module(
+            "test_thumbs_up_collection"
+        ).ReactionCollectionTests()
+        second.actor_id, second.task_text = "USECOND", "Heldout original task"
+        second.source_id, second.artifact_id, second.family_id = (
+            "source2",
+            "artifact2",
+            "family2",
+        )
+        second.event_prefix = "EvSecond"
+        second.output_message, second.reaction_time = (
+            "1900000000.000005",
+            "1900000000.000006",
+        )
+        second.feedback_path = self.h.h.h.root / "feedback.sqlite"
+        second.setUp()
+        self.addCleanup(second.doCleanups)
+        selected = second.select()
+        first = self.h.h.h
+        pairs = ((first.target, first.material), (second.target, second.material))
+
+        def verify(target: Any, material: Any) -> bool:
+            return any(target == t and material == m for t, m in pairs)
+
+        use = RetainedFeedbackUse(
+            first.dep,
+            first.app.store,
+            verify_material=verify,
+            approve_use=lambda _: True,
+        )
+        for i in range(100) if second_train else (13,):
+            snapshot = collect(
+                first.store,
+                first.dep,
+                first.app.store,
+                (self.h.h.selected, selected),
+                (),
+                seed=f"mixed-{i}",
+                collection_ref="collection",
+                training_ref="training",
+                resolve_material=lambda target: next(
+                    m for t, m in pairs if t == target
+                ),
+                verify_material=verify,
+                approve_collection=lambda *_: True,
+                approve_training=lambda *_: True,
+            )
+            _, split = first.store.lineage(snapshot)
+            if split.partition("family") == "train" and split.partition("family2") == (
+                "train" if second_train else "heldout"
+            ):
+                break
+        else:
+            self.fail("mixed split unavailable")
+        sources = tuple(
+            RetainedSource(
+                first.store, snapshot, selection, use, self.source.authorize_projection
+            )
+            for selection in (self.h.h.selected, selected)
+        )
+        self.source = sources[0]
+        batches = []
+        for source, purpose in zip(
+            sources, ("optimization", "optimization" if second_train else "evaluation")
+        ):
+            item = self.h.registry.materialize(
+                source,
+                "synthetic",
+                approve=self.h.approve,
+                permission_ref="explicit-test-grant",
+            )
+            selections = (Selection(item["item_id"], source),)
+            manifest, _ = capture(
+                self.h.registry,
+                selections,
+                purpose=purpose,
+                approve=self.h.approve,
+                permission_ref="explicit-test-grant",
+            )
+            batches.append(
+                AuthorizedBatch(
+                    manifest,
+                    self.h.registry,
+                    selections,
+                    self.h.approve,
+                    "explicit-test-grant",
+                )
+            )
+        return batches[0], batches[1]
+
+    def test_exact_evaluation_batch_under_sealed_owner(self) -> None:
+        batches = self.mixed_batches()
+        session = self.session(batches=batches)
+        compiled = importlib.import_module("test_durable_dspy").compile_fixture(session)
+        self.assertEqual(session.claim_evaluation(), compiled)
+        session.guard("evaluation")
+        with self.assertRaises(ev.Halt):
+            session.guard("optimization")
+        other = self.session(batches=batches, identity="wrong-heldout-owner")
+        with self.assertRaises(ev.Halt):
+            other.guard("evaluation")
+        self.assertEqual(len(session.provider.calls), 1)
+        self.assertEqual(other.provider.calls, [])
+
+    def test_swapped_or_extra_phase_examples_are_denied(self) -> None:
+        import json
+
+        batches = self.mixed_batches()
+        wrong = json.loads(batches[1].manifest)
+        wrong["purpose"] = "optimization"
+        from refinery.dataset_contract import canonical
+
+        swapped = replace(batches[1], manifest=canonical(wrong))
+        with self.assertRaises(ValueError):
+            self.session(batches=(swapped,)).guard("optimization")
+        extra = json.loads(batches[0].manifest)
+        extra["items"] += json.loads(batches[1].manifest)["items"]
+        extra["items"].sort(key=lambda row: row["item"]["item_id"])
+        combined = replace(
+            batches[0],
+            manifest=canonical(extra),
+            selections=batches[0].selections + batches[1].selections,
+        )
+        with self.assertRaises(ValueError):
+            self.session(batches=(combined,)).guard("optimization")
+
+    def test_current_callback_withdrawal_is_visible_before_dispatch(self) -> None:
+        session = None
+
+        def approve(descriptor: Any, purpose: str, reference: str) -> bool:
+            if session is not None:
+                self.h.registry.withdraw(
+                    self.item["item_id"],
+                    approve=self.h.approve,
+                    permission_ref="explicit-test-grant",
+                )
+            return True
+
+        batch = replace(self.batch, approve=approve)
+        session = self.session(batches=(batch,))
+        with self.assertRaises(ValueError):
+            session.claim_compile()
+        self.assertIsNone(session.row(session.store.db))
+        self.assertEqual(session.provider.calls, [])
+
+    def test_later_phase_item_callback_withdraws_earlier_item(self) -> None:
+        batches = self.mixed_batches(second_train=True)
+        selections = batches[0].selections + batches[1].selections
+        manifest, _ = capture(
+            self.h.registry,
+            selections,
+            purpose="optimization",
+            approve=self.h.approve,
+            permission_ref="explicit-test-grant",
+        )
+        ids = sorted(s.item_id for s in selections)
+        calls = []
+
+        def approve(descriptor: Any, purpose: str, reference: str) -> bool:
+            calls.append(descriptor["item_id"])
+            if descriptor["item_id"] == ids[1]:
+                self.h.registry.withdraw(
+                    ids[0], approve=self.h.approve, permission_ref="explicit-test-grant"
+                )
+            return True
+
+        batch = AuthorizedBatch(
+            manifest, self.h.registry, selections, approve, "explicit-test-grant"
+        )
+        session = self.session(batches=(batch,))
+        with self.assertRaises(ValueError):
+            session.claim_compile()
+        self.assertEqual(calls, ids)
+        self.assertIsNone(session.row(session.store.db))
+        self.assertEqual(session.provider.calls, [])
+
+    def test_stale_registry_copy_cannot_resume_withdrawn_owner(self) -> None:
+        import os
+
+        from refinery.dataset_materialization import DatasetRegistry
+
+        path = self.h.registry.path.with_name("copied-registry.sqlite")
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o600)
+        os.close(fd)
+        copy = sqlite3.connect(path)
+        self.h.registry.db.backup(copy)
+        copy.close()
+        registry = DatasetRegistry(path)
+        self.addCleanup(registry.close)
+        session = self.session()
+        session.claim_compile()
+        self.h.registry.withdraw(
+            self.item["item_id"],
+            approve=self.h.approve,
+            permission_ref="explicit-test-grant",
+        )
+        copied = replace(self.batch, registry=registry)
+        other = self.session(batches=(copied,))
+        with self.assertRaisesRegex(ValueError, "immutable DSPy lifecycle conflict"):
+            other.guard("optimization")
+        self.assertEqual(other.provider.calls, [])
+
+    def test_fresh_process_recovers_exact_owner_without_dispatch(self) -> None:
+        import json
+        import os
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        session = self.session()
+        compiled = importlib.import_module("test_durable_dspy").compile_fixture(session)
+        manifest = self.h.registry.path.with_name("batch-manifest.json")
+        manifest.write_bytes(self.batch.manifest)
+        root = Path(__file__).resolve().parents[1]
+        script = r"""
+import json, pathlib, socket, sys
+sys.path.insert(0, sys.argv[1])
+class DenySocket(socket.socket):
+    def __init__(self, *a, **k): raise AssertionError("network forbidden")
+socket.socket = DenySocket
+from refinery.storage import Store, VERSION
+from refinery.tether_dependency import TetherDependency
+from refinery.feedback_collection import Material, SelectedFeedback
+from refinery.feedback_use import RetainedFeedbackUse
+from refinery.feedback_projection import RetainedSource
+from refinery.dataset_materialization import DatasetRegistry
+from refinery.dataset_batch import Selection
+from refinery.materialized_use import AuthorizedBatch
+from refinery.durable_dspy import Session
+from refinery import evaluation as ev
+store = Store(pathlib.Path(sys.argv[2]))
+dep = TetherDependency(pathlib.Path(sys.argv[3]))
+feedback = dep.modules["tether.feedback"].FeedbackStore(sys.argv[4], None)
+registry = DatasetRegistry(pathlib.Path(sys.argv[5]))
+try:
+    snapshot = sys.argv[6]
+    value = store.get("lineage", snapshot)
+    receipt = store.get("feedback_collection", value["collection_evidence"])
+    row = receipt["selected"][0]
+    expected = Material(value["batch"][0][0], value["batch"][1][0], row["material_ref"])
+    use = RetainedFeedbackUse(dep, feedback,
+        verify_material=lambda target, material: target == row["target"] and material == expected,
+        approve_use=lambda request: True)
+    source = RetainedSource(store, snapshot, SelectedFeedback(**row["selection"]), use,
+        lambda key, destination: dict(revision="policy1", collection_allowed=True,
+            use_allowed=True, export_allowed=True, current_target=True))
+    manifest = pathlib.Path(sys.argv[7]).read_bytes()
+    item = json.loads(manifest)["items"][0]["item"]["item_id"]
+    batch = AuthorizedBatch(manifest, registry, (Selection(item, source),),
+        lambda d, p, r: r == "explicit-test-grant", "explicit-test-grant")
+    provider = ev.ScriptedProvider((ev.Completion(b"Synthetic answer",1,1,True,1),), clock=ev.VirtualClock())
+    run = Session(store, VERSION, "materialized-run", snapshot, provider=provider,
+        limits=ev.Limits(8,100,100,100), per_call=ev.Reservation(10,10),
+        budget_id="materialized-budget", retained_use=use, materialized_batches=(batch,))
+    result = run.recover_compiled()
+    print(json.dumps(dict(candidate=result.candidate_sha256, calls=len(provider.calls),
+                         binding=run.binding_sha256, pid=__import__("os").getpid())))
+finally:
+    registry.close(); feedback.close(); store.close()
+"""
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-I",
+                "-B",
+                "-c",
+                script,
+                str(root),
+                str(self.source.store.path),
+                os.environ["RUNSPINDLE_TETHER_SOURCE"],
+                str(
+                    self.source.use.tether_store.db.execute(
+                        "PRAGMA database_list"
+                    ).fetchone()[2]
+                ),
+                str(self.h.registry.path),
+                self.source.snapshot,
+                str(manifest),
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr[-4096:])
+        receipt = json.loads(result.stdout)
+        self.assertEqual(receipt["candidate"], compiled.candidate_sha256)
+        self.assertEqual(receipt["binding"], session.binding_sha256)
+        self.assertEqual(receipt["calls"], 0)
+        self.assertNotEqual(receipt["pid"], os.getpid())

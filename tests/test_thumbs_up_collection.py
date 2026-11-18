@@ -37,6 +37,9 @@ class ReactionCollectionTests(unittest.TestCase):
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
         task_text = getattr(self, "task_text", "Synthetic task")
+        source_id = getattr(self, "source_id", "source")
+        artifact_id = getattr(self, "artifact_id", "artifact")
+        family_id = getattr(self, "family_id", "family")
         self.route = ingress.Route(
             "ASYNTHETIC",
             "TSYNTHETIC",
@@ -67,13 +70,13 @@ class ReactionCollectionTests(unittest.TestCase):
         )
         self.admission.ingest(raw, self.headers(raw))
         self.source = SourceRevision(
-            "source", "1", "family", task_text.encode(), digest(task_text.encode())
+            source_id, "1", family_id, task_text.encode(), digest(task_text.encode())
         )
         self.output = OutputRevision(
-            "artifact",
+            artifact_id,
             "1",
             "new-task-type",
-            "source",
+            source_id,
             "1",
             self.source.sha256,
             b"Synthetic answer",
@@ -82,7 +85,7 @@ class ReactionCollectionTests(unittest.TestCase):
         self.material = Material(self.source, self.output, "verified-current-material")
         self.payload = t.Payload(
             "Synthetic answer",
-            (t.Attachment("artifact", "answer.txt", self.output.content),),
+            (t.Attachment(artifact_id, "answer.txt", self.output.content),),
         )
         self.delivery = self.a.canonical(
             dict(
@@ -99,7 +102,7 @@ class ReactionCollectionTests(unittest.TestCase):
                     lease_epoch=1,
                 ),
                 payload=dict(
-                    artifact_id="artifact",
+                    artifact_id=artifact_id,
                     artifact_revision=1,
                     sha256=self.output.sha256,
                     validator_revision="validator",
@@ -119,13 +122,13 @@ class ReactionCollectionTests(unittest.TestCase):
             lambda a, d: destination,
         )
         self.addCleanup(self.journal.close)
-        self.message = "1900000000.000003"
+        self.message = getattr(self, "output_message", "1900000000.000003")
         provider = t.FakeSlack(destination, lambda: NOW, lambda: self.message)
         self.journal.send(self.delivery, self.payload, provider)
         self.journal.lookup(self.delivery, self.payload, provider)
         target = slack.FeedbackTarget(self.delivery, self.payload, self.message)
         self.app = slack.SignedSlackFeedback(
-            str(self.root / "feedback.sqlite"),
+            str(getattr(self, "feedback_path", self.root / "feedback.sqlite")),
             SECRET,
             self.route,
             lambda: NOW,
@@ -194,12 +197,12 @@ class ReactionCollectionTests(unittest.TestCase):
                 type="reaction_removed" if removed else "reaction_added",
                 user=self.route.actor_id,
                 reaction="thumbsup",
-                event_ts="1900000000.000004",
+                event_ts=getattr(self, "reaction_time", "1900000000.000004"),
                 item=dict(
                     type="message", channel=self.route.channel_id, ts=self.message
                 ),
             ),
-            "EvRemove" if removed else "EvAdd",
+            getattr(self, "event_prefix", "") + ("EvRemove" if removed else "EvAdd"),
         )
 
     def select(self) -> Any:

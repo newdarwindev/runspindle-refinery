@@ -239,6 +239,8 @@ def compile_child(path: Path, forbidden: list[str], case: str) -> dict[str, Any]
         return {
             "pid": os.getpid(),
             "phase": "compile",
+            "compile_attempts": [asdict(a) for a in result.attempts],
+            "expected_heldout": expected_heldout(session),
             "framework": report,
             "snapshot": snapshot,
             "identity": identity(session, result),
@@ -251,11 +253,106 @@ def compile_child(path: Path, forbidden: list[str], case: str) -> dict[str, Any]
         }
 
 
+def expected_heldout(session: Any) -> dict[str, Any]:
+    from refinery import gepa_codec
+    from refinery.lineage import digest
+    from refinery.optimization import validate_dataset
+
+    train, heldout = validate_dataset(session.dataset, session.split)
+    require(len(train) == len(heldout) == 1, "exact heldout fixture")
+    e = heldout[0]
+    require(
+        e.output.output_id != train[0].output.output_id,
+        "heldout must differ from training",
+    )
+    return dict(
+        output_id=e.output.output_id,
+        output_revision=e.output.revision,
+        source_sha256=e.source.sha256,
+        split_sha256=session.split.sha256,
+        artifact_sha256=gepa_codec.baseline_artifact(),
+        stage="baseline",
+        attempt=1,
+        content_sha256=digest(b"wrong-heldout-baseline"),
+    )
+
+
+def decode_attempt(value: Any) -> Any:
+    from refinery import evaluation as ev
+
+    require(
+        type(value) is dict
+        and set(value)
+        == {
+            "request",
+            "outcome",
+            "content_sha256",
+            "tokens",
+            "cost_microunits",
+            "safety",
+            "latency_ms",
+        },
+        "complete Attempt schema",
+    )
+    request = value["request"]
+    require(
+        type(request) is dict
+        and set(request)
+        == {
+            "stage",
+            "output_id",
+            "output_revision",
+            "source_sha256",
+            "artifact_sha256",
+            "split_sha256",
+            "attempt",
+        },
+        "complete Request schema",
+    )
+    for key in ("stage", "output_id", "output_revision"):
+        require(
+            type(request[key]) is str and 0 < len(request[key]) <= 4096,
+            "request token type",
+        )
+    require(
+        type(request["attempt"]) is int and request["attempt"] > 0,
+        "request attempt type",
+    )
+    for digest_value in [
+        request[k] for k in ("source_sha256", "artifact_sha256", "split_sha256")
+    ] + [value["content_sha256"]]:
+        require(
+            type(digest_value) is str
+            and len(digest_value) == 64
+            and all(c in "0123456789abcdef" for c in digest_value),
+            "receipt digest type",
+        )
+    require(
+        value["outcome"] == "completed"
+        and type(value["outcome"]) is str
+        and value["safety"] is True,
+        "completed synthetic receipt",
+    )
+    require(
+        type(value["latency_ms"]) is int and value["latency_ms"] == 0, "receipt latency"
+    )
+    for key in ("tokens", "cost_microunits"):
+        require(
+            value[key] is None or (type(value[key]) is int and value[key] >= 0),
+            "receipt usage type",
+        )
+    return ev.Attempt(
+        request=ev.Request(**request),
+        **{k: v for k, v in value.items() if k != "request"},
+    )
+
+
 def outcome(session: Any, report: Any) -> dict[str, Any]:
     from refinery.lineage import digest
     from refinery.storage import pack
 
     return dict(
+        expected_heldout=expected_heldout(session),
         configuration=session.config,
         binding=session.binding_sha256,
         candidate=session.compiled()[0].candidate_sha256,
@@ -438,6 +535,26 @@ def validate_phases(
     require(case in CASES, "unknown case")
     validate(first["framework"])
     h.validate_identity(first["identity"], compiled=True)
+    from refinery import gepa_runtime as runtime
+    from refinery.storage import pack
+
+    raw_attempts = first["compile_attempts"]
+    require(
+        type(raw_attempts) is list and len(raw_attempts) == 5, "compile receipt count"
+    )
+    typed_attempts = tuple(decode_attempt(a) for a in raw_attempts)
+    require(
+        runtime.digest(pack(typed_attempts)) == first["identity"]["attempts"]
+        and runtime.digest(runtime.canonical(raw_attempts))
+        == first["framework"]["attempts_sha256"],
+        "compile receipt digest association",
+    )
+    require(
+        first["identity"]["candidate"] == first["framework"]["candidate_sha256"]
+        and first["identity"]["configuration"]
+        == first["framework"]["configuration_sha256"],
+        "compile checkpoint/framework association changed",
+    )
     require(
         first["materialized"] == second["materialized"] == third["materialized"],
         "owner changed",
@@ -464,6 +581,10 @@ def validate_phases(
     require(result == third["outcome"], "replay outcome")
     for key in ("configuration", "binding", "candidate"):
         require(result[key] == first["identity"][key], "cross phase identity")
+    require(
+        result["expected_heldout"] == first["expected_heldout"],
+        "expected heldout identity changed",
+    )
     cancelled = case == "cancelled"
     unknown = case.startswith("unknown_")
     expected = dict(
@@ -500,6 +621,14 @@ def validate_phases(
     )
     if not cancelled:
         receipt = result["heldout_attempts"][0]
+        decode_attempt(receipt)
+        expected_receipt = first["expected_heldout"]
+        require(
+            receipt["request"]
+            == {k: v for k, v in expected_receipt.items() if k != "content_sha256"}
+            and receipt["content_sha256"] == expected_receipt["content_sha256"],
+            "heldout source/output/content identity changed",
+        )
         require(receipt["request"]["stage"] == "baseline", "heldout receipt phase")
         require(
             receipt["tokens"] == (None if case == "unknown_tokens" else 1)

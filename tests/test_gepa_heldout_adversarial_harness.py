@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import unittest
 from contextlib import contextmanager
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -23,6 +24,45 @@ from tools import test_gepa_heldout_materialized as base
 
 def phases(case: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     first, _, _ = importlib.import_module("test_gepa_heldout_harness").phases()
+    from refinery.storage import pack
+
+    compiled = []
+    for i in range(5):
+        compiled.append(
+            ev.Attempt(
+                ev.Request(
+                    "reflection" if i == 2 else "optimization",
+                    "train",
+                    "v1",
+                    "a" * 64,
+                    "b" * 64,
+                    "c" * 64,
+                    i + 1,
+                ),
+                "completed",
+                "d" * 64,
+                1,
+                1,
+                True,
+                0,
+            )
+        )
+    first["compile_attempts"] = [asdict(a) for a in compiled]
+    first["identity"]["attempts"] = runtime.digest(pack(tuple(compiled)))
+    first["framework"]["attempts_sha256"] = runtime.digest(
+        runtime.canonical(first["compile_attempts"])
+    )
+    expected = dict(
+        stage="baseline",
+        output_id="heldout",
+        output_revision="v1",
+        source_sha256="e" * 64,
+        artifact_sha256="f" * 64,
+        split_sha256="c" * 64,
+        attempt=1,
+        content_sha256="d" * 64,
+    )
+    first["expected_heldout"] = expected
     cancelled = case == "cancelled"
     unknown = case.startswith("unknown_")
     usage = dict(
@@ -41,6 +81,7 @@ def phases(case: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         k: first["identity"][k] for k in ("configuration", "binding", "candidate")
     }
     outcome.update(
+        expected_heldout=copy.deepcopy(expected),
         state="compiled" if cancelled else "complete",
         usage=usage,
         report=None if cancelled else "a" * 64,
@@ -57,7 +98,11 @@ def phases(case: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
         if cancelled
         else [
             dict(
-                request=dict(stage="baseline"),
+                request={k: v for k, v in expected.items() if k != "content_sha256"},
+                outcome="completed",
+                content_sha256=expected["content_sha256"],
+                safety=True,
+                latency_ms=0,
                 tokens=None if case == "unknown_tokens" else 1,
                 cost_microunits=None if case == "unknown_cost" else 1,
             )
@@ -303,3 +348,62 @@ class AdversarialHarnessTests(unittest.TestCase):
         self.assertNotIn("LD_LIBRARY_PATH", bounded.call_args.kwargs["env"])
         self.assertEqual(closed, [True])
         self.assertFalse(paths[0].exists())
+
+    def test_detached_compile_identity_is_denied(self) -> None:
+        with patch.object(h, "validate"):
+            for key in ("candidate", "configuration"):
+                values = phases("cancelled")
+                values[0]["identity"][key] = "9" * 64
+                for phase in (1, 2):
+                    values[phase]["outcome"][key] = "9" * 64
+                with (
+                    self.subTest(key=key),
+                    self.assertRaisesRegex(
+                        ValueError, "checkpoint/framework association"
+                    ),
+                ):
+                    h.validate_phases("cancelled", *values)
+
+    def test_complete_heldout_receipt_schema_and_binding(self) -> None:
+        with patch.object(h, "validate"):
+            for mutation in (
+                "missing_content",
+                "missing_output",
+                "bool_cost",
+                "training_output",
+                "wrong_source",
+                "wrong_split",
+                "wrong_content",
+            ):
+                values = phases("unknown_tokens")
+                for phase in (1, 2):
+                    receipt = values[phase]["outcome"]["heldout_attempts"][0]
+                    if mutation == "missing_content":
+                        del receipt["content_sha256"]
+                    elif mutation == "missing_output":
+                        del receipt["request"]["output_id"]
+                    elif mutation == "bool_cost":
+                        receipt["cost_microunits"] = True
+                    elif mutation == "training_output":
+                        receipt["request"]["output_id"] = "train"
+                    elif mutation == "wrong_source":
+                        receipt["request"]["source_sha256"] = "a" * 64
+                    elif mutation == "wrong_split":
+                        receipt["request"]["split_sha256"] = "b" * 64
+                    else:
+                        receipt["content_sha256"] = "e" * 64
+                with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                    h.validate_phases("unknown_tokens", *values)
+
+    def test_compile_receipt_digest_associations(self) -> None:
+        with patch.object(h, "validate"):
+            for target in ("identity", "framework"):
+                values = phases("cancelled")
+                values[0][target][
+                    "attempts" if target == "identity" else "attempts_sha256"
+                ] = "a" * 64
+                with (
+                    self.subTest(target=target),
+                    self.assertRaisesRegex(ValueError, "receipt digest association"),
+                ):
+                    h.validate_phases("cancelled", *values)

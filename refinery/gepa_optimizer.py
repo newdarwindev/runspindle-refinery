@@ -1,7 +1,8 @@
-"""Bounded, process-local genuine GEPA reflection. Native qualification pending.
+"""Bounded genuine GEPA reflection and locked instruction evaluation.
 
-No Session integration, held-out evaluation, promotion, providers or framework
-fallback. All task/reflection calls use one cursor and one existing shared ledger.
+Shared durable ownership is supplied by Session; direct adapter calls do not
+create once-only authority. No live provider, promotion or framework fallback.
+New heldout execution still requires independent actual-framework qualification.
 """
 
 from __future__ import annotations
@@ -548,3 +549,168 @@ def optimize(
         tuple(dispatch.attempts),
         tuple(sorted(budget.snapshot().items())),
     )
+
+
+def heldout_program_guard(
+    student: Any, predict: Any, signature: Any, check_use: Callable[[], None]
+) -> None:
+    """Recheck current authority and the fixed original program before effects."""
+    check_use()
+    if (
+        student.predict is not predict
+        or len(student.predictors()) != 1
+        or predict.demos
+        or not predict.signature.equals(signature)
+    ):
+        raise ev.Halt("heldout_program_changed")
+
+
+def evaluate_locked(
+    compiled: Any,
+    *,
+    dataset: Dataset,
+    split: LockedSplit,
+    training_output_id: str,
+    provider: ev.ScriptedProvider,
+    budget: ev.Budget,
+    per_call: ev.Reservation,
+    check_use: Callable[[], None],
+) -> dict[str, Any]:
+    """Evaluate a locked instruction, never call GEPA.compile or a proposer.
+
+    Session supplies ownership, durable once-only claims and heldout sealing.
+    This adapter preserves its original compile cursor and cumulative budget.
+    """
+    from .dspy_optimizer import program
+    from .gepa_evidence import GEPACompiled
+
+    _, config = binding(
+        dataset,
+        split,
+        training_output_id=training_output_id,
+        provider=provider,
+        budget=budget,
+        per_call=per_call,
+    )
+    if (
+        type(compiled) is not GEPACompiled
+        or compiled.status != "compiled"
+        or compiled.reason is not None
+        or compiled.candidate is None
+        or compiled.candidate_sha256 is None
+        or compiled.configuration_sha256 != config
+        or compiled.evidence_class != "offline_gepa_compile_component"
+    ):
+        raise ValueError("locked GEPA compilation required")
+    instruction = codec.decode(
+        compiled.candidate,
+        compiled.candidate_sha256,
+        dataset,
+        split,
+        config,
+        compiled.attempts,
+    )
+    prefix = tuple(a.request for a in compiled.attempts)
+    if tuple(provider.calls) != prefix or not prefix:
+        raise ValueError("GEPA evaluation requires exact compiled cursor")
+    ledger: Any = budget
+    if ledger.snapshot()["calls"] < len(prefix):
+        raise ValueError("GEPA shared ledger lost compile reservations")
+    _, heldout = validate_dataset(dataset, split)
+    if not heldout:
+        raise ValueError("empty heldout")
+    # Explicit runtime admission before imports; no new Python/dependency lane.
+    runtime_identity()
+    dspy = framework()
+    scores: dict[str, int] = {}
+    attempts: list[ev.Attempt] = []
+    predictions: list[tuple[str, str, str, str]] = []
+    try:
+        for stage, text in (("baseline", codec.INITIAL), ("candidate", instruction)):
+            artifact = (
+                codec.baseline_artifact()
+                if stage == "baseline"
+                else compiled.candidate_sha256
+            )
+            student: Any = None
+            predict: Any = None
+            signature: Any = None
+
+            def guard() -> None:
+                heldout_program_guard(student, predict, signature, check_use)
+
+            dispatch = Dispatch(
+                heldout,
+                split,
+                stage=stage,
+                artifact_sha256=artifact,
+                provider=provider,
+                budget=budget,
+                per_call=per_call,
+                check_use=guard,
+            )
+            student, lm = program(dspy, dispatch)
+            predict = student.predict
+            student.predict.signature = student.predict.signature.with_instructions(
+                text
+            )
+            signature = student.predict.signature.with_instructions(text)
+            score = 0
+            try:
+                with dspy.context(
+                    lm=lm,
+                    adapter=dspy.ChatAdapter(use_native_function_calling=False),
+                    disable_history=True,
+                    callbacks=[],
+                ):
+                    for example in heldout:
+                        dispatch.guard()
+                        prediction = student(case=case(example))
+                        answer = prediction.answer.encode()
+                        last = dispatch.attempts[-1]
+                        if (
+                            last.request.output_id,
+                            last.request.output_revision,
+                            last.content_sha256,
+                        ) != (
+                            example.output.output_id,
+                            example.output.revision,
+                            digest(answer),
+                        ):
+                            ledger.stop("prediction_receipt_mismatch")
+                            raise ev.Halt("prediction_receipt_mismatch")
+                        predictions.append(
+                            (
+                                stage,
+                                example.output.output_id,
+                                example.output.revision,
+                                digest(answer),
+                            )
+                        )
+                        score += int(answer == example.gold)
+            finally:
+                attempts.extend(dispatch.attempts)
+            dispatch.guard()
+            scores[stage] = score
+        dispatch.guard()
+        ledger.checked_snapshot()
+    except Exception:
+        ledger.stop("heldout_evaluation_failed")
+        return {
+            "status": "blocked",
+            "scores": scores,
+            "attempts": tuple(attempts),
+            "predictions": tuple(predictions),
+            "candidate_sha256": compiled.candidate_sha256,
+            "usage": budget.snapshot(),
+        }
+    return {
+        "status": "evaluated",
+        "scores": scores,
+        "attempts": tuple(attempts),
+        "predictions": tuple(predictions),
+        "candidate_sha256": compiled.candidate_sha256,
+        "usage": budget.snapshot(),
+        "quality": "synthetic_exact_match_only",
+        "promotion": "not_authorized",
+    }

@@ -1,3 +1,5 @@
+> Historical compile-only milestone. The separately reviewed [GEPA heldout extension](gepa-heldout.md) adds component evaluation support; actual new-framework qualification is still pending.
+
 # Durable GEPA compilation (component implementation)
 
 This extends the existing `durable_dspy.Session` state machine with the sealed

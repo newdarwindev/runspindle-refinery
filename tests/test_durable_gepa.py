@@ -537,7 +537,7 @@ class DurableGEPATests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "association"):
             self.make().compile()
 
-    def test_reflection_authority_required_and_evaluation_unavailable(self) -> None:
+    def test_reflection_authority_required_and_unowned_evaluation_denied(self) -> None:
         def deny() -> None:
             raise ev.Halt("reflection_denied")
 
@@ -546,7 +546,7 @@ class DurableGEPATests(unittest.TestCase):
             self.session.claim_compile()
         self.assertIsNone(self.session.row(self.store.db))
         with patch.object(gepa, "framework", side_effect=AssertionError("framework")):
-            with self.assertRaisesRegex(ValueError, "not implemented"):
+            with self.assertRaisesRegex(ev.Halt, "interrupted_or_owned"):
                 self.session.evaluate()
 
     def test_interrupted_reservation_retains_witness_and_charge(self) -> None:

@@ -261,11 +261,11 @@ class DurableWorkerTests(unittest.TestCase):
         )
         self.assertEqual(resumed.budget().snapshot()["unresolved_calls"], 1)
 
-    def test_worker_heldout_evaluation_remains_unavailable(self) -> None:
+    def test_worker_unowned_evaluation_is_denied(self) -> None:
         s = self.f.session
         with patch(
             "refinery.dspy_optimizer.framework", side_effect=AssertionError("framework")
         ):
-            with self.assertRaisesRegex(ValueError, "not implemented"):
+            with self.assertRaisesRegex(ev.Halt, "interrupted_or_owned"):
                 self.worker_call(self.dispatch(s), s.evaluate)
         self.assertEqual(s.provider.calls, [])

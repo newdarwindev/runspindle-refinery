@@ -1,4 +1,4 @@
-"""Separate instruction codec. Never accepted by the Bootstrap or durable codecs."""
+"""Separate instruction codec, admitted only by the sealed GEPA strategy."""
 
 from __future__ import annotations
 
@@ -208,3 +208,18 @@ def decode(
         return cast(str, data["instruction"])
     except (KeyError, TypeError, UnicodeError) as exc:
         raise ValueError("invalid instruction candidate") from exc
+
+
+def baseline_artifact() -> str:
+    """Distinct immutable empty-demo instruction baseline, not Bootstrap demos."""
+    return digest(
+        canonical(
+            {
+                "format": "refinery.gepa.baseline.v1",
+                "signature": "case -> answer",
+                "component": COMPONENT,
+                "instruction": INITIAL,
+                "demonstrations": [],
+            }
+        )
+    )

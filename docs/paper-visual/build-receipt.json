@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "evidence_class": "fresh_hash_pinned_network_isolated_tex_build",
+  "source_commit": "e749b1231596dc465dcf6d5c8b9c9b69d44ebf25",
+  "wrapper_sha256": "55aff60ec397e5e7be76f24b6cec60a8c3dc7966c4a32359004f0aaf7ebe7aff",
+  "source_sha256": "47b03a76a2a2c83d163297928920a708d26badff3595867b408da0f8a145ffb7",
+  "toolchain_lock_sha256": "973aa9d445df8cbbf33ce2261905ab6e6e26f4930d5e2c01bcb66d88c60afb7c",
+  "matched_toolchain_inputs": 83,
+  "historical_build_receipt_sha256": "6155bf4ffe8652163e4927ea2623cfea141666edb96811fddaf524badd740960",
+  "commands": [
+    "python3 docs/design/build-paper.py --output .verification/paper-pass1",
+    "python3 docs/design/build-paper.py --output .verification/paper-pass2 --previous .verification/paper-pass1",
+    "python3 docs/design/build-paper.py --output .verification/paper-pass3 --previous .verification/paper-pass2"
+  ],
+  "network": "bwrap_unshare_all",
+  "timeout_seconds_per_pass": 120,
+  "passes": [
+    {
+      "name": "paper-pass1",
+      "exit_code": 0,
+      "files": {
+        "console.txt": "7b03cf43fb0fbf0f50b6431d9977417e41b4cfe8e7aa13f39036a00bdc35d04d",
+        "workflow-refinery.aux": "2d813fed0854ec63f19b885b328ae085f6f3afc542fd958bb125562dc50d8e3b",
+        "workflow-refinery.fls": "3c12b2f3346657927191cd60f628a7d3899fe57da88c1c7d21421ebb9a32a487",
+        "workflow-refinery.log": "e510dcf727da51dcdc868de57180e47bd072519ddcdd4c83eb3b616047cd3cb2",
+        "workflow-refinery.out": "1c579602ca6d0b234f20c94e117757c156d2078bd7feb2f2eb8b3defec05494e",
+        "workflow-refinery.pdf": "4a7ba0b4a4c218c4ab0f1108f1a2a4b221759ae8459950cfde8a1719011d84f8"
+      },
+      "accepted": false
+    },
+    {
+      "name": "paper-pass2",
+      "exit_code": 0,
+      "files": {
+        "console.txt": "08a8fc3aa520c4cc5329d646108cae7e99c4466be94d06e3a37e498aecee8a8e",
+        "workflow-refinery.aux": "2d813fed0854ec63f19b885b328ae085f6f3afc542fd958bb125562dc50d8e3b",
+        "workflow-refinery.fls": "01eba2ec55d667fbd317997508de48eb22360d2f15f9229e3cef28f2d564c7e6",
+        "workflow-refinery.log": "f245fafaa60e1601afd1951e9779df5244774a548f5d578a07723789617f3ec7",
+        "workflow-refinery.out": "1c579602ca6d0b234f20c94e117757c156d2078bd7feb2f2eb8b3defec05494e",
+        "workflow-refinery.pdf": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf"
+      },
+      "accepted": true
+    },
+    {
+      "name": "paper-pass3",
+      "exit_code": 0,
+      "files": {
+        "console.txt": "08a8fc3aa520c4cc5329d646108cae7e99c4466be94d06e3a37e498aecee8a8e",
+        "workflow-refinery.aux": "2d813fed0854ec63f19b885b328ae085f6f3afc542fd958bb125562dc50d8e3b",
+        "workflow-refinery.fls": "01eba2ec55d667fbd317997508de48eb22360d2f15f9229e3cef28f2d564c7e6",
+        "workflow-refinery.log": "f245fafaa60e1601afd1951e9779df5244774a548f5d578a07723789617f3ec7",
+        "workflow-refinery.out": "1c579602ca6d0b234f20c94e117757c156d2078bd7feb2f2eb8b3defec05494e",
+        "workflow-refinery.pdf": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf"
+      },
+      "accepted": true
+    }
+  ],
+  "runtime_acceptance": "not_run",
+  "source_or_canonical_pdf_changed": false,
+  "pass2_identical_to_retained_pdf": true,
+  "overfull_boxes": 0,
+  "underfull_boxes": 0,
+  "warnings": [
+    "epstopdf shell escape disabled, expected"
+  ],
+  "converged_passes_2_and_3_identical": true
+}

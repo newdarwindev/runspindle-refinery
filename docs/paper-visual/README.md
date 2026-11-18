@@ -63,14 +63,15 @@ fresh directory. After review, remove only those explicitly chosen temporary
 output directories using normal local cleanup. No automatic cleanup or baseline
 overwrite occurs. Pin updates, baseline selection and thresholds require review.
 
-## Evidence limits and remaining review
+## Evidence limits and completed native review
 
 Source tests use invented 2×2 RGB data. Whitening its black label proves the
 comparison rejects a missing-label defect without modifying expected hashes. It
-is a synthetic checker mutation, **not** a defective rebuilt paper. Real-paper
-clipping mutation, page/figure dispositions, PNG previews/contact sheets,
-source-build receipt, full runtime pins and reviewed baseline selection are
-separate qualification deliverables, not supplied by these unit tests.
+is a synthetic checker mutation, **not** a defective rebuilt paper. The separate [native evidence](evidence.json), [visual review](review.md) and
+[review receipt](review.json) provide the actual-paper clipping probe, every
+page/figure disposition, lossless previews/contact sheets, fresh source-build
+receipt, complete captured runtime pins and explicitly selected references.
+These observations are not supplied by the synthetic unit tests.
 
 Text anchors, actual URI records, Letter page geometry and embedded/subset/Unicode
 font flags are checked independently of pixels. These do not prove semantic
@@ -79,3 +80,21 @@ paper is untagged; unsupported accessibility must be explicit. Browser viewport,
 DOM, responsive-layout and keyboard claims do not apply to this fixed-layout PDF.
 No provider execution, performance result, production or parent-issue acceptance
 follows from visual comparison.
+
+## Actual clipping sensitivity command
+
+After a successful render/check, this bounded probe whites out a fixed rectangle
+over the reaction label in figure 3 in memory, verifies rejection, then writes
+only disposable clipped/diff rasters into a fresh directory:
+
+```sh
+python3 -m tools.paper_visual_clipping --actual .verification/paper-actual-1 --manifest docs/paper-visual/manifest.json --output "$PWD/.verification/paper-clipping-new"
+```
+
+The actual probe changed 5,850 pixels and was rejected. [Clipped sample](mutation/clipped.png)
+and [localized red diff](mutation/diff.png) are intentionally defective test
+artifacts, not approved references. The source PDF and reference hashes were not
+modified. A broken comparison that accepts this defect makes the probe fail.
+
+The preview images derive from the retained cleared SRC-013 expression; its
+[MIT notice](../design/LICENSE-SRC-013.txt) and [rights disposition](../design/source-disposition.json) apply.

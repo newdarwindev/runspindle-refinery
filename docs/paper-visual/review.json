@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "status": "reviewed",
+  "reviewer": "AI assistant visual and source review, not authenticated human approval",
+  "source_code_commit": "3f1221defee7c6aefc00f4c4ad4bb40d75ef7698",
+  "source_pdf_sha256": "e02963543d6fda11432a34b1fc625aae0baeb3022b67c91b4fb636e27daecbcf",
+  "candidate_render_receipt_sha256": "742fb643d20305b6c905cd9bab73466138ef1e2de7b2f8325a7a458b66054b3c",
+  "pixel_tolerance": 0,
+  "baseline_decision": "Explicitly accept exact 16 normalized RGB rasters from first pinned native render; no automatic regeneration permitted.",
+  "evidence_class": "fresh_source_built_actuals_selected_as_visual_references_not_runtime_mockups",
+  "renderer": "Poppler 26.07.0",
+  "environment": "Linux-7.1.5+kali-amd64-x86_64-with-glibc2.43",
+  "font_review": "All14 PDF font entries embedded/subset/Unicode mapped; font/system closure pinned.",
+  "view_modes": [
+    "all8 complete pages at1300pixel longedge",
+    "all8 standalone figures at1300pixel longedge",
+    "page and figure contact sheets fit-width"
+  ],
+  "pages": [
+    {
+      "page": 1,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": []
+    },
+    {
+      "page": 2,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": []
+    },
+    {
+      "page": 3,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": []
+    },
+    {
+      "page": 4,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": [
+        1,
+        2
+      ]
+    },
+    {
+      "page": 5,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": [
+        3,
+        4
+      ]
+    },
+    {
+      "page": 6,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": [
+        5,
+        6
+      ]
+    },
+    {
+      "page": 7,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": [
+        7,
+        8
+      ]
+    },
+    {
+      "page": 8,
+      "status": "reviewed",
+      "disposition": "Legible text, intact margins/page number, no clipped lines or missing glyphs; headings and reading sequence reviewed.",
+      "figures": []
+    }
+  ],
+  "figures": [
+    {
+      "figure": 1,
+      "page": 4,
+      "title": "Durable identity binding",
+      "description": "Repository/worktree links to host process, managed session and destination. Attribution is not permission and does not require transcript collection.",
+      "review": "Small historical connector labels extend across node-edge areas but remain readable; no node text is obscured. Source geometry intentionally retained.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 2,
+      "page": 4,
+      "title": "Managed-session lifecycle",
+      "description": "Owner-gated launch and verified binding precede active work; external sessions are observation-only and grant no control.",
+      "review": "Labels, lower external-session branch and caption readable; no clipping.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 3,
+      "page": 5,
+      "title": "Reaction, approval and execution",
+      "description": "A reaction leads to actor verification, scoped authority, reviewable plan and only the authorized effect. Feedback itself grants no authority.",
+      "review": "All five nodes and three qualification labels readable.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 4,
+      "page": 5,
+      "title": "Reviewed golden-data provenance",
+      "description": "Approved examples are reviewed/redacted, grouped and deduplicated before a locked train/validation/held-out split. Held-out data never guides optimization.",
+      "review": "Branches terminate in distinct labelled splits; caption and explanation on same page.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 5,
+      "page": 6,
+      "title": "Experiment and deployment control planes",
+      "description": "A bounded experiment yields versioned evidence. A distinct human approval and reviewed release path separates evidence from deployment authority.",
+      "review": "Both proposed planes explicitly labelled; dashed path and caption readable.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 6,
+      "page": 6,
+      "title": "Manually placed compute constellation",
+      "description": "A human places apps on three hypothetical hosts; a refinery candidate remains a separate future layer. This is not an observed fleet topology.",
+      "review": "All branches and optional-development note readable; no uptime claim.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 7,
+      "page": 7,
+      "title": "Versioned provenance chain",
+      "description": "Approved source, redaction, dataset version, candidate artifact and promotion record retain separate evidence, split and rollback bindings.",
+      "review": "Five stages and below-line labels readable.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    },
+    {
+      "figure": 8,
+      "page": 7,
+      "title": "Observation versus failure",
+      "description": "An observation ages into unknown state until a verified check; missing updates do not establish failure or permission to act.",
+      "review": "Timeline labels distinguish observed, aging and unknown; time is qualitative, not measured.",
+      "status": "reviewed",
+      "source_disposition": "retained_cleared_historical_vector_asset",
+      "editable_layout": "docs/design/workflow-refinery.tex",
+      "runtime_claim": "not_run"
+    }
+  ],
+  "accessibility": {
+    "pdf_tagging": "unsupported_untagged",
+    "screen_reader_conformance": "not_claimed",
+    "text_extraction": "allpages_and_figures_utf8_checked",
+    "reading_order": "visual_and_extracted_sequence_reviewed_not_semantic_tag_order",
+    "diagram_alternatives": "section6 prose plus review descriptions",
+    "contrast": "dark text on pale backgrounds visually reviewed; quantitative WCAG conformance not asserted",
+    "color": "labels and solid/dashed patterns convey distinctions without color alone"
+  },
+  "not_applicable": [
+    "responsive browser viewports: no retained web surface",
+    "DOM and web keyboard/focus: fixed-layout noninteractive PDF",
+    "equation rendering: no equations in retained adaptation",
+    "numeric chart units or performance results: no measured charts or benchmark claims"
+  ],
+  "preview_sha256": {
+    "references/figure-01-identity.png": "04b0792411ef71f63c8c6abf9bf926b571f3168eb1f17382d57df20a4151dda0",
+    "references/figure-02-lifecycle.png": "b0dc13ff74e47cd925f34f0d9556dde0ef9fec09cb155097a0f2a7c3d0978c11",
+    "references/figure-03-approval.png": "02aad730f8a4e4189801d1deda2728acb71f930204d60ffebab3bd51b3d24349",
+    "references/figure-04-golden-data.png": "7281c63046c23c5b61c70dcd96ec21e1e4c27ce2e1beb2113468ccbdf5de758d",
+    "references/figure-05-control-planes.png": "86a28df9184b75568307e46945ba72c513efda3d6360034499213de7c0fabda0",
+    "references/figure-06-constellation.png": "61e2a50e87a3176ce5bd00adceaf173eba0274155ad44f9949087b19fcaeb4ca",
+    "references/figure-07-provenance.png": "079318376691a328f96d9a4a8936c8813cc8ff189d413cc707d664ed105f1976",
+    "references/figure-08-observation.png": "053192b5f0932bbf574de6d04c3977ab1e316a891cae327b8b5ad2509050d664",
+    "references/figure-contact.png": "52735f7e9ea439912df46d231ee6579dcc3e67d8b3f7c7d0b0bab82886ed8517",
+    "references/page-1.png": "0dbd0c2d8ce9d14cb6773fced543307be4e9049015087e60ceb1c17780904a7b",
+    "references/page-2.png": "b4f792d79f978f7c315d84d2994b9b4bd82a2039dc23ea26395050b4490ca38e",
+    "references/page-3.png": "899a39d92d6c3a3ca4dbb575093b4b00afbbe10de5302cb62b81d60a946254f5",
+    "references/page-4.png": "5f4a3a40e5b5dd19dd80e07f27c00f2b417072a071d7819e7e7149e6d0af30e7",
+    "references/page-5.png": "443ab84f4dfe79ac45c84220abfe2d1fc84c7274604ba326dd30d24868752d38",
+    "references/page-6.png": "7b311bd894b0042bbf594171fca946b22c444f81332043841fb5c2e22b45bfa1",
+    "references/page-7.png": "5927d938ce9502ee5f01dcc90e1954fad0228079f2efd693950b92f19b210e5f",
+    "references/page-8.png": "182a88a2c650b05121cf964a4cc4d59edfbf4dad285879f8efee3f7515fe7b1e",
+    "references/page-contact.png": "d4c73c6a97b78c706ca4955c0240e80a7d117ba803c096e8b1169097a7ca4217"
+  }
+}

@@ -1,0 +1,404 @@
+{
+  "schema_version": 1,
+  "scope": "issue11_document_visual_generation_and_regression_only",
+  "source_code_commit": "8a78913daba332d573ee357d15316a08a4f549aa",
+  "source_build_commit": "e749b1231596dc465dcf6d5c8b9c9b69d44ebf25",
+  "manifest_sha256": "bc764a7f5d56c2e563f39fcd664329fecd2fd88ec9f142e993934430e3e5ad47",
+  "review_receipt_sha256": "79c80192d2378670a5c64141297271c54bb93a50414140afb175fd70eedb78fc",
+  "source_build_receipt_sha256": "1f6d904d1f1027cb31d13150f177d741298d1b20d25ae47faf86e4087292fbd7",
+  "render_1_status": "candidate_not_reviewed",
+  "render_2_status": "candidate_not_reviewed",
+  "reviewed_comparison": "passed",
+  "normalized_rgb_pixel_tolerance": 0,
+  "rasters": [
+    {
+      "name": "figure-01-identity",
+      "reference": {
+        "height": 225,
+        "mode": "RGB",
+        "pixel_sha256": "739d200ec01db9d77205bed7ead8adb22918d0fed1b1cb42f147d500307e95a4",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 225,
+        "mode": "RGB",
+        "pixel_sha256": "739d200ec01db9d77205bed7ead8adb22918d0fed1b1cb42f147d500307e95a4",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 225,
+        "mode": "RGB",
+        "pixel_sha256": "739d200ec01db9d77205bed7ead8adb22918d0fed1b1cb42f147d500307e95a4",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-02-lifecycle",
+      "reference": {
+        "height": 302,
+        "mode": "RGB",
+        "pixel_sha256": "396aad9adc200468dfcdabe827e5056c65854290b4a15649b0f8654061c8ea8e",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 302,
+        "mode": "RGB",
+        "pixel_sha256": "396aad9adc200468dfcdabe827e5056c65854290b4a15649b0f8654061c8ea8e",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 302,
+        "mode": "RGB",
+        "pixel_sha256": "396aad9adc200468dfcdabe827e5056c65854290b4a15649b0f8654061c8ea8e",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-03-approval",
+      "reference": {
+        "height": 189,
+        "mode": "RGB",
+        "pixel_sha256": "712e01dd74cc5827f6a61fae54b669273fb9635a2520266a2bf8ebc55acbf143",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 189,
+        "mode": "RGB",
+        "pixel_sha256": "712e01dd74cc5827f6a61fae54b669273fb9635a2520266a2bf8ebc55acbf143",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 189,
+        "mode": "RGB",
+        "pixel_sha256": "712e01dd74cc5827f6a61fae54b669273fb9635a2520266a2bf8ebc55acbf143",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-04-golden-data",
+      "reference": {
+        "height": 339,
+        "mode": "RGB",
+        "pixel_sha256": "410e9eca54802883cafa42ec9d53283110b3022260d8f4ec418b37d5ca60baf9",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 339,
+        "mode": "RGB",
+        "pixel_sha256": "410e9eca54802883cafa42ec9d53283110b3022260d8f4ec418b37d5ca60baf9",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 339,
+        "mode": "RGB",
+        "pixel_sha256": "410e9eca54802883cafa42ec9d53283110b3022260d8f4ec418b37d5ca60baf9",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-05-control-planes",
+      "reference": {
+        "height": 707,
+        "mode": "RGB",
+        "pixel_sha256": "d56314c13c55d8544be09017f3ce31f8b460c48ec218adc693918eae1721d8df",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 707,
+        "mode": "RGB",
+        "pixel_sha256": "d56314c13c55d8544be09017f3ce31f8b460c48ec218adc693918eae1721d8df",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 707,
+        "mode": "RGB",
+        "pixel_sha256": "d56314c13c55d8544be09017f3ce31f8b460c48ec218adc693918eae1721d8df",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-06-constellation",
+      "reference": {
+        "height": 607,
+        "mode": "RGB",
+        "pixel_sha256": "acf88b0fff2660cbdb0ae9eeda7f4d35062c0faf3a958913bbce5978a5a63419",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 607,
+        "mode": "RGB",
+        "pixel_sha256": "acf88b0fff2660cbdb0ae9eeda7f4d35062c0faf3a958913bbce5978a5a63419",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 607,
+        "mode": "RGB",
+        "pixel_sha256": "acf88b0fff2660cbdb0ae9eeda7f4d35062c0faf3a958913bbce5978a5a63419",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-07-provenance",
+      "reference": {
+        "height": 194,
+        "mode": "RGB",
+        "pixel_sha256": "288d129b75aa617d520c50829b9fc7f9ec185e794f3dede43ebe9668903439ef",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 194,
+        "mode": "RGB",
+        "pixel_sha256": "288d129b75aa617d520c50829b9fc7f9ec185e794f3dede43ebe9668903439ef",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 194,
+        "mode": "RGB",
+        "pixel_sha256": "288d129b75aa617d520c50829b9fc7f9ec185e794f3dede43ebe9668903439ef",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "figure-08-observation",
+      "reference": {
+        "height": 361,
+        "mode": "RGB",
+        "pixel_sha256": "30b3998a43b492cb6b048716367626b7ea860e09557525ac50dc2304d73c73cc",
+        "width": 1300
+      },
+      "actual_render_1": {
+        "height": 361,
+        "mode": "RGB",
+        "pixel_sha256": "30b3998a43b492cb6b048716367626b7ea860e09557525ac50dc2304d73c73cc",
+        "width": 1300
+      },
+      "actual_render_2": {
+        "height": 361,
+        "mode": "RGB",
+        "pixel_sha256": "30b3998a43b492cb6b048716367626b7ea860e09557525ac50dc2304d73c73cc",
+        "width": 1300
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-1",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "f71de823e01e3cdbfbb54577ecf40880469ba38e99c2ba65770ba8a9e083bd56",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "f71de823e01e3cdbfbb54577ecf40880469ba38e99c2ba65770ba8a9e083bd56",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "f71de823e01e3cdbfbb54577ecf40880469ba38e99c2ba65770ba8a9e083bd56",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-2",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "191791265dbfac83841d019cc072f1f8acb2b309790f33003660e9cb3eab6284",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "191791265dbfac83841d019cc072f1f8acb2b309790f33003660e9cb3eab6284",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "191791265dbfac83841d019cc072f1f8acb2b309790f33003660e9cb3eab6284",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-3",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "0620b624fd1413fda0071bd184d70d4fb265f04537edb1b0b8f93bd3e2c390e1",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "0620b624fd1413fda0071bd184d70d4fb265f04537edb1b0b8f93bd3e2c390e1",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "0620b624fd1413fda0071bd184d70d4fb265f04537edb1b0b8f93bd3e2c390e1",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-4",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "88730852d2f28c6fd31d3b73122ddb01851bef9b8223ff044834185ec3849a45",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "88730852d2f28c6fd31d3b73122ddb01851bef9b8223ff044834185ec3849a45",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "88730852d2f28c6fd31d3b73122ddb01851bef9b8223ff044834185ec3849a45",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-5",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "04a632c4ea9366637b38f309a80f20541ee672d68381fe87c8139abc557286e2",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "04a632c4ea9366637b38f309a80f20541ee672d68381fe87c8139abc557286e2",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "04a632c4ea9366637b38f309a80f20541ee672d68381fe87c8139abc557286e2",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-6",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "d55fe4eecec5957cbc9084155405326053a39e0e4f28d545859da0f88f53e7b8",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "d55fe4eecec5957cbc9084155405326053a39e0e4f28d545859da0f88f53e7b8",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "d55fe4eecec5957cbc9084155405326053a39e0e4f28d545859da0f88f53e7b8",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-7",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "b35adf25faf03ff1bbc095c8b493555e4b7e66a6063f94875135a203cf90d88c",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "b35adf25faf03ff1bbc095c8b493555e4b7e66a6063f94875135a203cf90d88c",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "b35adf25faf03ff1bbc095c8b493555e4b7e66a6063f94875135a203cf90d88c",
+        "width": 1005
+      },
+      "different_pixels": 0
+    },
+    {
+      "name": "page-8",
+      "reference": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "6e2575d877d37367865952a12e40656497bfb5944f5f4f82b4c475526bdc1411",
+        "width": 1005
+      },
+      "actual_render_1": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "6e2575d877d37367865952a12e40656497bfb5944f5f4f82b4c475526bdc1411",
+        "width": 1005
+      },
+      "actual_render_2": {
+        "height": 1300,
+        "mode": "RGB",
+        "pixel_sha256": "6e2575d877d37367865952a12e40656497bfb5944f5f4f82b4c475526bdc1411",
+        "width": 1005
+      },
+      "different_pixels": 0
+    }
+  ],
+  "source_inputs_unchanged": true,
+  "clipping_probe": {
+    "status": "detected",
+    "evidence_class": "actual_raster_label_clipping_not_source_mutation",
+    "raster": "figure-03-approval",
+    "rectangle_xyxy": [
+      100,
+      30,
+      230,
+      75
+    ],
+    "changed_pixels": 5850,
+    "original_pixel_sha256": "712e01dd74cc5827f6a61fae54b669273fb9635a2520266a2bf8ebc55acbf143",
+    "clipped_pixel_sha256": "ee95aa3e5155a4007667ec7f5b8aff99c3c38bd5281ca3e4ac70f53b07251993",
+    "diff_pixel_sha256": "161a78afe27440bf0aa81463a05c6fa8ff1c2d0e49e72428086eb689597c23ae",
+    "reference_modified": false,
+    "source_pdf_modified": false
+  },
+  "clipping_tool_sha256": "b6e76abc1a4e17c39876300e6d95cf297f1a14a74d25e8186efc2b8ec7da199a",
+  "clipping_previews": {
+    "clipped.png": "657caf2e43f3e58081f01aa926e305ef01b8785eeb56ea147bfc455e13689f31",
+    "diff.png": "82c4b9fd2aaa0d047aab045c159864434ae97c9a7965a744abeea97fe900252d"
+  },
+  "runtime_acceptance": "not_run",
+  "issue_acceptance": {
+    "all8_figures_rights_and_disposition": "retained reviewed source-disposition linked in manifest",
+    "editable_layout": "existing TeX source; no invented substitute diagrams",
+    "fresh_source_compile": "passed pins83 and converged byte identity",
+    "native_geometry_and_eachpage_visual_review": "passed",
+    "separate_references_actuals_and_diff": "passed",
+    "missing_label_mutation": "detected5850 changed pixels",
+    "text_and_actual_links": "passed all16 fulltext expectations;6 annotations5 unique URLs",
+    "accessibility": "explicitly limited: untagged, no conformance claim",
+    "responsive_DOM_keyboard": "not_applicable static PDF",
+    "runtime_or_provider_qualification": "not_claimed"
+  },
+  "full_repository_aggregate": "pending_final_commit"
+}

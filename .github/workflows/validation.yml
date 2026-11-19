@@ -33,11 +33,29 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
+      - name: Read the Tether feedback lock
+        id: tether-pin
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          pin = json.loads(Path("dependencies/tether-feedback.json").read_text())
+          commit = pin.get("commit")
+          if pin.get("repository") != "newdarwindev/runspindle-tether" or not (
+              isinstance(commit, str) and re.fullmatch(r"[0-9a-f]{40}", commit)
+          ):
+              raise SystemExit("invalid Tether feedback lock")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"commit={commit}\n")
+          PYTHON
       - name: Checkout pinned Tether feedback source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: newdarwindev/runspindle-tether
-          ref: c3fbfb9ff5ed0483e522c93268ced9e40a6cb79d
+          ref: ${{ steps.tether-pin.outputs.commit }}
           path: .feedback-deps/tether
           persist-credentials: false
       - id: partition

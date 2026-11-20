@@ -34,6 +34,10 @@
     "status": "strict_component_observation_candidate",
     "evidence": "docs/serving-readback-integrity-evidence.json"
   },
+  "serving_claimed_reconciliation": {
+    "status": "local_component_dispatch_and_rejection_fence",
+    "evidence": "docs/serving-claimed-reconciliation-evidence.json"
+  },
   "dspy_result_identity": "source_component_candidate",
   "dspy_result_identity_evidence": "docs/dspy-result-identity-evidence.json",
   "budget_settlement_ownership": {

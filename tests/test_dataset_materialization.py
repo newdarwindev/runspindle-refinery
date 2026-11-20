@@ -15,6 +15,8 @@ from unittest.mock import patch
 from refinery import dataset_contract as c
 from refinery.dataset_materialization import DatasetRegistry, prepare
 from refinery.evaluation import Halt
+from refinery.feedback_collection import collect
+from refinery.feedback_projection import RetainedSource
 
 
 class MaterializationTests(unittest.TestCase):
@@ -206,6 +208,86 @@ class MaterializationTests(unittest.TestCase):
             self.add()
         self.assertEqual(
             self.registry.db.execute("SELECT COUNT(*) FROM items").fetchone(), (0,)
+        )
+
+    def co_selected_feedback(self) -> tuple[RetainedSource, Any]:
+        original = self.h.h
+        other: Any = importlib.import_module(
+            "test_thumbs_up_collection"
+        ).ReactionCollectionTests()
+        other.actor_id = "USECOND"
+        other.event_prefix = "EvSecond"
+        other.feedback_path = original.root / "feedback.sqlite"
+        other.setUp()
+        self.addCleanup(other.doCleanups)
+        selected = other.select()
+        self.assertEqual(original.target, other.target)
+        self.assertEqual(original.material, other.material)
+        snapshot = collect(
+            original.store,
+            original.dep,
+            original.app.store,
+            (self.source.selection, selected),
+            (),
+            seed="two-actors",
+            collection_ref="collection",
+            training_ref="training",
+            resolve_material=lambda _: original.material,
+            verify_material=self.source.use.verify_material,
+            approve_collection=lambda *_: True,
+            approve_training=lambda *_: True,
+        )
+        return replace(self.source, snapshot=snapshot), other
+
+    def revoke_co_selected_at_final_observation(
+        self, source: RetainedSource, other: Any
+    ) -> RetainedSource:
+        calls = 0
+
+        def authorize(key: str, destination: str) -> dict[str, Any]:
+            nonlocal calls
+            calls += 1
+            # Each prepare observes policy twice. Invalidate on the last read.
+            if calls == 4:
+                raw = other.reaction(True)
+                other.app.react(raw, other.headers(raw))
+            return source.authorize_projection(key, destination)
+
+        return replace(source, authorize_projection=authorize)
+
+    def assert_co_selected_removal(self, other: Any) -> None:
+        original = self.h.h
+        self.assertEqual(
+            original.app.store.evidence(original.app.namespace, original.feedback_id)[
+                "state"
+            ],
+            "active",
+        )
+        self.assertEqual(
+            other.app.store.evidence(other.app.namespace, other.feedback_id)["state"],
+            "invalidated",
+        )
+
+    def test_co_selected_removal_during_final_observation_rolls_back_content(
+        self,
+    ) -> None:
+        source, other = self.co_selected_feedback()
+        with self.assertRaisesRegex(ValueError, "batch feedback changed"):
+            self.add(self.revoke_co_selected_at_final_observation(source, other))
+        self.assert_co_selected_removal(other)
+        self.assertEqual(
+            self.registry.db.execute("SELECT COUNT(*) FROM items").fetchone(), (0,)
+        )
+
+    def test_co_selected_removal_during_final_observation_denies_read(self) -> None:
+        source, other = self.co_selected_feedback()
+        item = self.add(source)
+        self.source = self.revoke_co_selected_at_final_observation(source, other)
+        with self.assertRaisesRegex(ValueError, "batch feedback changed"):
+            self.read(item)
+        self.assert_co_selected_removal(other)
+        self.assertEqual(
+            self.registry.db.execute("SELECT COUNT(*) FROM items").fetchone(), (1,)
         )
 
     def test_permanent_local_withdrawal_does_not_claim_bytes_erased(self) -> None:

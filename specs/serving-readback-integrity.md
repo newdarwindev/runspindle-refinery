@@ -29,6 +29,14 @@ stores, not hostile-storage isolation. No transaction spans registry and loader.
 Historical reconciliation remains separate from authorization to load. It does
 not reauthorize or redispatch an unknown activation, including after restart and
 revocation. Existing fresh dispatch checks and rollback admission remain intact.
+An unclaimed `intent` remains pending and returns `intent` without reading the
+adapter. Matching bytes observed independently through `observe` cannot advance
+that intent. After the durable dispatch claim, `reconcile` may confirm exact
+loaded bytes. Only a literal `False` from the actual `load` call can release its
+reservation on exact unchanged-predecessor readback. If that rejection is lost
+before settlement, the retained operation stays unknown and is eligible for
+readback only. The public `rejected=False` keyword remains accepted, and passing
+a rejection from the caller raises a fixed error.
 The adapter is still trusted to read the requested environment; a correctly shaped
 lie about another target is not authenticated by this check. Production account,
 target identity, issuer and storage qualification remain open. There is no new

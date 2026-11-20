@@ -1,6 +1,7 @@
 """Bounded reported diagnostics are hints, never verified causes or status."""
 
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -115,6 +116,58 @@ class FailureDiagnosticTests(unittest.TestCase):
                     )
                 else:
                     self.assertNotIn("reported_diagnostic", entry)
+
+    def test_unittest_report_requires_a_committed_case_and_omits_details(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "tests").mkdir()
+            (root / "tests/test_runtime_probe.py").write_text(
+                "import unittest\n"
+                "class Probe(unittest.TestCase):\n"
+                "    def test_declared(self):\n"
+                "        with self.subTest(message='PRIVATE_CANARY'):\n"
+                "            self.fail('PRIVATE_CANARY')\n"
+            )
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            subprocess.run(["git", "add", "tests"], cwd=root, check=True)
+            subprocess.run(
+                [
+                    "git",
+                    "-c",
+                    "user.name=Fixture",
+                    "-c",
+                    "user.email=fixture@example.invalid",
+                    "commit",
+                    "-qm",
+                    "fixture",
+                ],
+                cwd=root,
+                check=True,
+            )
+            receipt = hygiene.run_entry(
+                root,
+                {
+                    "id": "python-tests",
+                    "command": [
+                        "python3",
+                        "-m",
+                        "unittest",
+                        "discover",
+                        "-s",
+                        "tests",
+                    ],
+                },
+            )
+            known = "test_runtime_probe.Probe.test_declared"
+            self.assertEqual(receipt["reported_unittest_cases"], [known])
+            self.assertEqual(receipt["exit_code"], 1)
+            receipt["reported_unittest_cases"].append(
+                "test_runtime_probe.Probe.test_PRIVATE"
+            )
+            output = hygiene.failure_summary({"checks": [receipt]}, root=root)
+            self.assertIn("reported_tests=" + known + " (unverified)", output[0])
+            self.assertNotIn("PRIVATE", output[0])
+            self.assertNotIn(directory, output[0])
 
     def test_renderer_rejects_tampered_report_fields(self) -> None:
         for diagnostic in (

@@ -92,9 +92,21 @@ class ServingAdapter(Protocol):
     def readback(self, environment: str) -> Any: ...
 
 
+def _unique_program_fields(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate program field")
+        result[key] = value
+    return result
+
+
 def program(content: bytes) -> Any:
     _bytes(content)
-    value = json.loads(content)
+    try:
+        value = json.loads(content, object_pairs_hook=_unique_program_fields)
+    except (ValueError, RecursionError):
+        value = None
     if (
         type(value) is not dict
         or set(value) != {"format", "responses"}
@@ -529,6 +541,7 @@ class Registry:
             or digest(candidate["content"]) != candidate["candidate_sha256"]
         ):
             raise ValueError("candidate identity changed")
+        program(candidate["content"])
         if (
             approval.candidate_sha256,
             approval.evaluation_sha256,
@@ -650,6 +663,7 @@ class Registry:
             else None
         )
         expected_actor = approval.actor
+        program(candidate["content"])
         try:
             actor = self.verify_approval(approval) if self.verify_approval else None
         except Exception:
@@ -736,6 +750,7 @@ class Registry:
         candidate_bytes = pack(candidate)
         if digest(candidate_bytes) != key:
             raise ValueError("candidate identity changed")
+        program(candidate["content"])
         expected = {
             "activation_id": activation_id,
             "generation": generation,

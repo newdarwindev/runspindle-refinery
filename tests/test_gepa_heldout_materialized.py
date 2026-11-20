@@ -10,8 +10,9 @@ from unittest.mock import patch
 from refinery import evaluation as ev
 from refinery import gepa_optimizer as gepa
 from refinery.durable_dspy import Session
+from refinery.lineage import digest
 from refinery.optimization import validate_dataset
-from refinery.storage import VERSION
+from refinery.storage import VERSION, pack
 
 
 class MaterializedHeldoutTests(unittest.TestCase):
@@ -72,6 +73,19 @@ class MaterializedHeldoutTests(unittest.TestCase):
             ),
         ):
             self.assertEqual(resumed.evaluate(), report)
+            measured = resumed.measured_materialized_heldout()
+        batch = self.batches[1]
+        self.assertEqual(
+            measured["version"], "runspindle.gepa-materialized-measurement.v1"
+        )
+        self.assertEqual(measured["heldout_manifest_sha256"], digest(batch.manifest))
+        self.assertEqual(len(self.heldout), 1)
+        output = self.heldout[0].output
+        case = digest(pack((output.output_id, output.revision)))
+        self.assertEqual(
+            measured["cases"], [{"case": case, "item_id": batch.selections[0].item_id}]
+        )
+        self.assertEqual(measured["measurement"]["rows"]["candidate"][0]["case"], case)
         self.assertEqual(resumed.provider.calls, [])
         self.assertEqual(len(self.s.provider.calls), 3 + 2 * len(self.heldout))
         # No generic cohort-owner override is introduced for either split.
@@ -94,6 +108,8 @@ class MaterializedHeldoutTests(unittest.TestCase):
         )
         with self.assertRaises((ValueError, ev.Halt)):
             resumed.evaluate()
+        with self.assertRaises((ValueError, ev.Halt)):
+            resumed.measured_materialized_heldout()
         self.assertEqual(resumed.provider.calls, [])
         self.assertEqual(
             tuple(self.source.store.db.execute("SELECT * FROM budgets")), before

@@ -23,6 +23,7 @@ from .optimization import validate_dataset
 from .storage import Store, pack, unpack, version
 
 LIFECYCLE = "refinery.dspy.lifecycle.v1"
+MaterializedEvaluation = tuple[str, tuple[tuple[str, str], ...]]
 
 # Component-owned routing, not a resettable Session attribute. Weak values avoid
 # retaining a Session through a test/authority callback that closes over it.
@@ -194,13 +195,13 @@ class Session:
 
     def make_use_guard(
         self, store: Store, snapshot: str, **kwargs: Any
-    ) -> Callable[[], None]:
+    ) -> Callable[[], MaterializedEvaluation | None]:
         if not self.batches():
             return use_guard(store, snapshot, **kwargs)
         purpose = kwargs["purpose"]
         phase = "optimization" if purpose == "reflection" else purpose
 
-        def check() -> None:
+        def check() -> MaterializedEvaluation | None:
             matches = [b for b in self.batches() if b.purpose == phase]
             if len(matches) != 1:
                 raise ev.Halt("materialized_phase_batch_required")
@@ -211,7 +212,7 @@ class Session:
                 else validate_dataset(self.dataset, self.split)[1]
             )
             with batch.scope() as (registry, retained_use, selections):
-                batch.check(
+                matched = batch.check(
                     registry,
                     selections,
                     purpose=purpose,
@@ -220,6 +221,20 @@ class Session:
                 use_guard(store, snapshot, **dict(kwargs, retained_use=retained_use))()
                 batch.fence(registry, selections)
                 self.batches()
+            if phase != "evaluation":
+                return None
+            cases = tuple(
+                sorted(
+                    (
+                        gepa_measurements.case_digest(
+                            example.output.output_id, example.output.revision
+                        ),
+                        item,
+                    )
+                    for item, example in matched
+                )
+            )
+            return digest(batch.manifest), cases
 
         return check
 
@@ -291,6 +306,9 @@ class Session:
         return tuple(self.provider.calls)
 
     def guard(self, purpose: str) -> None:
+        self._guard(purpose)
+
+    def _guard(self, purpose: str) -> MaterializedEvaluation | None:
         seal = Session.strategy_binding(self)
         if seal != self._strategy_seal:
             raise ev.Halt("lifecycle_strategy_changed")
@@ -307,9 +325,10 @@ class Session:
         )
         guards = self.guards
         callbacks = tuple(guards[p] for p in purposes)
+        materialized = None
         for callback in callbacks:
             Session.verify_authority_routes(self)
-            callback()
+            materialized = callback()
             if Session.strategy_binding(self) != seal or self._strategy_seal != seal:
                 raise ev.Halt("lifecycle_strategy_changed")
             if Session.verify_authority_routes(self) is not authority_routes:
@@ -370,6 +389,7 @@ class Session:
                 configuration_sha256=self.config,
                 candidate_sha256=str(compiled.candidate_sha256),
             )
+        return materialized
 
     def row(self, tx: Any) -> Any:
         row = tx.execute(
@@ -1032,7 +1052,9 @@ class Session:
             ):
                 raise ValueError("incomplete heldout result")
 
-    def _read_evaluated(self, tx: Any) -> tuple[dict[str, Any], str] | None:
+    def _read_evaluated(
+        self, tx: Any, *, include_materialized: bool = False
+    ) -> tuple[dict[str, Any], str, MaterializedEvaluation | None] | None:
         row = self.row(tx)
         if row is None or row[1] in {"compiling", "evaluating"}:
             raise ev.Halt("interrupted_or_owned_dspy_phase")
@@ -1042,7 +1064,11 @@ class Session:
             return None
         if row[1] != "complete":
             raise ValueError("invalid DSPy lifecycle state")
-        self.guard("evaluation")
+        materialized = None
+        if include_materialized:
+            materialized = self._guard("evaluation")
+        else:
+            self.guard("evaluation")
         compiled, _ = self.compiled()
         value = self.store.get(Session.evaluated_kind(self), self.key)
         encode: Any = pack
@@ -1057,7 +1083,7 @@ class Session:
         self.verify_evaluated(value["report"], compiled)
         if self.row(tx) != row:
             raise ev.Halt("lifecycle_claim_changed")
-        return value["report"], row[2]
+        return value["report"], row[2], materialized
 
     def recover_evaluated(self) -> dict[str, Any] | None:
         with self.store.transaction() as tx:
@@ -1066,15 +1092,35 @@ class Session:
 
     def measured_heldout(self) -> dict[str, Any]:
         """Project exact retained GEPA attempt usage without starting evaluation."""
+        return self._read_measurement()[0]
+
+    def measured_materialized_heldout(self) -> dict[str, Any]:
+        """Bind verified measured cases to their exact authorized materialized items."""
+        measurement, materialized = self._read_measurement(include_materialized=True)
+        if materialized is None:
+            raise ValueError("authorized materialized evaluation batch required")
+        manifest, cases = materialized
+        return {
+            "version": "runspindle.gepa-materialized-measurement.v1",
+            "measurement": measurement,
+            "heldout_manifest_sha256": manifest,
+            "cases": [{"case": case, "item_id": item} for case, item in cases],
+        }
+
+    def _read_measurement(
+        self, *, include_materialized: bool = False
+    ) -> tuple[dict[str, Any], MaterializedEvaluation | None]:
         if Session.evaluated_kind(self) != "gepa_evaluated":
             raise ValueError("exact durable GEPA session required")
         with self.store.transaction() as tx:
-            verified = self._read_evaluated(tx)
+            verified = self._read_evaluated(
+                tx, include_materialized=include_materialized
+            )
             if verified is None or verified[0]["status"] != "evaluated":
                 raise ValueError("completed GEPA heldout measurement required")
-            report, report_sha = verified
+            report, report_sha, materialized = verified
             heldout = validate_dataset(self.dataset, self.split)[1]
-            return {
+            measurement = {
                 "version": "runspindle.gepa-heldout-measurement.v1",
                 "evidence_class": "offline_scripted_provider",
                 "quality": report["quality"],
@@ -1089,6 +1135,7 @@ class Session:
                     heldout, report["attempts"], report["predictions"]
                 ),
             }
+            return measurement, materialized
 
     def claim_evaluation(self) -> opt.Compiled | evidence.GEPACompiled:
         self.guard("evaluation")

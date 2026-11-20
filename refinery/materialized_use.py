@@ -15,6 +15,7 @@ from .dataset_batch import Selection, source_fence
 from .dataset_materialization import Authority, DatasetRegistry, authorize
 from .feedback_projection import RetainedSource
 from .feedback_use import RetainedFeedbackUse
+from .lineage import Example
 from .readonly_view import ReadView
 
 
@@ -150,11 +151,12 @@ class BoundBatch:
         selections: tuple[Selection, ...],
         *,
         purpose: str,
-        expected_examples: tuple[Any, ...],
-    ) -> None:
+        expected_examples: tuple[Example, ...],
+    ) -> tuple[tuple[str, Example], ...]:
         rows = []
         matched = []
-        for selection in sorted(selections, key=lambda s: s.item_id):
+        ordered = sorted(selections, key=lambda s: s.item_id)
+        for selection in ordered:
             item = registry._bound_item(selection.item_id, selection.source)
             expected_split = "heldout" if self.purpose == "evaluation" else "train"
             if item.descriptor["split"] != expected_split:
@@ -213,6 +215,10 @@ class BoundBatch:
         )
         if actual != self.manifest:
             raise ValueError("materialized batch binding changed")
+        return tuple(
+            (selection.item_id, example)
+            for selection, example in zip(ordered, matched, strict=True)
+        )
 
     def fence(
         self, registry: DatasetRegistry, selections: tuple[Selection, ...]

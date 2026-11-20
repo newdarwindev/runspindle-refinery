@@ -348,6 +348,66 @@ class DatasetRegistry:
         self.available(item_id)
         return json.loads(item.input_bytes), item.output_bytes
 
+    def export_read(
+        self,
+        item_id: str,
+        source: RetainedSource,
+        *,
+        destination: dict[str, Any],
+        approve: Authority,
+        permission_ref: str,
+    ) -> tuple[dict[str, Any], Any, bytes]:
+        """Exact transient content export; remote authority never authorizes use."""
+        from .dataset_batch import Selection, source_fence
+        from .dataset_export import Destination
+
+        if type(destination) is not dict or set(destination) != {
+            "origin",
+            "project_id",
+            "dataset_id",
+            "dataset_name",
+            "split",
+            "status",
+        }:
+            raise ValueError("exact export destination required")
+        expected_destination = Destination(
+            **{k: v for k, v in destination.items() if k != "status"}
+        ).value()
+        if destination != expected_destination:
+            raise ValueError("exact export destination required")
+        item = self._bound_item(item_id, source)
+        encoded_destination = c.canonical(destination)
+        if (
+            type(destination) is not dict
+            or destination.get("split") != item.descriptor["split"]
+        ):
+            raise ValueError("export destination crosses split")
+        if type(permission_ref) is not str or not re.fullmatch(
+            r"[A-Za-z0-9_.:-]{1,128}", permission_ref
+        ):
+            raise ValueError("explicit export permission reference required")
+        request = dict(item=item.descriptor, destination=destination)
+        encoded = c.canonical(request)
+
+        def authorize_now() -> None:
+            if (
+                approve(json.loads(encoded), "dataset_export", permission_ref)
+                is not True
+            ):
+                raise ValueError("dataset content export denied")
+            if c.canonical(destination) != encoded_destination:
+                raise ValueError("export destination changed")
+
+        authorize_now()
+        verify_use(source, item, "dataset_export")
+        if self._bound_item(item_id, source) != item:
+            raise ValueError("export source changed")
+        authorize_now()
+        source_fence(Selection(item_id, source))
+        cohort_check(source, item, "dataset_export")
+        self.available(item_id)
+        return dict(item.descriptor), json.loads(item.input_bytes), item.output_bytes
+
     def withdraw(
         self, item_id: str, *, approve: Authority, permission_ref: str
     ) -> None:

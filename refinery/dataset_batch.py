@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from . import dataset_contract as c
-from .dataset_materialization import Authority, DatasetRegistry
+from .dataset_materialization import Authority, DatasetRegistry, retained_source_fence
 from .feedback_projection import RetainedSource
 
 
@@ -19,23 +19,7 @@ class Selection:
 
 
 def source_fence(selection: Selection) -> None:
-    """Callback-free retained feedback/source fence, never positive permission."""
-    source = selection.source
-    value = source.store.get("lineage", source.snapshot)
-    receipt = source.store.get("feedback_collection", value["collection_evidence"])
-    canonical = source.use.dependency.modules["tether.admission"].canonical
-    for row in receipt["selected"]:
-        selected = row["selection"]
-        evidence = source.use.tether_store.evidence(
-            selected["namespace"], selected["feedback_id"]
-        )
-        if c.digest(canonical(evidence)) != row["evidence_sha256"]:
-            raise ValueError("batch feedback changed")
-        if receipt["version"] == "retained_feedback_collection.v2":
-            guard = source.use.source_guard
-            observed = row["source_observation"]
-            if guard is None or guard.reread(observed) != observed:
-                raise ValueError("batch source changed")
+    retained_source_fence(selection.source)
 
 
 def final_fence(registry: DatasetRegistry, selection: Selection, purpose: str) -> None:

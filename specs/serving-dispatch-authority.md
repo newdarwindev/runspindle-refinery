@@ -19,6 +19,12 @@ environment ownership. A verifier that mutates its argument or another registry
 binding cannot authorize dispatch under the old decision. Callback exceptions
 produce a fixed denial; cancellation propagates.
 
+Each dispatch also binds the registry store handle and approval verifier by
+identity. A verifier that replaces either during its callback cannot authorize
+the load, even when another handle reads the same SQLite records. The durable
+claim and the check after the before-load checkpoint use the same pair. A swap
+after the claim leaves the pending activation unknown.
+
 A denial before the durable claim makes no registry or adapter write. A denial or
 cancellation after the claim leaves the existing unknown outcome and reservation;
 restoring approval does not automatically retry an uncertain load. An acknowledgment

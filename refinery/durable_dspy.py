@@ -11,7 +11,7 @@ from weakref import ReferenceType, WeakKeyDictionary, ref
 
 from . import dspy_optimizer as opt
 from . import evaluation as ev
-from . import gepa_codec
+from . import gepa_codec, gepa_measurements
 from . import gepa_evidence as evidence
 from . import gepa_optimizer as gepa
 from . import heldout_policy as policy
@@ -1032,33 +1032,63 @@ class Session:
             ):
                 raise ValueError("incomplete heldout result")
 
+    def _read_evaluated(self, tx: Any) -> tuple[dict[str, Any], str] | None:
+        row = self.row(tx)
+        if row is None or row[1] in {"compiling", "evaluating"}:
+            raise ev.Halt("interrupted_or_owned_dspy_phase")
+        if row[1] == "compile_blocked":
+            raise ev.Halt("DSPy_compilation_blocked")
+        if row[1] == "compiled":
+            return None
+        if row[1] != "complete":
+            raise ValueError("invalid DSPy lifecycle state")
+        self.guard("evaluation")
+        compiled, _ = self.compiled()
+        value = self.store.get(Session.evaluated_kind(self), self.key)
+        encode: Any = pack
+        if (
+            type(value) is not dict
+            or set(value) != {"version", "binding_sha256", "report"}
+            or value["version"] != self.lifecycle
+            or value["binding_sha256"] != self.binding_sha256
+            or digest(encode(value)) != row[2]
+        ):
+            raise ValueError("heldout result association changed")
+        self.verify_evaluated(value["report"], compiled)
+        if self.row(tx) != row:
+            raise ev.Halt("lifecycle_claim_changed")
+        return value["report"], row[2]
+
     def recover_evaluated(self) -> dict[str, Any] | None:
         with self.store.transaction() as tx:
-            row = self.row(tx)
-            if row is None or row[1] in {"compiling", "evaluating"}:
-                raise ev.Halt("interrupted_or_owned_dspy_phase")
-            if row[1] == "compile_blocked":
-                raise ev.Halt("DSPy_compilation_blocked")
-            if row[1] == "compiled":
-                return None
-            if row[1] != "complete":
-                raise ValueError("invalid DSPy lifecycle state")
-            self.guard("evaluation")
-            compiled, _ = self.compiled()
-            value = self.store.get(Session.evaluated_kind(self), self.key)
-            encode: Any = pack
-            if (
-                type(value) is not dict
-                or set(value) != {"version", "binding_sha256", "report"}
-                or value["version"] != self.lifecycle
-                or value["binding_sha256"] != self.binding_sha256
-                or digest(encode(value)) != row[2]
-            ):
-                raise ValueError("heldout result association changed")
-            self.verify_evaluated(value["report"], compiled)
-            if self.row(tx) != row:
-                raise ev.Halt("lifecycle_claim_changed")
-            return value["report"]  # type: ignore[no-any-return]
+            verified = self._read_evaluated(tx)
+            return None if verified is None else verified[0]
+
+    def measured_heldout(self) -> dict[str, Any]:
+        """Project exact retained GEPA attempt usage without starting evaluation."""
+        if Session.evaluated_kind(self) != "gepa_evaluated":
+            raise ValueError("exact durable GEPA session required")
+        with self.store.transaction() as tx:
+            verified = self._read_evaluated(tx)
+            if verified is None or verified[0]["status"] != "evaluated":
+                raise ValueError("completed GEPA heldout measurement required")
+            report, report_sha = verified
+            heldout = validate_dataset(self.dataset, self.split)[1]
+            return {
+                "version": "runspindle.gepa-heldout-measurement.v1",
+                "evidence_class": "offline_scripted_provider",
+                "quality": report["quality"],
+                "promotion": report["promotion"],
+                "binding_sha256": self.binding_sha256,
+                "configuration_sha256": self.config,
+                "split_sha256": self.split.sha256,
+                "report_sha256": report_sha,
+                "baseline_sha256": gepa_codec.baseline_artifact(),
+                "candidate_sha256": report["candidate_sha256"],
+                "rows": gepa_measurements.paired_rows(
+                    heldout, report["attempts"], report["predictions"]
+                ),
+            }
 
     def claim_evaluation(self) -> opt.Compiled | evidence.GEPACompiled:
         self.guard("evaluation")

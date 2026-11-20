@@ -78,3 +78,25 @@ physical owner hashes to fabricate equality. Per-child limits and aggregate
 cleanup must be independently reviewed within the existing 120-second container
 bound; no timing sufficiency claim is made here. Actual source/input/effect and
 cleanup receipts, including truthful failures, are required before qualification.
+
+## Read verified held-out measurements
+
+Call `Session.measured_heldout()` on the existing GEPA owner to read a completed
+report. The read verifies current evaluation access, the durable report digest,
+the exact candidate and fixed baseline, the sealed cohort, and its original
+ordered attempt receipts. It uses the same verification path as completed
+evaluation recovery. A compiled or blocked run cannot supply measurements.
+
+The `runspindle.gepa-heldout-measurement.v1` document binds the report to its owner,
+configuration, split, baseline and candidate by digest. The `rows` object contains
+paired `baseline` and `candidate` arrays sorted by opaque case identity. Each case
+identity is SHA-256 of the existing storage codec's output-ID/revision tuple.
+Each row records correctness against the retained held-out gold digest and the
+sum of settled `tokens` and `cost_micros` for that case and stage. Compilation and
+reflection charges stay in the durable run ledger. The document discloses no
+prediction text, gold text, or original output identifiers.
+
+The source is currently the offline scripted provider. Its exact-match metric
+and metered fixture charges remain synthetic. The read starts no model dispatch
+or optimizer and grants no promotion authority. A consumer still needs an exact
+case-to-cohort mapping and its independent quality, regression and cost gates.

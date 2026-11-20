@@ -29,6 +29,12 @@ MUTATIONS = {
         "budget = Budget(self.limits, clock_ms=self.clock_ms); budget._owners = {}",
         "test_durable.DurableTests.test_multi_connection_budget_concurrency_and_no_reset",
     ),
+    "digest_only_predecessor": (
+        "serving.py",
+        "if not _predecessor_matches(old, predecessor) or (",
+        'if (old[2] if old else None) != (predecessor["candidate_sha256"] if type(predecessor) is dict else predecessor) or (',
+        "test_serving_dispatch_authority.DispatchAuthorityTests.test_replacement_cannot_overwrite_same_bytes_from_another_activation",
+    ),
     "approval_bypass": (
         "serving.py",
         "if (\n"

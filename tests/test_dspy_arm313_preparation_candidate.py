@@ -95,6 +95,8 @@ class Arm313CandidateTests(unittest.TestCase):
             prep.compare_preparations(self.root / "a", self.root / "b")
 
     def test_only_mode_difference_rejects(self) -> None:
+        # Fix the control mode so 0600 remains a mutation under a restrictive umask.
+        (self.root / "a/dspy-3.1.0.dist-info/LICENSE").chmod(0o644)
         path = self.root / "b/dspy-3.1.0.dist-info/LICENSE"
         path.chmod(0o600)
         with self.assertRaisesRegex(ValueError, "differ"):

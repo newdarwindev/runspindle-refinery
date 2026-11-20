@@ -65,6 +65,14 @@ and metered fixture charges remain synthetic. The read starts no model dispatch
 or optimizer and grants no promotion authority. A consumer still needs an exact
 case-to-cohort mapping and its independent quality, regression and cost gates.
 
+For a materialized run, `Session.measured_materialized_heldout()` wraps the same
+measurement with the verified held-out manifest digest and a one-to-one mapping
+from opaque case digest to shared materialized item ID. The original owner
+derives that mapping during the fresh evaluation grant and batch fence; no caller
+supplies the association. The wrapper requires an authorized materialized
+evaluation batch, and withdrawal blocks the whole read. It exposes opaque
+identities and adds no training read after the held-out seal.
+
 
 ## Adversarial component coverage
 

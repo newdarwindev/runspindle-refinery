@@ -713,17 +713,31 @@ class Registry:
             # A thrown exception may follow an actual load: keep unknown until readback.
             accepted = None
         checkpoint("after_candidate_load")
-        return self.reconcile(
+        return self._reconcile(
             api_version, activation_id, adapter, rejected=accepted is False
         )
 
     def reconcile(
         self, api_version, activation_id, adapter: ServingAdapter, *, rejected=False
     ):
-        version(api_version)
+        if rejected is not False:
+            raise ValueError("only the dispatching load may report a rejection")
+        return self._reconcile(api_version, activation_id, adapter, rejected=False)
+
+    def _reconcile(
+        self,
+        api_version: str,
+        activation_id: str,
+        adapter: ServingAdapter,
+        *,
+        rejected: bool,
+    ) -> str:
+        cast(Callable[[str], None], version)(api_version)
         environment, generation, key, predecessor, state = self._intent(activation_id)
         if state in {"active", "failed"}:
-            return state
+            return cast(str, state)
+        if state not in {"intent", "unknown"}:
+            raise ValueError("invalid activation lifecycle state")
         intent = (environment, generation, key, predecessor, state)
         ownership = {
             "generation": generation,
@@ -732,6 +746,10 @@ class Registry:
         }
         if self.state(environment) != ownership:
             raise ValueError("activation ownership conflict")
+        # An approval intent is not a dispatch. Readback before the durable
+        # claim must not adopt bytes or release the still-unused reservation.
+        if state == "intent":
+            return "intent"
         candidate = self.store.get("candidate", key)
         candidate_bytes = pack(candidate)
         if digest(candidate_bytes) != key:

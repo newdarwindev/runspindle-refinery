@@ -117,6 +117,8 @@ class RuntimeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "package").mkdir()
+            # Make the baseline distinct from the 0700 mutation under any umask.
+            (root / "package").chmod(0o755)
             (root / "package" / "module.py").write_bytes(b"source")
             expected = runtime.snapshot(root)
             with patch.object(runtime, "reviewed", return_value=({}, expected)):

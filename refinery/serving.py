@@ -244,8 +244,10 @@ class LocalServing:
                 generation=predecessor["generation"],
                 candidate_sha256=predecessor["candidate_sha256"],
             )
-        elif predecessor is not None:
+        elif type(predecessor) is str:
             _hash(predecessor)
+        elif predecessor is not None:
+            raise ValueError("invalid serving predecessor")
         with self._transaction():
             self.db.execute(
                 "INSERT INTO calls(action,activation,digest) VALUES('load',?,?)",

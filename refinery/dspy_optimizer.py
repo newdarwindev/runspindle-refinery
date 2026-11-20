@@ -196,8 +196,9 @@ class Dispatch:
         """Shared settlement only; framing and request admission belong to callers."""
         self.guard()
         ticket = self.reserve(request)
+        message_sha256 = digest(canonical(messages))
         self.guard()
-        self.messages.append(digest(canonical(messages)))
+        self.messages.append(message_sha256)
         try:
             reply = self.provider.complete(request)
             self.expected_calls += (request,)

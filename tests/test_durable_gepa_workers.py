@@ -5,15 +5,19 @@ from __future__ import annotations
 import importlib
 import threading
 import unittest
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import patch
 
+from refinery import dspy_optimizer as opt
 from refinery import evaluation as ev
 from refinery import gepa_codec as codec
 from refinery import gepa_optimizer as gepa
 from refinery.dspy_optimizer import case
+from refinery.durable_evaluation import SQLiteBudget
 from refinery.gepa_evidence import GEPACompiled
 from refinery.lineage import digest
 
@@ -208,6 +212,73 @@ class DurableWorkerTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ev.Halt, "interrupted_or_owned"):
             self.f.make().compile()
+
+    def assert_halt_during_message_fingerprinting(
+        self, reason: str, interrupt: Callable[[Any], None]
+    ) -> None:
+        session = self.f.session
+        session.claim_compile()
+        dispatch = self.dispatch(session)
+        messages = [{"role": "user", "content": "synthetic framework input"}]
+        original = opt.canonical
+
+        def fingerprint(value: Any) -> bytes:
+            result = original(value)
+            if value is messages:
+                self.assertEqual(dispatch.budget.snapshot()["unresolved_calls"], 1)
+                interrupt(session)
+            return result
+
+        with (
+            patch.object(opt, "canonical", side_effect=fingerprint),
+            self.assertRaisesRegex(ev.Halt, reason),
+        ):
+            self.worker_call(
+                dispatch,
+                lambda: dispatch.invoke_sealed(
+                    lambda **_: dispatch.forward(messages),
+                    "optimization",
+                    codec.INITIAL,
+                    case(self.f.example),
+                ),
+            )
+
+        self.assertEqual(session.provider.calls, [])
+        self.assertEqual(dispatch.messages, [])
+        retained = self.f.make().budget().snapshot()
+        self.assertEqual(
+            (retained["calls"], retained["unresolved_calls"], retained["reason"]),
+            (1, 1, reason),
+        )
+        self.assertEqual(
+            self.f.store.db.execute("SELECT outcome,receipt FROM attempts").fetchall(),
+            [("unknown", None)],
+        )
+        self.assertEqual(
+            self.f.store.db.execute(
+                "SELECT identity FROM objects WHERE kind='gepa_request_witness'"
+            ).fetchall(),
+            [(f"{session.key}:1",)],
+        )
+
+    def test_worker_message_fingerprinting_rechecks_cancellation(self) -> None:
+        def cancel(session: Any) -> None:
+            with closing(storage.Store(session.store.path)) as controller:
+                SQLiteBudget(
+                    controller,
+                    session.budget_id,
+                    session.limits,
+                    clock_ms=session.provider.clock,
+                    experiment=session.key,
+                ).cancel()
+
+        self.assert_halt_during_message_fingerprinting("cancelled", cancel)
+
+    def test_worker_message_fingerprinting_rechecks_deadline(self) -> None:
+        self.assert_halt_during_message_fingerprinting(
+            "time_exhausted",
+            lambda session: session.provider.clock.advance(session.limits.time_ms),
+        )
 
     def test_witness_failure_rolls_back_worker_reservation(self) -> None:
         s = self.f.session

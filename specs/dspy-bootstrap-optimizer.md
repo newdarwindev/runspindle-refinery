@@ -28,6 +28,12 @@ callback effects halt without retroactively crediting them as budgeted calls;
 recursive transport calls are rejected. Compilation requires a pristine cursor. Optimizer success is checked again
 against cancellation and unsettled usage before a candidate can be returned.
 
+The shared DSPy dispatch fingerprints framework messages after reservation,
+then performs its final use and budget check before invoking the provider.
+Cancellation or deadline expiry during fingerprinting leaves the reservation
+and any durable GEPA request witness intact. The worker makes no provider call
+and records no dispatched message digest.
+
 The candidate is canonical JSON with training-only demonstrations, dataset/split,
 configuration, dependency-manifest digest (through configuration), fixed signature,
 and framework version. It is not pickle, executable code or a serving artifact.

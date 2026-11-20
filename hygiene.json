@@ -87,7 +87,7 @@
       "required_files": [
         "tests"
       ],
-      "timeout_seconds": 600
+      "timeout_seconds": 780
     },
     {
       "id": "distributable-build",

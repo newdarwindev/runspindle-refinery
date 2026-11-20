@@ -1,8 +1,10 @@
 # Materialized batches bound to durable optimizer ownership
 
-Opt-in component refactor, not yet actual framework qualification. Existing
-legacy Session ownership bytes are unchanged when no materialized batches are
-supplied. No runtime or historical evidence is removed.
+Opt-in component refactor. Existing legacy Session ownership bytes are unchanged
+when no materialized batches are supplied. No runtime or historical evidence is
+removed. The separately source-bound [materialized compile/recovery harness](materialized-gepa-qualification.md)
+and [heldout harness](gepa-heldout-qualification.md) define native verification;
+component tests alone do not establish that a particular source tree ran.
 
 `Session(materialized_batches=(AuthorizedBatch(...), ...))` binds the exact
 canonical batch manifest hash, explicit phase and opaque permission-reference hash
@@ -21,8 +23,9 @@ train manifest; evaluation requires a separate evaluation manifest. Missing
 heldout materialization does not fall back to unrestricted lineage. The selected
 items must cover exactly the phase's actual examples, including original feedback
 attribution, input/output bytes, family and split. Both manifests must bind the
-same actual Store, lineage snapshot and original retained-use authority. GEPA's
-existing compile-only restriction remains; this does not add GEPA heldout support.
+same actual Store, lineage snapshot and original retained-use authority. The
+[later GEPA heldout extension](gepa-heldout.md) evaluates the locked instruction
+with the same owner and budget; it does not reopen training after sealing.
 
 The local materialization registry supplies the shared exact-byte mapping. Its
 current item/purpose permission callback runs for each use. Existing Session
@@ -52,7 +55,8 @@ Tests include real signed synthetic lineage and SQLite claims/dispatch receipts,
 fresh Session and fresh-process checkpoint recovery, withdrawal, manifest substitution, generic-read denial
 after enrollment, actual worker threads, private sidecar refusal, replaced files
 and handle cleanup. Such fixture dispatch tests are not a claim that DSPy ran.
-Actual pinned framework and fresh-process qualification remain a separate gate.
+Actual pinned framework and fresh-process qualification remain source-bound
+separate evidence, not an inference from these component tests.
 
 The regression suite also uses two independently signed targets retained in one
 actual Tether store and a locked mixed-family snapshot: exact evaluation batch

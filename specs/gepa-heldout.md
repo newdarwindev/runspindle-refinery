@@ -1,10 +1,11 @@
 # GEPA locked heldout extension
 
-This is an implemented component extension requiring independent review and
-actual-framework qualification. The tests use real SQLite, original component
-Dispatch and immutable hand-built compile/evaluation receipts. They are not DSPy
-or GEPA execution receipts. Existing native materialized compilation evidence is
-preserved and does not automatically qualify this new evaluation path.
+This implemented component extension has separate component and native
+qualification boundaries. Component tests use real SQLite, original component
+Dispatch and immutable hand-built compile/evaluation receipts; they are not DSPy
+or GEPA execution receipts. The [reviewed heldout harness](gepa-heldout-qualification.md)
+adds actual-framework observation without treating earlier compile-only evidence
+as proof of evaluation.
 
 ## One owner, candidate and budget
 
@@ -55,9 +56,9 @@ performs no provider dispatch. This is not promotion or live-quality evidence.
   missing/changed evaluation batch, generic read denial and current withdrawal.
 - Existing Bootstrap identity/configuration/serialization goldens remain unchanged.
 
-## Proposed next native 5/2/0 qualification
+## Source-bound native 5/2/0 qualification
 
-A separate reviewed harness must use the unchanged pinned Python3.13.13 closure,
+The separate reviewed harness uses the unchanged pinned Python3.13.13 closure,
 exact Tether1e8 and real Git input, network-none/no-NIC isolation and same physical
 signed fixture files. Do not relabel Bootstrap execution as GEPA acceptance.
 
@@ -78,3 +79,10 @@ physical owner hashes to fabricate equality. Per-child limits and aggregate
 cleanup must be independently reviewed within the existing 120-second container
 bound; no timing sufficiency claim is made here. Actual source/input/effect and
 cleanup receipts, including truthful failures, are required before qualification.
+
+The bounded synthetic campaign at exact source `35b3715c66cac11d41f45c076367c1cc06c7b8fa`
+observed this 5/2/0 sequence in two launcher runs, with independent source/receipt
+review and cleanup checks. The source is published in [PR96](https://github.com/newdarwindev/runspindle-refinery/pull/96);
+full native receipts remain separately retained private evidence. This statement
+does not claim that this documentation descendant ran, that hosted CI passed,
+or that live-provider or production-quality acceptance is complete.

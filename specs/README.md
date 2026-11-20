@@ -1,6 +1,6 @@
 # refinery specification
 
-Status: partial process-local lineage candidate; upstream integration and live acceptance not verified.
+Status: implemented durable local feedback, dataset, budget and candidate boundaries; selected pinned synthetic framework/integration campaigns have source-bound evidence. Live provider quality and production acceptance remain separate.
 
 ## Responsibility
 
@@ -21,7 +21,7 @@ Preserve explicit authority and unknown outcomes. Distinguish request admission,
 3. Bounded live acceptance in an authorized target.
 4. Failure, restart, uncertain-effect reconciliation and rollback evidence.
 
-Synthetic lineage component tests now run separately. Isolated integration, durable recovery, provider/serving and live acceptance remain blocked/not-run. See [implementation evidence](../docs/IMPLEMENTATION_EVIDENCE.md).
+Component tests remain distinct from actual-framework qualification. See the [materialized learning boundary](materialized-durable-ownership.md), [locked GEPA evaluation](gepa-heldout.md), [native heldout harness](gepa-heldout-qualification.md) and [ephemeral Langfuse qualification](langfuse-ephemeral-qualification.md). Historical [implementation evidence](../docs/IMPLEMENTATION_EVIDENCE.md) retains its original scope; live provider/serving acceptance is not implied.
 
 Detailed adaptation: [experiments.md](experiments.md).
 
@@ -121,5 +121,9 @@ incompatible component stores and rolls back invalid transaction changes.
 - [GEPA locked heldout extension](gepa-heldout.md): strict component implementation and proposed actual 5/2/0 qualification; not a native receipt.
 
 - [Proposed materialized GEPA heldout qualification](gepa-heldout-qualification.md): separate bounded actual-framework compile/evaluate/replay lane; native execution pending.
+
+The [explicit materialized learning admission](materialized-learning-admission.md)
+preflights a new GEPA run or admits evaluation-only recovery using the existing
+Session owner; it does not create another coordinator or cache permission.
 
 - [GEPA heldout accounting adversity](gepa-heldout-adversarial.md)

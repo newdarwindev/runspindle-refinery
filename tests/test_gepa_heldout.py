@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import importlib
+import json
+import subprocess
+import sys
 import unittest
 from dataclasses import replace
 from types import SimpleNamespace
@@ -15,6 +18,7 @@ from refinery import gepa_codec as codec
 from refinery import gepa_optimizer as gepa
 from refinery.lineage import digest
 from refinery.optimization import validate_dataset
+from refinery.storage import pack
 
 
 class HeldoutTests(unittest.TestCase):
@@ -24,7 +28,11 @@ class HeldoutTests(unittest.TestCase):
         self.addCleanup(self.h.doCleanups)
         self.heldout = validate_dataset(self.h.session.dataset, self.h.session.split)[1]
         self.h.script += tuple(
-            ev.Completion(e.gold, 1, 1, True, 0) for _ in range(2) for e in self.heldout
+            ev.Completion(
+                e.gold if correct else b"fixture wrong", tokens, cost, True, 0
+            )
+            for correct, tokens, cost in ((False, 3, 7), (True, 2, 4))
+            for e in self.heldout
         )
         self.s = self.h.make()
         self.h.session = self.s
@@ -35,6 +43,7 @@ class HeldoutTests(unittest.TestCase):
         compiled = s.claim_evaluation()
         attempts = []
         predictions = []
+        scores = {"baseline": 0, "candidate": 0}
         for stage in ("baseline", "candidate"):
             d = opt.Dispatch(
                 tuple(self.heldout),
@@ -50,13 +59,17 @@ class HeldoutTests(unittest.TestCase):
             )
             for e in self.heldout:
                 d.invoke(lambda **_: d.forward([]), opt.case(e))
+                answer = d.attempts[-1].content_sha256
+                if answer is None:
+                    self.fail("missing synthetic prediction digest")
                 predictions.append(
-                    (stage, e.output.output_id, e.output.revision, digest(e.gold))
+                    (stage, e.output.output_id, e.output.revision, answer)
                 )
+                scores[stage] += int(answer == digest(e.gold))
             attempts.extend(d.attempts)
         result = dict(
             status="evaluated",
-            scores={"baseline": len(self.heldout), "candidate": len(self.heldout)},
+            scores=scores,
             attempts=tuple(attempts),
             predictions=tuple(predictions),
             candidate_sha256=compiled.candidate_sha256,
@@ -108,6 +121,120 @@ class HeldoutTests(unittest.TestCase):
         self.assertEqual(resumed.provider.calls, [])
         with self.assertRaises(ev.Halt):
             resumed.guard("optimization")
+
+    def test_measured_heldout_reuses_exact_durable_receipts_without_dispatch(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, "completed GEPA heldout measurement"):
+            self.s.measured_heldout()
+        report = self.evaluate_fixture()
+        resumed = self.h.make()
+        with (
+            patch.object(
+                gepa, "runtime_identity", side_effect=AssertionError("runtime")
+            ),
+            patch.object(opt, "framework", side_effect=AssertionError("framework")),
+        ):
+            measured = resumed.measured_heldout()
+        self.assertEqual(resumed.provider.calls, [])
+        self.assertEqual(measured["version"], "runspindle.gepa-heldout-measurement.v1")
+        self.assertEqual(measured["evidence_class"], "offline_scripted_provider")
+        self.assertEqual(measured["quality"], "synthetic_exact_match_only")
+        self.assertEqual(measured["promotion"], "not_authorized")
+        self.assertEqual(measured["candidate_sha256"], report["candidate_sha256"])
+        self.assertEqual(measured["baseline_sha256"], codec.baseline_artifact())
+        self.assertEqual(measured["binding_sha256"], resumed.binding_sha256)
+        self.assertEqual(measured["configuration_sha256"], resumed.config)
+        self.assertEqual(measured["split_sha256"], resumed.split.sha256)
+        stored_sha = resumed.store.db.execute(
+            "SELECT report FROM experiments WHERE identity=?", (resumed.key,)
+        ).fetchone()[0]
+        self.assertEqual(measured["report_sha256"], stored_sha)
+        cases = sorted(
+            digest(pack((e.output.output_id, e.output.revision))) for e in self.heldout
+        )
+        self.assertEqual(
+            measured["rows"],
+            {
+                stage: [
+                    {
+                        "case": case,
+                        "correct": correct,
+                        "cost_micros": cost,
+                        "tokens": tokens,
+                    }
+                    for case in cases
+                ]
+                for stage, correct, cost, tokens in (
+                    ("baseline", False, 7, 3),
+                    ("candidate", True, 4, 2),
+                )
+            },
+        )
+        self.assertEqual(resumed.measured_heldout(), measured)
+        script = [
+            (reply.content.hex(), reply.tokens, reply.cost_microunits, reply.safety)
+            for reply in self.h.script
+        ]
+        child = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                *(["-O"] if sys.flags.optimize else []),
+                "-c",
+                """
+import json
+import sys
+from unittest.mock import patch
+from refinery import dspy_optimizer, evaluation, gepa_optimizer
+from refinery.durable_dspy import Session
+from refinery.storage import Store, VERSION
+
+script = tuple(evaluation.Completion(bytes.fromhex(body), tokens, cost, safety)
+               for body, tokens, cost, safety in json.load(sys.stdin))
+with Store(sys.argv[1]) as store:
+    provider = evaluation.ScriptedProvider(script, clock=evaluation.VirtualClock())
+    session = Session(store, VERSION, 'gepa-run', sys.argv[2], provider=provider,
+                      limits=evaluation.Limits(16, 100, 100, 100),
+                      per_call=evaluation.Reservation(10, 10), budget_id='shared',
+                      strategy='gepa', training_output_id=sys.argv[3], synthetic_fixture=True)
+    with patch.object(dspy_optimizer, 'framework', side_effect=RuntimeError('framework forbidden')), \
+         patch.object(gepa_optimizer, 'runtime_identity', side_effect=RuntimeError('runtime forbidden')):
+        print(json.dumps({'evidence': session.measured_heldout(), 'calls': provider.calls}))
+""",
+                str(resumed.store.path),
+                self.h.snapshot,
+                self.h.example.output.output_id,
+            ],
+            input=json.dumps(script),
+            text=True,
+            capture_output=True,
+            check=True,
+            timeout=20,
+        )
+        self.assertEqual(json.loads(child.stdout), {"evidence": measured, "calls": []})
+
+    def test_measurements_refuse_revoked_authority_and_missing_attempt_receipt(
+        self,
+    ) -> None:
+        self.evaluate_fixture()
+
+        def deny() -> None:
+            raise ev.Halt("evaluation_revoked")
+
+        denied = self.h.make(authority={"evaluation": deny})
+        with self.assertRaisesRegex(ev.Halt, "evaluation_revoked"):
+            denied.measured_heldout()
+        self.assertEqual(denied.provider.calls, [])
+        resumed = self.h.make()
+        with resumed.store.transaction() as tx:
+            tx.execute(
+                "DELETE FROM attempts WHERE ticket=(SELECT max(ticket) FROM attempts WHERE experiment=?)",
+                (resumed.key,),
+            )
+        with self.assertRaises(ValueError):
+            resumed.measured_heldout()
+        self.assertEqual(resumed.provider.calls, [])
 
     def test_evaluation_requires_current_independent_authority(self) -> None:
         def deny() -> None:

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -177,6 +178,42 @@ DIAGNOSTIC_CODES = {
     "dependency_preparation": frozenset({"unavailable"}),
 }
 REPORTED_PROVENANCE = "child_output_unverified"
+UNITTEST_CASE = re.compile(
+    r"(?m)^(?:FAIL|ERROR): (test_[a-zA-Z0-9_]{1,75}) "
+    r"\((test_[a-zA-Z0-9_]{1,75}\.[a-zA-Z_][a-zA-Z0-9_]{0,79}"
+    r"\.\1)\)(?= |$)"
+)
+UNITTEST_ID = re.compile(
+    r"(test_[a-zA-Z0-9_]{1,75})\.([a-zA-Z_][a-zA-Z0-9_]{0,79})"
+    r"\.(test_[a-zA-Z0-9_]{1,75})"
+)
+
+
+def committed_unittest_cases(root: Path, cases: list[str]) -> list[str]:
+    """Allow only exact test identifiers defined in the current committed source."""
+    sources: dict[str, set[tuple[str, str]]] = {}
+    verified = []
+    for case in dict.fromkeys(cases[:12]):
+        match = UNITTEST_ID.fullmatch(case)
+        if not match:
+            continue
+        module, class_name, method = match.groups()
+        if module not in sources:
+            try:
+                source = ast.parse(git(root, "show", f"HEAD:tests/{module}.py"))
+            except (OSError, SyntaxError, ValueError, subprocess.SubprocessError):
+                sources[module] = set()
+            else:
+                sources[module] = {
+                    (node.name, member.name)
+                    for node in source.body
+                    if isinstance(node, ast.ClassDef)
+                    for member in node.body
+                    if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef))
+                }
+        if (class_name, method) in sources[module]:
+            verified.append(case)
+    return verified
 
 
 def reported_failure(output: str) -> dict[str, str]:
@@ -482,6 +519,11 @@ def run_entry(root: Path, entry: dict[str, Any]) -> dict[str, Any]:
         if entry["id"] == "static-quality" and code is not None and code != 0:
             receipt.update(quality_tool_failure(output))
         if "unittest" in entry["command"]:
+            if receipt["status"] == "failed":
+                cases = [match[2] for match in UNITTEST_CASE.finditer(output)]
+                observed = committed_unittest_cases(root, cases)
+                if observed:
+                    receipt["reported_unittest_cases"] = observed
             counts = re.findall(r"(?m)^Ran (\d+) tests? in [0-9.]+s$", output)
             summaries = re.findall(r"(?m)^(?:OK|FAILED)(?: \(([^\n]*)\))?$", output)
             if counts and summaries:
@@ -808,7 +850,7 @@ def write_reports(output: Path, result: dict[str, Any]) -> None:
     (output / "report.md").write_text("\n".join(lines) + "\n")
 
 
-def failure_summary(result: dict[str, Any]) -> list[str]:
+def failure_summary(result: dict[str, Any], root: Path | None = None) -> list[str]:
     """Expose only receipt fields we constructed, never child output or argv."""
     lines: list[str] = []
     for entry in result.get("checks", []):
@@ -834,6 +876,15 @@ def failure_summary(result: dict[str, Any]) -> list[str]:
         if isinstance(version, str) and re.fullmatch(r"\d+(?:\.\d+){1,3}", version):
             fields.append(f"required_version={version}")
         fields.append(diagnostic_summary(entry))
+        cases = entry.get("reported_unittest_cases")
+        if (
+            root is not None
+            and isinstance(cases, list)
+            and all(isinstance(case, str) for case in cases[:12])
+        ):
+            observed = committed_unittest_cases(root, cases)
+            if observed:
+                fields.append("reported_tests=" + ",".join(observed) + " (unverified)")
         lines.append("hygiene failure: " + " ".join(fields))
     return lines[:32]
 

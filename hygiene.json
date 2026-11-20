@@ -77,12 +77,7 @@
       "id": "python-tests",
       "command": [
         "python3",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tests",
-        "-v"
+        "tools/run_component_tests.py"
       ],
       "required_files": [
         "tests"

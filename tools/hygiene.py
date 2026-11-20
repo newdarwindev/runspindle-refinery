@@ -518,7 +518,7 @@ def run_entry(root: Path, entry: dict[str, Any]) -> dict[str, Any]:
             receipt["reported_diagnostic"] = reported_failure(output)
         if entry["id"] == "static-quality" and code is not None and code != 0:
             receipt.update(quality_tool_failure(output))
-        if "unittest" in entry["command"]:
+        if entry["id"] == "python-tests" or "unittest" in entry["command"]:
             if receipt["status"] == "failed":
                 cases = [match[2] for match in UNITTEST_CASE.finditer(output)]
                 observed = committed_unittest_cases(root, cases)

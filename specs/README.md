@@ -125,3 +125,5 @@ incompatible component stores and rolls back invalid transaction changes.
 The [explicit materialized learning admission](materialized-learning-admission.md)
 preflights a new GEPA run or admits evaluation-only recovery using the existing
 Session owner; it does not create another coordinator or cache permission.
+
+- [GEPA heldout accounting adversity](gepa-heldout-adversarial.md)

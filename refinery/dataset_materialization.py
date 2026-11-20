@@ -98,6 +98,25 @@ def verify_use(source: RetainedSource, item: Prepared, purpose: str) -> None:
     )()
 
 
+def retained_source_fence(source: RetainedSource) -> None:
+    """Check every selection after authority callbacks, never grant permission."""
+    value = source.store.get("lineage", source.snapshot)
+    receipt = source.store.get("feedback_collection", value["collection_evidence"])
+    canonical = source.use.dependency.modules["tether.admission"].canonical
+    for row in receipt["selected"]:
+        selected = row["selection"]
+        evidence = source.use.tether_store.evidence(
+            selected["namespace"], selected["feedback_id"]
+        )
+        if c.digest(canonical(evidence)) != row["evidence_sha256"]:
+            raise ValueError("batch feedback changed")
+        if receipt["version"] == "retained_feedback_collection.v2":
+            guard = source.use.source_guard
+            observed = row["source_observation"]
+            if guard is None or guard.reread(observed) != observed:
+                raise ValueError("batch source changed")
+
+
 def provenance_receipt(source: RetainedSource, item: Prepared, reference: str) -> bytes:
     value = source.store.get("lineage", source.snapshot)
     return c.canonical(
@@ -299,6 +318,7 @@ class DatasetRegistry:
             authorize(approve, item, "materialize", permission_ref)
             if prepare(source, dataset) != item:
                 raise ValueError("dataset source changed during materialization")
+            retained_source_fence(source)
             cohort_check(source, item, "dataset_materialization")
             self.available(d["item_id"])
             self.db.execute("COMMIT")
@@ -344,6 +364,7 @@ class DatasetRegistry:
         authorize(approve, item, purpose, permission_ref)
         if prepare(source, item.descriptor["dataset"]) != item:
             raise ValueError("dataset source changed during use")
+        retained_source_fence(source)
         cohort_check(source, item, purpose)
         self.available(item_id)
         return json.loads(item.input_bytes), item.output_bytes

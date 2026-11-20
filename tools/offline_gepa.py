@@ -122,11 +122,25 @@ def execute(
     suite: str = "reflection",
     tether: str | None = None,
     git: str | None = None,
+    case: str | None = None,
 ) -> dict[str, Any]:
-    if suite not in {"reflection", "durable", "materialized", "heldout"}:
+    if suite not in {
+        "reflection",
+        "durable",
+        "materialized",
+        "heldout",
+        "heldout-adversarial",
+    }:
         raise ValueError("unknown GEPA suite")
+    if suite == "heldout-adversarial":
+        from tools.test_gepa_heldout_adversarial import CASES
+
+        if case not in CASES:
+            raise ValueError("explicit adversarial case required")
+    elif case is not None:
+        raise ValueError("case cannot alter legacy suites")
     inputs = None
-    if suite in {"materialized", "heldout"}:
+    if suite in {"materialized", "heldout", "heldout-adversarial"}:
         if type(tether) is not str or type(git) is not str:
             raise ValueError("explicit materialized Tether and Git inputs required")
         inputs = materialized_inputs(tether, git)
@@ -140,10 +154,12 @@ def execute(
 
     if suite == "durable":
         from tools.test_gepa_durable import source_hashes, validate_report
-    if suite in {"materialized", "heldout"}:
+    if suite in {"materialized", "heldout", "heldout-adversarial"}:
         from tools.test_gepa_materialized import source_hashes, validate_report
     if suite == "heldout":
         from tools.test_gepa_heldout_materialized import source_hashes, validate_report
+    if suite == "heldout-adversarial":
+        from tools.test_gepa_heldout_adversarial import source_hashes, validate_report
     sources = source_hashes()
     inspected = bounded(["docker", "image", "inspect", runtime.IMAGE], 30)
     if inspected.returncode:
@@ -183,7 +199,7 @@ def execute(
         "-w",
         "/work",
     ]
-    if suite in {"materialized", "heldout"}:
+    if suite in {"materialized", "heldout", "heldout-adversarial"}:
         argv += [
             "-v",
             str(tether) + ":/tether:ro",
@@ -214,8 +230,12 @@ def execute(
         if suite == "durable"
         else "tools/test_gepa_materialized.py"
         if suite == "materialized"
-        else "tools/test_gepa_heldout_materialized.py",
+        else "tools/test_gepa_heldout_materialized.py"
+        if suite == "heldout"
+        else "tools/test_gepa_heldout_adversarial.py",
     ]
+    if suite == "heldout-adversarial":
+        argv += ["--case", cast(str, case)]
     try:
         result = bounded(argv, 120)
     finally:
@@ -242,9 +262,11 @@ def execute(
         print(result.stderr, file=sys.stderr)
         raise RuntimeError("GEPA native qualification failed")
     value = json.loads(result.stdout)
-    if suite in {"durable", "materialized", "heldout"}:
+    if suite in {"durable", "materialized", "heldout", "heldout-adversarial"}:
         validate_report(value)
-        if suite in {"materialized", "heldout"} and (
+        if suite == "heldout-adversarial" and value.get("case") != case:
+            raise ValueError("adversarial case changed")
+        if suite in {"materialized", "heldout", "heldout-adversarial"} and (
             value["inputs"] != inputs
             or materialized_inputs(cast(str, tether), cast(str, git)) != inputs
         ):
@@ -281,16 +303,27 @@ def main() -> None:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument(
         "--suite",
-        choices=("reflection", "durable", "materialized", "heldout"),
+        choices=(
+            "reflection",
+            "durable",
+            "materialized",
+            "heldout",
+            "heldout-adversarial",
+        ),
         default="reflection",
     )
     parser.add_argument("--tether")
     parser.add_argument("--git")
+    parser.add_argument("--case")
     args = parser.parse_args()
     # Refuse overwrite before any runtime execution. No auto-acceptance of evidence.
     with args.report.open("x") as output:
         report = execute(
-            args.prepared, suite=args.suite, tether=args.tether, git=args.git
+            args.prepared,
+            suite=args.suite,
+            tether=args.tether,
+            git=args.git,
+            case=args.case,
         )
         output.write(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report))

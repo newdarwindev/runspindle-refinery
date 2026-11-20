@@ -1,0 +1,46 @@
+{
+  "base_commit": "e2a1d45c2ba201f4476a7265b7a8c766d87ff694",
+  "checks": {
+    "durable_mutations": {
+      "detected": 7
+    },
+    "durable_suite_normal_and_optimized": {
+      "passed_each": 17
+    },
+    "regressions_reproduced_on_prior_main": [
+      "unclaimed_matching_bytes_adopted",
+      "caller_rejection_releases_claimed_reservation"
+    ],
+    "scaffold": "passed",
+    "serving_normal_and_optimized": {
+      "passed_each": 41
+    },
+    "static_quality": "preexisting macOS mypy diagnostic for Linux-only os.O_PATH reproduced on base"
+  },
+  "classification": "local_disposable_sqlite_component",
+  "effect_observations": {
+    "caller_rejection_local_load_rows": 0,
+    "caller_rejection_readback_calls": 0,
+    "local_load_rows_after_independent_load": 1,
+    "unclaimed_readback_calls": 0
+  },
+  "environment": {
+    "platform": "darwin/arm64",
+    "python": "3.13.18",
+    "sqlite": "3.54.1"
+  },
+  "inputs_sha256": {
+    "dependencies/tether-feedback.json": "7b3fde62dda082970ceba5480409f47aff0163b66c98592709679464fd8d4f74",
+    "refinery/serving.py": "f2dbc395f9e23cf188580099ae3fa2075d42460cd173b5cd025684237168beb6",
+    "tests/test_serving_readback_integrity.py": "7561005966dc35a433269197b7d419ce666bfe40e3111aea3e57949af88ec313",
+    "tools/check_durable_mutations.py": "f16daeb62914dadd06bb93b13bd82cfcbba437e9f26070f937b96a71de2384b1"
+  },
+  "issues": [
+    17,
+    6
+  ],
+  "pending": [
+    "production approval issuer and target authentication",
+    "production storage and live qualification"
+  ]
+}

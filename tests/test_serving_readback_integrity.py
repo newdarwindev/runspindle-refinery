@@ -35,6 +35,14 @@ class ReadbackIntegrityTests(unittest.TestCase):
         }
         return registry, adapter, expected
 
+    def claim_without_loading(self, registry: Any, adapter: Any) -> None:
+        def stop(point: str) -> None:
+            if point == "before_candidate_load":
+                raise KeyboardInterrupt()
+
+        with self.assertRaises(KeyboardInterrupt):
+            registry.load(VERSION, "activation", adapter, checkpoint=stop)
+
     def observe(self, registry: Any, value: Any, *, rejected: bool = False) -> str:
         class ReadOnly:
             def load(self, *args: Any) -> None:
@@ -48,14 +56,17 @@ class ReadbackIntegrityTests(unittest.TestCase):
         with patch.object(
             socket, "socket", side_effect=AssertionError("network forbidden")
         ) as network:
-            result = registry.reconcile(
-                VERSION, "activation", ReadOnly(), rejected=rejected
+            result = (
+                registry._reconcile(VERSION, "activation", ReadOnly(), rejected=True)
+                if rejected
+                else registry.reconcile(VERSION, "activation", ReadOnly())
             )
             network.assert_not_called()
         return cast(str, result)
 
     def test_foreign_equality_and_boolean_generation_never_activate(self) -> None:
         registry, adapter, expected = self.pending()
+        self.claim_without_loading(registry, adapter)
 
         class Foreign:
             def __eq__(self, other: Any) -> bool:
@@ -81,10 +92,11 @@ class ReadbackIntegrityTests(unittest.TestCase):
 
     def test_readback_callback_mutation_cannot_commit_stale_observation(self) -> None:
         registry, adapter, expected = self.pending()
+        self.claim_without_loading(registry, adapter)
         for sql in (
             "UPDATE environments SET generation=2 WHERE identity='local'",
             "UPDATE activations SET generation=2 WHERE identity='activation'",
-            "UPDATE activations SET state='unknown' WHERE identity='activation'",
+            "UPDATE activations SET state='intent' WHERE identity='activation'",
         ):
             with self.subTest(sql=sql):
 
@@ -98,7 +110,7 @@ class ReadbackIntegrityTests(unittest.TestCase):
                 self.assertIsNone(registry.state("local")["active"])
                 self.store.db.execute("UPDATE environments SET generation=1")
                 self.store.db.execute(
-                    "UPDATE activations SET generation=1,state='intent'"
+                    "UPDATE activations SET generation=1,state='unknown'"
                 )
         self.assertEqual(
             adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
@@ -112,6 +124,7 @@ class ReadbackIntegrityTests(unittest.TestCase):
         prior = adapter.readback("local")
         _, second, approval = self.candidate("two")
         registry.begin(VERSION, "activation", second, approval, expected_generation=1)
+        self.claim_without_loading(registry, adapter)
         for value in (
             {"candidate_sha256": prior["candidate_sha256"]},
             {**prior, "activation_id": "foreign"},
@@ -174,6 +187,53 @@ with Store(root/'refinery.sqlite') as store:
             },
         )
         self.assertEqual(receipt["output"]["output"], "answerone")
+
+    def test_unclaimed_intent_cannot_adopt_matching_loaded_bytes(self) -> None:
+        registry, adapter, expected = self.pending()
+        candidate_key = self.store.db.execute(
+            "SELECT candidate FROM activations WHERE identity='activation'"
+        ).fetchone()[0]
+        candidate = self.store.get("candidate", candidate_key)
+        adapter.load(
+            "activation",
+            "local",
+            1,
+            expected["candidate_sha256"],
+            candidate["content"],
+            None,
+        )
+        self.assertEqual(adapter.readback("local"), expected)
+        with patch.object(adapter, "readback", wraps=adapter.readback) as readback:
+            self.assertEqual(
+                registry.reconcile(VERSION, "activation", adapter), "intent"
+            )
+            readback.assert_not_called()
+        self.assertEqual(
+            registry.state("local"),
+            {
+                "generation": 1,
+                "active": None,
+                "pending": "activation",
+            },
+        )
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 1
+        )
+
+    def test_caller_rejection_cannot_release_claimed_reservation(self) -> None:
+        registry, adapter, _ = self.pending()
+        self.claim_without_loading(registry, adapter)
+        self.assertIsNone(adapter.readback("local"))
+        with patch.object(adapter, "readback", wraps=adapter.readback) as readback:
+            with self.assertRaisesRegex(ValueError, "dispatching load"):
+                registry.reconcile(VERSION, "activation", adapter, rejected=True)
+            readback.assert_not_called()
+        self.assertEqual(registry.reconcile(VERSION, "activation", adapter), "unknown")
+        self.assertEqual(registry.state("local")["pending"], "activation")
+        self.assertIsNone(registry.state("local")["active"])
+        self.assertEqual(
+            adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
+        )
 
     def test_removed_strict_readback_guard_is_detected(self) -> None:
         with patch.object(

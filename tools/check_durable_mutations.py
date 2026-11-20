@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Isolated behavioral mutations must fail assertions, not imports or syntax."""
 
-from pathlib import Path
 import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MUTATIONS = {
@@ -46,6 +46,20 @@ MUTATIONS = {
         'return {"output": value["responses"][text], "candidate_sha256": row[2]}',
         'return {"output": value["responses"][text], "candidate_sha256": "0" * 64}',
         "test_durable.ServingTests.test_load_readback_actual_output_and_failed_load_preserves_prior",
+    ),
+    "serving_adopts_unclaimed_intent": (
+        "serving.py",
+        'if state == "intent":\n            return "intent"',
+        'if False:\n            return "intent"',
+        "test_serving_readback_integrity.ReadbackIntegrityTests.test_unclaimed_intent_cannot_adopt_matching_loaded_bytes",
+    ),
+    "serving_accepts_caller_rejection": (
+        "serving.py",
+        "if rejected is not False:\n"
+        '            raise ValueError("only the dispatching load may report a rejection")\n'
+        "        return self._reconcile(api_version, activation_id, adapter, rejected=False)",
+        "return self._reconcile(api_version, activation_id, adapter, rejected=rejected)",
+        "test_serving_readback_integrity.ReadbackIntegrityTests.test_caller_rejection_cannot_release_claimed_reservation",
     ),
 }
 results = []

@@ -13,6 +13,27 @@ from pathlib import Path
 
 from tools.hygiene import source_fingerprint
 
+# Rounded measurements from the two-worker component profile on 2026-11-20.
+# Keep modules intact so their fixtures still run once in a single worker.
+MODULE_SECONDS = {
+    "test_dataset_batch": 21,
+    "test_dataset_materialization": 21,
+    "test_durable": 27,
+    "test_durable_dspy": 41,
+    "test_durable_gepa": 31,
+    "test_durable_optimization": 22,
+    "test_evaluation_admission": 16,
+    "test_feedback_collection": 11,
+    "test_feedback_projection": 19,
+    "test_feedback_use": 51,
+    "test_gepa_heldout": 40,
+    "test_gepa_heldout_materialized": 30,
+    "test_materialized_durable": 62,
+    "test_qualification_thresholds": 98,
+    "test_serving_dispatch_authority": 17,
+    "test_serving_observation": 11,
+}
+
 
 def cases(suite: unittest.TestSuite) -> Iterator[unittest.TestCase]:
     for item in suite:
@@ -37,9 +58,18 @@ def assign(identities: list[str]) -> list[list[str]]:
     modules: defaultdict[str, list[str]] = defaultdict(list)
     for identity in identities:
         modules[identity.split(".", 1)[0]].append(identity)
+    weights = {
+        name: float(MODULE_SECONDS[name])
+        if name in MODULE_SECONDS
+        else len(tests) * 0.2
+        for name, tests in modules.items()
+    }
     shards: list[list[str]] = [[], []]
-    for module in sorted(modules, key=lambda name: (-len(modules[name]), name)):
-        min(shards, key=len).extend(modules[module])
+    totals = [0.0, 0.0]
+    for module in sorted(modules, key=lambda name: (-weights[name], name)):
+        index = 0 if totals[0] <= totals[1] else 1
+        shards[index].extend(modules[module])
+        totals[index] += weights[module]
     if any(not shard for shard in shards):
         raise RuntimeError("expected two nonempty component test shards")
     return shards
@@ -147,7 +177,8 @@ def main() -> int:
         result = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite(selected))
         module_by_test = {str(test): test.id().split(".", 1)[0] for test in selected}
         module_seconds: defaultdict[str, float] = defaultdict(float)
-        for description, seconds in result.collectedDurations:
+        durations: list[tuple[str, float]] = getattr(result, "collectedDurations", [])
+        for description, seconds in durations:
             module = module_by_test.get(description)
             if module is not None:
                 module_seconds[module] += seconds

@@ -57,6 +57,11 @@ bytes as a bounded `synthetic.map.v1` lookup program. It is a disposable local
 adapter, not a workflow/provider execution service. A single read obtains both
 response bytes and their actual serving digest. Rollback needs an available,
 compatible previously approved predecessor and re-verifies its bound approval.
+The two most recent successful activations must agree with the current
+environment and its recorded predecessor. Failed attempts do not count as
+served predecessors. The reservation transaction rechecks both exact activation
+rows and the retained approval after the verifier callback. A changed history
+or missing approval blocks the reservation.
 Null predecessors, stale generations and unavailable bytes fail before loading.
 Repeated rollback with the same generation cannot create another activation.
 

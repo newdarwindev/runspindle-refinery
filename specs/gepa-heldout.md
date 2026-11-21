@@ -80,6 +80,22 @@ evaluation batch, and withdrawal blocks the whole read. It exposes opaque
 identities and adds no training read after the held-out seal.
 
 
+For a paired read, call `Session.measured_materialized_cohorts()`. The
+`runspindle.gepa-materialized-cohort-measurement.v1` wrapper includes the v2
+measurement, the existing heldout manifest and mapping, and the retained
+`training_manifest_sha256` and `training_cases` case-to-item mapping. Current
+GEPA optimizes on one selected example. The paired read requires that the
+owner's exact materialized optimization item covers the full locked training
+roster. An unmatched roster fails closed.
+
+The training mapping is historical. It comes from the verified compile and
+immutable ownership binding, with no training item reads or optimization
+authority callbacks after the seal. The read still requires fresh evaluation
+access and the exact heldout materialization. Consumers must separately verify
+current training use if they need it. The heldout-only API keeps its existing
+report versions and behavior.
+
+
 ## Adversarial component coverage
 
 - Changed candidate/instruction/history/digest and cross-codec input before runtime.

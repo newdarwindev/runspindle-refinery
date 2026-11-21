@@ -19,11 +19,14 @@ from .evaluation import (
     Report,
     Reservation,
     _integer,
+    _validate_dataset,
     evaluate,
+    evaluation_cases,
+    evaluation_request,
     validate_provider,
 )
 from .feedback_use import RetainedFeedbackUse, use_guard
-from .lineage import _hash, _token, digest
+from .lineage import Dataset, Example, LockedSplit, _hash, _token, digest
 from .storage import VERSION, Store, pack, unpack, version
 
 
@@ -316,6 +319,118 @@ class SQLiteBudget(Budget):
         return self._apply("checked_snapshot")
 
 
+def verify_evaluation_pass(
+    tx: sqlite3.Connection,
+    identity: str,
+    report: Report,
+    experiment: Experiment,
+    dataset: Dataset,
+    split: LockedSplit,
+) -> None:
+    """Reconstruct a passing result from the locked cases and settled rows."""
+    failure = "invalid passing evaluation evidence"
+    validate_dataset = cast(
+        Callable[
+            [Dataset, LockedSplit], tuple[tuple[Example, ...], tuple[Example, ...]]
+        ],
+        _validate_dataset,
+    )
+    train, heldout = validate_dataset(dataset, split)
+    config = experiment.configuration
+    attempts = report.attempts
+    if (
+        not heldout
+        or (config.preparation and not train)
+        or report.version != EVALUATION_VERSION
+        or report.reason is not None
+        or report.safety is not True
+        or report.heldout_cases
+        != tuple((e.output.output_id, e.output.revision) for e in heldout)
+        or report.excluded_counts != tuple(sorted(dataset.excluded_counts.items()))
+        or type(attempts) is not tuple
+        or not 1 <= len(attempts) <= 4096
+    ):
+        raise ValueError(failure)
+    rows = tx.execute(
+        "SELECT request,outcome,receipt FROM attempts WHERE experiment=? ORDER BY ticket LIMIT 4097",
+        (identity,),
+    )
+    position = tokens = cost = latency = 0
+    scores = {"baseline": 0, "candidate": 0}
+    for stage, example in evaluation_cases(config, train, heldout):
+        for number in range(1, config.max_attempts + 1):
+            if position >= len(attempts):
+                raise ValueError(failure)
+            attempt = attempts[position]
+            request = pack(evaluation_request(experiment, stage, example, number))
+            if (
+                type(attempt) is not Attempt
+                or next(rows, None) != (request, "settled", pack(attempt))
+                or pack(attempt.request) != request
+                or attempt.safety is not True
+                or type(attempt.tokens) is not int
+                or not 0 <= attempt.tokens <= config.per_call.tokens
+                or type(attempt.cost_microunits) is not int
+                or not 0 <= attempt.cost_microunits <= config.per_call.cost_microunits
+                or type(attempt.latency_ms) is not int
+                or not 0 <= attempt.latency_ms < config.limits.time_ms
+            ):
+                raise ValueError(failure)
+            position += 1
+            tokens += attempt.tokens
+            cost += attempt.cost_microunits
+            latency += attempt.latency_ms
+            if attempt.outcome == "completed":
+                if type(attempt.content_sha256) is not str:
+                    raise ValueError(failure)
+                _hash(attempt.content_sha256)
+                if stage in scores:
+                    scores[stage] += int(attempt.content_sha256 == digest(example.gold))
+                break
+            if (
+                attempt.outcome != "timeout"
+                or attempt.content_sha256 is not None
+                or number == config.max_attempts
+            ):
+                raise ValueError(failure)
+    count = len(heldout)
+    if (
+        position != len(attempts)
+        or next(rows, None) is not None
+        or pack((report.baseline_score, report.candidate_score))
+        != pack((scores["baseline"] / count, scores["candidate"] / count))
+        or scores["candidate"] * 1_000_000 < config.min_score_ppm * count
+        or (scores["candidate"] - scores["baseline"]) * 1_000_000
+        < config.min_improvement_ppm * count
+    ):
+        raise ValueError(failure)
+    if (
+        type(report.usage) is not tuple
+        or len(report.usage) != 6
+        or any(
+            type(item) is not tuple or len(item) != 2 or type(item[0]) is not str
+            for item in report.usage
+        )
+    ):
+        raise ValueError(failure)
+    usage = dict(report.usage)
+    if (
+        usage.get("reason", "") is not None
+        or type(usage.get("unresolved_calls")) is not int
+        or usage["unresolved_calls"] != 0
+    ):
+        raise ValueError(failure)
+    for field, minimum, maximum in (
+        ("calls", position, config.limits.calls),
+        ("tokens", tokens, config.limits.tokens),
+        ("cost_microunits", cost, config.limits.cost_microunits),
+        ("elapsed_ms", latency, config.limits.time_ms - 1),
+    ):
+        value = usage.get(field)
+        if type(value) is not int or not minimum <= value <= maximum:
+            raise ValueError(failure)
+
+
 def run(
     store: Store,
     api_version,
@@ -398,6 +513,10 @@ def run(
                 ):
                     raise ValueError("invalid evaluation result association")
                 check_use()
+                if report.status == "passed":
+                    verify_evaluation_pass(
+                        tx, identity, report, experiment, dataset, split
+                    )
                 return report
             raise Halt("interrupted_or_owned_experiment")
         # Recheck after use callbacks, before any ledger or claim mutation.
@@ -437,6 +556,8 @@ def run(
         )
         checkpoint("before_report_commit")
         check_use()
+        if report.status == "passed":
+            verify_evaluation_pass(tx, identity, report, experiment, dataset, split)
     checkpoint("after_report_commit")
     check_use()
     return report

@@ -312,6 +312,18 @@ class QualificationThresholdTests(unittest.TestCase):
             )
         self.assert_denied_unchanged(600000, 400000)
 
+    def test_rehashed_on_grid_score_cannot_qualify_above_measured_result(self) -> None:
+        report, provider = evaluated(self.store, 5, 1, 3, prepared_retry=True)
+        forged = replace(report, candidate_score=4 / 5)
+        sha = lin.digest(st.pack(forged))
+        with self.store.transaction() as tx:
+            self.store.put(tx, "report", sha, forged)
+            tx.execute(
+                "UPDATE experiments SET report=? WHERE identity='evaluation'", (sha,)
+            )
+        self.assert_denied_unchanged(800000, 600000)
+        self.assertEqual(len(provider.calls), 13)
+
     def test_negative_improvement_remains_rejected(self) -> None:
         report, _ = evaluated(self.store, 5, 1, 3)
         negative = replace(report, baseline_score=4 / 5)

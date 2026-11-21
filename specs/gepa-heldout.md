@@ -51,6 +51,12 @@ the exact candidate and fixed baseline, the sealed cohort, and its original
 ordered attempt receipts. It uses the same verification path as completed
 evaluation recovery. A compiled or blocked run cannot supply measurements.
 
+Use `include_cohort=True` with either measurement method for
+`runspindle.gepa-heldout-measurement.v2`. The underlying measurement adds a
+`cohort` with sorted opaque `training_cases` and `heldout_cases` from the
+owner's validated split. Consumers can compare both lists with a separate lock.
+The default v1 measurement remains available to existing readers.
+
 The `runspindle.gepa-heldout-measurement.v1` document binds the report to its owner,
 configuration, split, baseline and candidate by digest. The `rows` object contains
 paired `baseline` and `candidate` arrays sorted by opaque case identity. Each case

@@ -59,3 +59,42 @@ Tests use actual signed synthetic Tether admission/lineage, including permission
 withdrawal, source removal, final-callback invalidation rollback, cross-split
 rejection, immutable rows, reopening and a deliberate withdrawal-guard mutation.
 No provider, model, remote API or actual customer content is used.
+
+## Final feedback check for a single item
+
+For Refinery #15 and #4, both materialization and use check the entire retained
+feedback collection after the final policy callbacks. The individual projection
+can still be current when feedback from a different selection in the same
+collection has changed. The same callback-free check used for guarded batches
+compares every retained feedback digest and any recorded task-source fence.
+It runs before SQLite commit or byte release. A late invalidation rolls back a
+new item or denies a read of an existing item while preserving its historical
+bytes and receipt.
+
+The regression uses two signed synthetic reactions for one exact output. The
+final policy callback removes the other actor's reaction through pinned Tether.
+Independent Tether reads observe the removal while the selected reaction is still
+active. Both denial assertions fail on the base code and when the two final
+checks are removed in a disposable source copy. These checks cover a change the
+component can observe before returning. Concurrent updates after that read and
+distributed transaction guarantees remain outside this qualification.
+
+Reproduce with the exact Tether checkout from `dependencies/tether-feedback.json`:
+
+```sh
+RUNSPINDLE_TETHER_SOURCE=/path/to/pinned/tether python3 -B -m unittest discover -s tests -p test_dataset_materialization.py
+```
+
+The local checks use Refinery base `e2a1d45c2ba201f4476a7265b7a8c766d87ff694`,
+Python 3.13.18 on macOS arm64 and the exact Tether pin
+`1e8d2091c55dfad47fdc64ec2e73fcd946da9921`. Scaffold and changed-file Ruff
+checks passed. Repo-wide static quality reported the same Linux-only
+`os.O_PATH` diagnostic on both base and candidate.
+
+```text
+7a305663f4f9a10884698074946d9c902556f9a0a459156e4c08a177d017e7d6  refinery/dataset_materialization.py
+36a32971452952c3b743e9d0fe1665f10a18c06aee14e0997da914e213c50eb7  refinery/dataset_batch.py
+1e0da41be2e6b9bc7d0ebece3d8a2fef013bf0e5868ee3b2159c8972e084b4f3  tests/test_dataset_materialization.py
+7b3fde62dda082970ceba5480409f47aff0163b66c98592709679464fd8d4f74  dependencies/tether-feedback.json
+9cbe1331549216b953f2922f1e8321357ca82bb985e1ea595c87fcee8a8fdc84  requirements-quality.txt
+```

@@ -145,6 +145,23 @@ def main() -> int:
         root = Path.cwd()
         before = source_fingerprint(root)
         result = unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite(selected))
+        module_by_test = {str(test): test.id().split(".", 1)[0] for test in selected}
+        module_seconds: defaultdict[str, float] = defaultdict(float)
+        for description, seconds in result.collectedDurations:
+            module = module_by_test.get(description)
+            if module is not None:
+                module_seconds[module] += seconds
+        print(
+            "REFINERY_COMPONENT_MODULE_SECONDS "
+            + json.dumps(
+                {
+                    module: round(seconds, 3)
+                    for module, seconds in module_seconds.items()
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
         if source_fingerprint(root) != before:
             raise RuntimeError("component test shard changed its source tree")
         return 0 if result.wasSuccessful() and result.testsRun == len(selected) else 1

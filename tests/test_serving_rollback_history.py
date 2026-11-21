@@ -113,10 +113,17 @@ class RollbackHistoryTests(unittest.TestCase):
 
         def remove_approval(value: Approval) -> str:
             with closing(sqlite3.connect(self.path)) as db, db:
+                db.execute("BEGIN IMMEDIATE")
+                trigger = db.execute(
+                    "SELECT sql FROM sqlite_master WHERE name='objects_DELETE'"
+                ).fetchone()[0]
+                # Model logical row loss while restoring the admitted schema.
+                db.execute("DROP TRIGGER objects_DELETE")
                 db.execute(
                     "DELETE FROM objects WHERE kind='approval' AND identity=?",
                     (approval_key,),
                 )
+                db.execute(trigger)
             return value.actor
 
         registry.verify_approval = remove_approval

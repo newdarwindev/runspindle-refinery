@@ -74,6 +74,7 @@ class MaterializedHeldoutTests(unittest.TestCase):
         ):
             self.assertEqual(resumed.evaluate(), report)
             measured = resumed.measured_materialized_heldout()
+            with_cohort = resumed.measured_materialized_heldout(include_cohort=True)
         batch = self.batches[1]
         self.assertEqual(
             measured["version"], "runspindle.gepa-materialized-measurement.v1"
@@ -86,6 +87,20 @@ class MaterializedHeldoutTests(unittest.TestCase):
             measured["cases"], [{"case": case, "item_id": batch.selections[0].item_id}]
         )
         self.assertEqual(measured["measurement"]["rows"]["candidate"][0]["case"], case)
+        cohort = with_cohort["measurement"]["cohort"]
+        self.assertEqual(cohort["heldout_cases"], [case])
+        self.assertEqual(
+            cohort["training_cases"],
+            sorted(
+                digest(pack((item.output.output_id, item.output.revision)))
+                for item in resumed.dataset.examples
+                if resumed.split.partition(item.source.family_id) == "train"
+            ),
+        )
+        self.assertEqual(with_cohort["cases"], measured["cases"])
+        self.assertEqual(
+            with_cohort["heldout_manifest_sha256"], measured["heldout_manifest_sha256"]
+        )
         self.assertEqual(resumed.provider.calls, [])
         self.assertEqual(len(self.s.provider.calls), 3 + 2 * len(self.heldout))
         # No generic cohort-owner override is introduced for either split.

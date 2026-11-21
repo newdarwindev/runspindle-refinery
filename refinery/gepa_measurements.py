@@ -13,6 +13,13 @@ def case_digest(output_id: str, revision: str) -> str:
     return digest(pack((output_id, revision)))
 
 
+def case_roster(examples: tuple[Example, ...]) -> list[str]:
+    return sorted(
+        case_digest(example.output.output_id, example.output.revision)
+        for example in examples
+    )
+
+
 def paired_rows(
     heldout: tuple[Example, ...],
     attempts: tuple[Attempt, ...],

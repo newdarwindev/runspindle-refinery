@@ -1090,13 +1090,17 @@ class Session:
             verified = self._read_evaluated(tx)
             return None if verified is None else verified[0]
 
-    def measured_heldout(self) -> dict[str, Any]:
+    def measured_heldout(self, *, include_cohort: bool = False) -> dict[str, Any]:
         """Project exact retained GEPA attempt usage without starting evaluation."""
-        return self._read_measurement()[0]
+        return self._read_measurement(include_cohort=include_cohort)[0]
 
-    def measured_materialized_heldout(self) -> dict[str, Any]:
+    def measured_materialized_heldout(
+        self, *, include_cohort: bool = False
+    ) -> dict[str, Any]:
         """Bind verified measured cases to their exact authorized materialized items."""
-        measurement, materialized = self._read_measurement(include_materialized=True)
+        measurement, materialized = self._read_measurement(
+            include_materialized=True, include_cohort=include_cohort
+        )
         if materialized is None:
             raise ValueError("authorized materialized evaluation batch required")
         manifest, cases = materialized
@@ -1108,7 +1112,7 @@ class Session:
         }
 
     def _read_measurement(
-        self, *, include_materialized: bool = False
+        self, *, include_materialized: bool = False, include_cohort: bool = False
     ) -> tuple[dict[str, Any], MaterializedEvaluation | None]:
         if Session.evaluated_kind(self) != "gepa_evaluated":
             raise ValueError("exact durable GEPA session required")
@@ -1119,7 +1123,7 @@ class Session:
             if verified is None or verified[0]["status"] != "evaluated":
                 raise ValueError("completed GEPA heldout measurement required")
             report, report_sha, materialized = verified
-            heldout = validate_dataset(self.dataset, self.split)[1]
+            train, heldout = validate_dataset(self.dataset, self.split)
             measurement = {
                 "version": "runspindle.gepa-heldout-measurement.v1",
                 "evidence_class": "offline_scripted_provider",
@@ -1135,6 +1139,12 @@ class Session:
                     heldout, report["attempts"], report["predictions"]
                 ),
             }
+            if include_cohort:
+                measurement["version"] = "runspindle.gepa-heldout-measurement.v2"
+                measurement["cohort"] = {
+                    "training_cases": gepa_measurements.case_roster(train),
+                    "heldout_cases": gepa_measurements.case_roster(heldout),
+                }
             return measurement, materialized
 
     def claim_evaluation(self) -> opt.Compiled | evidence.GEPACompiled:

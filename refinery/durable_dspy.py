@@ -17,13 +17,13 @@ from . import gepa_optimizer as gepa
 from . import heldout_policy as policy
 from .durable_evaluation import SQLiteBudget, _restore
 from .feedback_use import RetainedFeedbackUse, use_guard
-from .lineage import _token, digest
+from .lineage import Example, _token, digest
 from .materialized_use import AuthorizedBatch, BoundBatch
 from .optimization import validate_dataset
 from .storage import Store, pack, unpack, version
 
 LIFECYCLE = "refinery.dspy.lifecycle.v1"
-MaterializedEvaluation = tuple[str, tuple[tuple[str, str], ...]]
+MaterializedCases = tuple[str, tuple[tuple[str, str], ...]]
 
 # Component-owned routing, not a resettable Session attribute. Weak values avoid
 # retaining a Session through a test/authority callback that closes over it.
@@ -195,13 +195,13 @@ class Session:
 
     def make_use_guard(
         self, store: Store, snapshot: str, **kwargs: Any
-    ) -> Callable[[], MaterializedEvaluation | None]:
+    ) -> Callable[[], MaterializedCases | None]:
         if not self.batches():
             return use_guard(store, snapshot, **kwargs)
         purpose = kwargs["purpose"]
         phase = "optimization" if purpose == "reflection" else purpose
 
-        def check() -> MaterializedEvaluation | None:
+        def check() -> MaterializedCases | None:
             matches = [b for b in self.batches() if b.purpose == phase]
             if len(matches) != 1:
                 raise ev.Halt("materialized_phase_batch_required")
@@ -308,7 +308,7 @@ class Session:
     def guard(self, purpose: str) -> None:
         self._guard(purpose)
 
-    def _guard(self, purpose: str) -> MaterializedEvaluation | None:
+    def _guard(self, purpose: str) -> MaterializedCases | None:
         seal = Session.strategy_binding(self)
         if seal != self._strategy_seal:
             raise ev.Halt("lifecycle_strategy_changed")
@@ -1054,7 +1054,7 @@ class Session:
 
     def _read_evaluated(
         self, tx: Any, *, include_materialized: bool = False
-    ) -> tuple[dict[str, Any], str, MaterializedEvaluation | None] | None:
+    ) -> tuple[dict[str, Any], str, MaterializedCases | None] | None:
         row = self.row(tx)
         if row is None or row[1] in {"compiling", "evaluating"}:
             raise ev.Halt("interrupted_or_owned_dspy_phase")
@@ -1098,12 +1098,36 @@ class Session:
         self, *, include_cohort: bool = False
     ) -> dict[str, Any]:
         """Bind verified measured cases to their exact authorized materialized items."""
-        measurement, materialized = self._read_measurement(
+        measurement, heldout, _ = self._read_measurement(
             include_materialized=True, include_cohort=include_cohort
         )
-        if materialized is None:
+        return self._materialized_report(measurement, heldout)
+
+    def measured_materialized_cohorts(self) -> dict[str, Any]:
+        """Include the retained optimization case without reauthorizing training."""
+        measurement, heldout, training = self._read_measurement(
+            include_materialized=True,
+            include_cohort=True,
+            include_training_mapping=True,
+        )
+        result = self._materialized_report(measurement, heldout)
+        if training is None:
+            raise ValueError("exact retained materialized training cohort required")
+        manifest, cases = training
+        return {
+            **result,
+            "version": "runspindle.gepa-materialized-cohort-measurement.v1",
+            "training_manifest_sha256": manifest,
+            "training_cases": [{"case": case, "item_id": item} for case, item in cases],
+        }
+
+    @staticmethod
+    def _materialized_report(
+        measurement: dict[str, Any], heldout: MaterializedCases | None
+    ) -> dict[str, Any]:
+        if heldout is None:
             raise ValueError("authorized materialized evaluation batch required")
-        manifest, cases = materialized
+        manifest, cases = heldout
         return {
             "version": "runspindle.gepa-materialized-measurement.v1",
             "measurement": measurement,
@@ -1111,9 +1135,31 @@ class Session:
             "cases": [{"case": case, "item_id": item} for case, item in cases],
         }
 
+    def _retained_training_cases(self, train: tuple[Example, ...]) -> MaterializedCases:
+        # The original optimization guard checked the single selected item
+        # against self.train. The verified compile and ownership binding pin
+        # that example and this immutable batch. Do not reopen its registry.
+        batches = [batch for batch in self.batches() if batch.purpose == "optimization"]
+        if (
+            len(batches) != 1
+            or len(batches[0].batch.selections) != 1
+            or len(train) != 1
+            or train != self.train
+        ):
+            raise ValueError("exact retained materialized training cohort required")
+        batch = batches[0]
+        case = gepa_measurements.case_digest(
+            train[0].output.output_id, train[0].output.revision
+        )
+        return digest(batch.manifest), ((case, batch.batch.selections[0].item_id),)
+
     def _read_measurement(
-        self, *, include_materialized: bool = False, include_cohort: bool = False
-    ) -> tuple[dict[str, Any], MaterializedEvaluation | None]:
+        self,
+        *,
+        include_materialized: bool = False,
+        include_cohort: bool = False,
+        include_training_mapping: bool = False,
+    ) -> tuple[dict[str, Any], MaterializedCases | None, MaterializedCases | None]:
         if Session.evaluated_kind(self) != "gepa_evaluated":
             raise ValueError("exact durable GEPA session required")
         with self.store.transaction() as tx:
@@ -1145,7 +1191,12 @@ class Session:
                     "training_cases": gepa_measurements.case_roster(train),
                     "heldout_cases": gepa_measurements.case_roster(heldout),
                 }
-            return measurement, materialized
+            training = (
+                self._retained_training_cases(train)
+                if include_training_mapping
+                else None
+            )
+            return measurement, materialized, training
 
     def claim_evaluation(self) -> opt.Compiled | evidence.GEPACompiled:
         self.guard("evaluation")

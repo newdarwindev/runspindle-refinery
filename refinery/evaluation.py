@@ -11,7 +11,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable, Protocol, cast
 
-from .lineage import MAX_BYTES, MAX_RECORDS, Dataset, LockedSplit, digest
+from .lineage import MAX_BYTES, MAX_RECORDS, Dataset, Example, LockedSplit, digest
 
 VERSION = "runspindle.runtime.v1"
 
@@ -515,6 +515,34 @@ def validate_provider(
     return config
 
 
+def evaluation_cases(
+    config: Configuration, train: tuple[Example, ...], heldout: tuple[Example, ...]
+) -> list[tuple[str, Example]]:
+    return [(stage, e) for stage in config.preparation for e in train] + [
+        (stage, e) for stage in ("baseline", "candidate") for e in heldout
+    ]
+
+
+def evaluation_request(
+    experiment: Experiment,
+    split: LockedSplit,
+    stage: str,
+    example: Example,
+    number: int,
+) -> Request:
+    return Request(
+        stage,
+        example.output.output_id,
+        example.output.revision,
+        example.source.sha256,
+        experiment.baseline_sha256
+        if stage == "baseline"
+        else experiment.candidate_sha256,
+        split.sha256,
+        number,
+    )
+
+
 def evaluate(
     dataset: Dataset,
     split: LockedSplit,
@@ -576,26 +604,12 @@ def evaluate(
             raise Halt("empty_evaluation")
         if config.preparation and not train:
             raise Halt("empty_training")
-        sequence = [(stage, e) for stage in config.preparation for e in train]
-        sequence += [(stage, e) for stage in ("baseline", "candidate") for e in heldout]
+        sequence = evaluation_cases(config, train, heldout)
         if len(sequence) * config.max_attempts > 4096:
             raise Halt("attempt_limit")
         for stage, example in sequence:
-            artifact = (
-                experiment.baseline_sha256
-                if stage == "baseline"
-                else experiment.candidate_sha256
-            )
             for number in range(1, config.max_attempts + 1):
-                request = Request(
-                    stage,
-                    example.output.output_id,
-                    example.output.revision,
-                    example.source.sha256,
-                    artifact,
-                    split.sha256,
-                    number,
-                )
+                request = evaluation_request(experiment, split, stage, example, number)
                 guard_use(budget, check_use)
                 ticket = budget.reserve(config.per_call, request=request)
                 guard_use(budget, check_use)  # dispatch guard

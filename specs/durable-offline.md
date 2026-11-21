@@ -30,6 +30,12 @@ atomically before invocation. A running experiment cannot be reclaimed or
 automatically replayed, including interruption before the first call. Unknown
 usage retains reservations. No automatic expiry, refund or eviction exists.
 Completed report replay returns the stored report without provider calls.
+Before committing or replaying a passing scripted report, Refinery matches
+the complete preparation and held-out request sequence to the ordered settled
+SQLite receipts. It recomputes exact-match counts from receipt output digests
+and locked gold digests, checks the configured thresholds, and verifies that
+cumulative usage covers the recorded attempts within the budget limits.
+Blocked reports remain available as diagnostic evidence.
 
 The pinned DSPy 3.1.0 lane runs actual `Predict` and `BaseLM.forward` against a
 deterministic local LM inside a Linux arm64 Python 3.14 container with no network.
@@ -43,6 +49,11 @@ provider quality nor actual monetary cost. No provider fallback is implemented.
 
 `Registry.qualify` binds a durably completed locked report and exact candidate
 bytes to explicit quality/improvement/resource thresholds and an environment.
+The qualification transaction rechecks the same passing evidence against the
+retained experiment binding and lineage before recording a policy or candidate.
+A changed summary score with a matching new checksum still requires supporting
+settled receipts. This checks consistency with the local ledger and locked
+lineage in the existing component trust boundary.
 `begin` requires independent approval verification, binds actor evidence to all
 candidate/evaluation/policy/environment digests, and claims a generation with
 compare-and-swap. Activation intent commits before dispatch; dispatch is claimed

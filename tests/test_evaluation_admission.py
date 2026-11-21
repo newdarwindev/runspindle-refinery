@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib
 import importlib.util
 import json
@@ -168,6 +169,40 @@ class EvaluationAdmissionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "immutable experiment conflict"):
             invoke(self.store, ready, budget_id="unrelated")
         self.assertEqual(contents(self.store), before)
+
+    def test_passing_replay_rejects_rehashed_score_and_missing_settlement(self) -> None:
+        ready = fixture(self.store)
+        report = invoke(self.store, ready)
+        original = hashlib.sha256(storage.pack(report)).hexdigest()
+        changed = replace(report, baseline_score=0.0)
+        changed_sha = hashlib.sha256(storage.pack(changed)).hexdigest()
+        with self.store.transaction() as tx:
+            self.store.put(tx, "report", changed_sha, changed)
+            tx.execute("UPDATE experiments SET report=?", (changed_sha,))
+
+        def assert_denied() -> None:
+            before = contents(self.store)
+            with (
+                patch.object(
+                    ev.ScriptedProvider,
+                    "complete",
+                    side_effect=AssertionError("dispatch"),
+                ) as dispatch,
+                storage.Store(self.path) as reopened,
+            ):
+                with self.assertRaisesRegex(ValueError, "passing evaluation evidence"):
+                    invoke(reopened, ready)
+                dispatch.assert_not_called()
+            self.assertEqual(contents(self.store), before)
+
+        assert_denied()
+        with self.store.transaction() as tx:
+            tx.execute("UPDATE experiments SET report=?", (original,))
+            tx.execute(
+                "UPDATE attempts SET outcome='unknown', receipt=NULL "
+                "WHERE ticket=(SELECT max(ticket) FROM attempts)"
+            )
+        assert_denied()
 
     def test_rejected_shared_budget_and_failed_claim_roll_back_all_rows(self) -> None:
         ready = fixture(self.store)

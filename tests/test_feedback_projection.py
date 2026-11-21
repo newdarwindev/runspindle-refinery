@@ -23,10 +23,12 @@ class HTTP:
         self.origin = "https://langfuse.example"
         self.scores: dict[str, dict[str, Any]] = {}
         self.posts = 0
+        self.gets = 0
         self.outage = False
         self.accept_then_fail = False
         self.hidden = False
         self.on_get: Any = lambda: None
+        self.on_post: Any = lambda: None
 
     def request(
         self,
@@ -56,6 +58,7 @@ class HTTP:
                 metadata=value["metadata"],
                 subject={"kind": "trace", "id": value["traceId"]},
             )
+            self.on_post()
             if self.accept_then_fail:
                 raise TimeoutError("accepted without acknowledgement")
             return Response(200, c.canonical({"id": value["id"]}))
@@ -64,6 +67,7 @@ class HTTP:
             "details,subject"
         ]:
             raise AssertionError("wrong read")
+        self.gets += 1
         self.on_get()
         row = self.scores.get(query["id"][0])
         return Response(
@@ -290,6 +294,41 @@ class ProjectionTests(unittest.TestCase):
         self.assertFalse(current["export_allowed"])
         self.assertEqual(self.http.posts, 0)
 
+    def test_export_withdrawn_during_post_denies_readback_after_reopen(self) -> None:
+        first = self.ledger.capture(self.source)
+        self.http.on_post = lambda: self.authority.update(
+            export_allowed=False, revision="policy2"
+        )
+        self.assertEqual(self.ledger.dispatch(self.source, self.adapter), "superseded")
+        self.assertIn(first["projection_id"], self.http.scores)
+        self.assertEqual((self.http.gets, self.http.posts), (1, 1))
+        self.assertEqual(self.ledger.status(first["projection_id"]), "superseded")
+        reopened = ProjectionLedger(self.path, self.adapter.destination)
+        try:
+            self.assertEqual(reopened.dispatch(self.source, self.adapter), "blocked")
+        finally:
+            reopened.close()
+        self.assertEqual((self.http.gets, self.http.posts), (1, 1))
+
+    def test_destination_changed_during_post_denies_readback(self) -> None:
+        adapter = self.adapter
+
+        class Transport:
+            destination = adapter.destination
+
+            def get(self, projection_id: str) -> dict[str, Any] | None:
+                return adapter.get(projection_id)
+
+            def put(self, value: dict[str, Any]) -> None:
+                adapter.put(value)
+                self.destination = "changed-destination"
+
+        first = self.ledger.capture(self.source)
+        with self.assertRaisesRegex(ValueError, "transport destination changed"):
+            self.ledger.dispatch(self.source, Transport())
+        self.assertEqual((self.http.gets, self.http.posts), (1, 1))
+        self.assertEqual(self.ledger.status(first["projection_id"]), "uncertain")
+
     def test_revocation_during_remote_read_is_sticky_and_negative_revision(
         self,
     ) -> None:
@@ -397,7 +436,7 @@ class ProjectionTests(unittest.TestCase):
         module = importlib.import_module("refinery.feedback_projection")
         source = textwrap.dedent(inspect.getsource(ProjectionLedger.dispatch))
         needle = "if self.capture(source) != value:"
-        self.assertEqual(source.count(needle), 3)
+        self.assertEqual(source.count(needle), 4)
         namespace = dict(vars(module))
         exec(
             compile(

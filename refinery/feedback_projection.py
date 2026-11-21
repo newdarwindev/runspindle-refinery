@@ -340,17 +340,27 @@ class ProjectionLedger:
         return str(row[0])
 
     def dispatch(self, source: RetainedSource, transport: ProjectionTransport) -> str:
-        if transport.destination != self.destination:
-            raise ValueError("projection transport destination changed")
+        def require_destination() -> None:
+            if transport.destination != self.destination:
+                raise ValueError("projection transport destination changed")
+
+        require_destination()
         value = self.capture(source)
         pid = value["projection_id"]
+
+        def readback() -> dict[str, Any] | None:
+            require_destination()
+            observed = transport.get(pid)
+            require_destination()
+            return observed
+
         if not value["export_allowed"]:
             return "blocked"
         if self.status(pid) == "delivered":
             return "delivered"
         # Reads do not imply authority and never establish that an ambiguous
         # async write did not happen. HTTP failure before first write stays pending.
-        observed = transport.get(pid)
+        observed = readback()
         if observed is not None and observed != value:
             raise ValueError("remote projection conflict")
         if self.capture(source) != value:
@@ -373,8 +383,11 @@ class ProjectionLedger:
             try:
                 if self.capture(source) != value:
                     return "superseded"
+                require_destination()
                 transport.put(dict(value))
-                observed = transport.get(pid)
+                if self.capture(source) != value:
+                    return "superseded"
+                observed = readback()
             except BaseException:
                 self.db.execute(
                     "UPDATE projection_outbox SET state='uncertain' WHERE projection_id=? AND state='attempted'",

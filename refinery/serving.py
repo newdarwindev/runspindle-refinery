@@ -602,6 +602,7 @@ class Registry:
         mutable ownership again after its callback, before returning exact bytes.
         This is not an atomic transaction with an external serving target.
         """
+        store, verifier = self.store, self.verify_approval
         environment, generation, key, predecessor, _ = expected
         ownership = {
             "generation": generation,
@@ -651,9 +652,11 @@ class Registry:
         )
         expected_actor = approval.actor
         try:
-            actor = self.verify_approval(approval) if self.verify_approval else None
+            actor = verifier(approval) if verifier else None
         except Exception:
             actor = None
+        if self.store is not store or self.verify_approval is not verifier:
+            raise ValueError("activation approval denied: dispatch context changed")
         if (
             type(actor) is not str
             or actor != expected_actor
@@ -682,6 +685,7 @@ class Registry:
         checkpoint=lambda _: None,
     ):
         version(api_version)
+        store, verifier = self.store, self.verify_approval
         environment, generation, key, predecessor, state = self._intent(activation_id)
         if state != "intent":
             return self.reconcile(api_version, activation_id, adapter)
@@ -689,7 +693,7 @@ class Registry:
             activation_id, (environment, generation, key, predecessor, state)
         )
         # Claim dispatch durably. A second caller must read back; never reload unknown.
-        with self.store.transaction() as tx:
+        with store.transaction() as tx:
             changed = tx.execute(
                 "UPDATE activations SET state='unknown' WHERE identity=? AND state='intent'",
                 (activation_id,),
@@ -697,6 +701,8 @@ class Registry:
         if not changed:
             return self.reconcile(api_version, activation_id, adapter)
         checkpoint("before_candidate_load")
+        if self.store is not store or self.verify_approval is not verifier:
+            raise ValueError("activation approval denied: dispatch context changed")
         candidate, old_digest = self._authorize_load(
             activation_id, (environment, generation, key, predecessor, "unknown")
         )

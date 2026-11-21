@@ -15,7 +15,7 @@ from unittest.mock import patch
 from refinery import serving
 from refinery.lineage import digest
 from refinery.serving import Approval, Registry
-from refinery.storage import VERSION, pack
+from refinery.storage import VERSION, Store, pack
 
 fixtures = importlib.import_module("test_durable")
 ROOT = Path(__file__).resolve().parents[1]
@@ -215,6 +215,85 @@ finally:
         self.assertEqual(
             adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
         )
+
+    def _dispatch_context_substitution(self, field: str, *, call: int = 1) -> None:
+        registry, _, _, adapter = self.pending()
+        checks = 0
+        with Store(self.path) as replacement:
+            before = tuple(self.store.db.iterdump())
+
+            def replace_context(approval: Approval) -> str:
+                nonlocal checks
+                checks += 1
+                if checks == call:
+                    if field == "store":
+                        registry.store = replacement
+                    else:
+                        registry.verify_approval = lambda approval: approval.actor
+                return approval.actor
+
+            registry.verify_approval = replace_context
+            try:
+                with self.assertRaisesRegex(ValueError, "approval denied"):
+                    registry.load(VERSION, "activation", adapter)
+            finally:
+                registry.store = self.store
+                self.assertEqual(
+                    adapter.db.execute("SELECT count(*) FROM calls").fetchone(), (0,)
+                )
+            if call == 1:
+                self.assertEqual(tuple(replacement.db.iterdump()), before)
+                self.assertEqual(tuple(self.store.db.iterdump()), before)
+            else:
+                self.assertEqual(
+                    replacement.db.execute(
+                        "SELECT state FROM activations WHERE identity='activation'"
+                    ).fetchone(),
+                    ("unknown",),
+                )
+                self.assertEqual(registry.state("local")["pending"], "activation")
+            self.assertEqual(checks, call)
+            self.assertIsNone(adapter.readback("local"))
+
+    def test_dispatch_rejects_store_substitution_by_verifier(self) -> None:
+        self._dispatch_context_substitution("store")
+
+    def test_dispatch_rejects_verifier_substitution_by_verifier(self) -> None:
+        self._dispatch_context_substitution("verify_approval")
+
+    def test_claimed_dispatch_rejects_context_change_in_second_verification(
+        self,
+    ) -> None:
+        self._dispatch_context_substitution("verify_approval", call=2)
+
+    def test_checkpoint_store_substitution_retains_unknown_without_dispatch(
+        self,
+    ) -> None:
+        registry, _, _, adapter = self.pending()
+        with Store(self.path) as replacement:
+
+            def replace_store(point: str) -> None:
+                if point == "before_candidate_load":
+                    registry.store = replacement
+
+            try:
+                with self.assertRaisesRegex(ValueError, "approval denied"):
+                    registry.load(
+                        VERSION, "activation", adapter, checkpoint=replace_store
+                    )
+            finally:
+                registry.store = self.store
+                self.assertEqual(
+                    adapter.db.execute("SELECT count(*) FROM calls").fetchone(), (0,)
+                )
+            self.assertEqual(
+                replacement.db.execute(
+                    "SELECT state FROM activations WHERE identity='activation'"
+                ).fetchone(),
+                ("unknown",),
+            )
+        self.assertEqual(registry.load(VERSION, "activation", adapter), "unknown")
+        self.assertIsNone(adapter.readback("local"))
 
     def test_approval_pointer_substitution_fails_closed(self) -> None:
         registry, _, approval, adapter = self.pending()

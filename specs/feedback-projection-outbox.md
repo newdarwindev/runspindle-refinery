@@ -55,6 +55,12 @@ revision. A stale worker cannot acknowledge a newer revision. Two callers may
 perform harmless reads; the pending-to-attempted transaction admits only one first
 write. Caller-owned transport must honor the explicit timeout/output bounds.
 
+After a POST, the dispatcher re-observes local export authority before requesting
+readback. Withdrawal or a newer projection stops the read and retains the
+superseding revision. A changed transport destination also blocks the read.
+The dispatcher checks the declared destination before transport calls and after
+reads. A POST attempted before either change stays reserved against resending.
+
 Failure before any write remains pending and can replay after an outage. Once a
 write was attempted, absent/failed/eventually-consistent readback remains uncertain:
 **there is no blind re-POST**, lease-expiry assumption or automatic retry authority.

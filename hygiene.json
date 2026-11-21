@@ -77,7 +77,8 @@
       "id": "python-tests",
       "command": [
         "python3",
-        "tools/run_component_tests.py"
+        "-m",
+        "tools.run_component_tests"
       ],
       "required_files": [
         "tests"

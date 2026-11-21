@@ -8,20 +8,23 @@ import sys
 import tempfile
 import unittest
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
 
-from hygiene import source_fingerprint
+from tools.hygiene import source_fingerprint
 
 
-def cases(suite):
+def cases(suite: unittest.TestSuite) -> Iterator[unittest.TestCase]:
     for item in suite:
         if isinstance(item, unittest.TestSuite):
             yield from cases(item)
-        else:
+        elif isinstance(item, unittest.TestCase):
             yield item
+        else:
+            raise TypeError("unexpected unittest discovery item")
 
 
-def discover():
+def discover() -> tuple[list[unittest.TestCase], list[str]]:
     loader = unittest.TestLoader()
     discovered = list(cases(loader.discover("tests")))
     identities = [test.id() for test in discovered]
@@ -30,11 +33,11 @@ def discover():
     return discovered, identities
 
 
-def assign(identities):
-    modules = defaultdict(list)
+def assign(identities: list[str]) -> list[list[str]]:
+    modules: defaultdict[str, list[str]] = defaultdict(list)
     for identity in identities:
         modules[identity.split(".", 1)[0]].append(identity)
-    shards = [[], []]
+    shards: list[list[str]] = [[], []]
     for module in sorted(modules, key=lambda name: (-len(modules[name]), name)):
         min(shards, key=len).extend(modules[module])
     if any(not shard for shard in shards):
@@ -42,11 +45,11 @@ def assign(identities):
     return shards
 
 
-def git(*args):
+def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], text=True).strip()
 
 
-def clone(source, destination, revision):
+def clone(source: Path, destination: Path, revision: str) -> None:
     git(
         "clone",
         "--quiet",
@@ -59,11 +62,11 @@ def clone(source, destination, revision):
     git("-C", str(destination), "checkout", "--quiet", "--detach", revision)
 
 
-def command(*args):
-    return [sys.executable, str(Path(__file__).resolve()), *args]
+def command(*args: str) -> list[str]:
+    return [sys.executable, "-m", "tools.run_component_tests", *args]
 
 
-def run_parallel():
+def run_parallel() -> int:
     root = Path.cwd()
     tether = Path(os.environ["RUNSPINDLE_TETHER_SOURCE"]).resolve(strict=True)
     revision = git("rev-parse", "HEAD")
@@ -99,7 +102,7 @@ def run_parallel():
             check=True,
         )
         identities = json.loads(inventory.read_text())
-        workers = []
+        workers: list[subprocess.Popen[bytes]] = []
         try:
             for index, shard in enumerate(assign(identities)):
                 plan = workspace / f"shard-{index}.json"
@@ -120,7 +123,7 @@ def run_parallel():
                     worker.wait()
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--discover", type=Path)
     parser.add_argument("--inventory", type=Path)

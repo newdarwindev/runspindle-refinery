@@ -73,7 +73,7 @@ def run_parallel() -> int:
     pin = json.loads((root / "dependencies/tether-feedback.json").read_text())
     if git("-C", str(tether), "rev-parse", "HEAD") != pin["commit"]:
         raise RuntimeError("prepared Tether checkout differs from the component lock")
-    with tempfile.TemporaryDirectory(prefix="refinery-component-") as scratch:
+    with tempfile.TemporaryDirectory(prefix="rf-") as scratch:
         workspace = Path(scratch)
         checkouts, environments = [], []
         for index in range(2):
@@ -82,7 +82,8 @@ def run_parallel() -> int:
             pinned = checkout / ".feedback-deps" / "tether"
             pinned.parent.mkdir()
             clone(tether, pinned, pin["commit"])
-            temporary = checkout / ".git" / "component-tmp"
+            # Keep Unix socket fixture paths short and outside the checkout.
+            temporary = workspace / f"t{index}"
             temporary.mkdir()
             checkouts.append(checkout)
             environments.append(

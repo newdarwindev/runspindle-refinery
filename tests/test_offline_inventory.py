@@ -8,6 +8,7 @@ import os
 import socket
 import tempfile
 import unittest
+from contextlib import chdir
 from pathlib import Path
 from typing import Any
 from unittest.mock import patch
@@ -101,7 +102,9 @@ class InventoryTests(unittest.TestCase):
         self.assert_rejected_without_dispatch(self.prepared)
         fifo.unlink()
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
-            sock.bind(str(self.prepared / "extra.socket"))
+            # The fixture must still work under long CI scratch paths.
+            with chdir(self.prepared):
+                sock.bind("extra.socket")
             self.assert_rejected_without_dispatch(self.prepared)
 
     def test_unreadable_walk_is_not_silently_omitted(self) -> None:

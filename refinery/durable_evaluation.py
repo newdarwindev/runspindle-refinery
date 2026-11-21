@@ -362,7 +362,9 @@ def verify_evaluation_pass(
             if position >= len(attempts):
                 raise ValueError(failure)
             attempt = attempts[position]
-            request = pack(evaluation_request(experiment, stage, example, number))
+            request = pack(
+                evaluation_request(experiment, split, stage, example, number)
+            )
             if (
                 type(attempt) is not Attempt
                 or next(rows, None) != (request, "settled", pack(attempt))

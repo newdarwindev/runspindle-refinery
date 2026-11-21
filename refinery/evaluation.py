@@ -524,7 +524,11 @@ def evaluation_cases(
 
 
 def evaluation_request(
-    experiment: Experiment, stage: str, example: Example, number: int
+    experiment: Experiment,
+    split: LockedSplit,
+    stage: str,
+    example: Example,
+    number: int,
 ) -> Request:
     return Request(
         stage,
@@ -534,7 +538,7 @@ def evaluation_request(
         experiment.baseline_sha256
         if stage == "baseline"
         else experiment.candidate_sha256,
-        experiment.split_sha256,
+        split.sha256,
         number,
     )
 
@@ -605,7 +609,7 @@ def evaluate(
             raise Halt("attempt_limit")
         for stage, example in sequence:
             for number in range(1, config.max_attempts + 1):
-                request = evaluation_request(experiment, stage, example, number)
+                request = evaluation_request(experiment, split, stage, example, number)
                 guard_use(budget, check_use)
                 ticket = budget.reserve(config.per_call, request=request)
                 guard_use(budget, check_use)  # dispatch guard

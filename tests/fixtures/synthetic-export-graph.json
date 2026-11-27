@@ -1,0 +1,87 @@
+{
+  "tree_entry": "fixture-main",
+  "expected_heads": {
+    "99": "fixture-head-99",
+    "100": "fixture-head-100",
+    "101": "fixture-head-101",
+    "102": "fixture-head-102",
+    "103": "fixture-head-103"
+  },
+  "nodes": [
+    {
+      "number": 99,
+      "head": "fixture-head-99",
+      "base": "fixture-main",
+      "predecessor": null,
+      "merged": true,
+      "review": {
+        "head": "fixture-head-99",
+        "state": "approved"
+      },
+      "checks": {
+        "head": "fixture-head-99",
+        "validation": "passed"
+      }
+    },
+    {
+      "number": 100,
+      "head": "fixture-head-100",
+      "base": "fixture-head-99",
+      "predecessor": 99,
+      "merged": true,
+      "review": {
+        "head": "fixture-head-100",
+        "state": "approved"
+      },
+      "checks": {
+        "head": "fixture-head-100",
+        "validation": "passed"
+      }
+    },
+    {
+      "number": 101,
+      "head": "fixture-head-101",
+      "base": "fixture-head-100",
+      "predecessor": 100,
+      "merged": true,
+      "review": {
+        "head": "fixture-head-101",
+        "state": "approved"
+      },
+      "checks": {
+        "head": "fixture-head-101",
+        "validation": "passed"
+      }
+    },
+    {
+      "number": 102,
+      "head": "fixture-head-102",
+      "base": "fixture-head-101",
+      "predecessor": 101,
+      "merged": false,
+      "review": {
+        "head": "fixture-head-102",
+        "state": "requested"
+      },
+      "checks": {
+        "head": "fixture-head-102",
+        "validation": "passed"
+      }
+    },
+    {
+      "number": 103,
+      "head": "fixture-head-103",
+      "base": "fixture-head-102",
+      "predecessor": 102,
+      "merged": false,
+      "review": {
+        "head": "fixture-head-103",
+        "state": "requested"
+      },
+      "checks": {
+        "head": "fixture-head-103",
+        "validation": "passed"
+      }
+    }
+  ]
+}

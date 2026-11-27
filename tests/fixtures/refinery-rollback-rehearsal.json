@@ -1,0 +1,7 @@
+{
+  "candidate": {"id": "fixture-candidate", "lineage": "fixture-lineage", "holdout": "fixture-holdout"},
+  "approval": {"id": "fixture-candidate", "lineage": "fixture-lineage", "holdout": "fixture-holdout", "predecessor": "fixture-previous"},
+  "predecessor": "fixture-previous",
+  "reviewed_predecessor": "fixture-previous",
+  "witness": {"candidate": "fixture-candidate", "restored": "fixture-previous"}
+}

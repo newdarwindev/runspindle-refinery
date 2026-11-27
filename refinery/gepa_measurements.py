@@ -9,6 +9,10 @@ from .lineage import Example, digest
 from .storage import pack
 
 
+def case_digest(output_id: str, revision: str) -> str:
+    return digest(pack((output_id, revision)))
+
+
 def paired_rows(
     heldout: tuple[Example, ...],
     attempts: tuple[Attempt, ...],
@@ -33,7 +37,7 @@ def paired_rows(
         cost, tokens = totals[stage, output, revision]
         rows[stage].append(
             {
-                "case": digest(pack((output, revision))),
+                "case": case_digest(output, revision),
                 "correct": answer == gold[output, revision],
                 "cost_micros": cost,
                 "tokens": tokens,

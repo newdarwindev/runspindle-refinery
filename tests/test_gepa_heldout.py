@@ -172,6 +172,10 @@ class HeldoutTests(unittest.TestCase):
             },
         )
         self.assertEqual(resumed.measured_heldout(), measured)
+        with self.assertRaisesRegex(
+            ValueError, "authorized materialized evaluation batch required"
+        ):
+            resumed.measured_materialized_heldout()
         script = [
             (reply.content.hex(), reply.tokens, reply.cost_microunits, reply.safety)
             for reply in self.h.script

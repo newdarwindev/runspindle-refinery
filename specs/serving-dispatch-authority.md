@@ -19,6 +19,14 @@ environment ownership. A verifier that mutates its argument or another registry
 binding cannot authorize dispatch under the old decision. Callback exceptions
 produce a fixed denial; cancellation propagates.
 
+The dispatch binds the exact prior activation ID, generation and candidate
+digest, and rechecks them after the verifier callback. A replacement or rollback
+can only proceed when the loader compares that identity atomically with its
+actual active row. Matching program bytes from another activation do not permit
+replacement. The registry's adapter interface supplies this complete identity.
+The local synthetic loader still accepts digest-only direct calls using its old
+fixture API.
+
 A denial before the durable claim makes no registry or adapter write. A denial or
 cancellation after the claim leaves the existing unknown outcome and reservation;
 restoring approval does not automatically retry an uncertain load. An acknowledgment

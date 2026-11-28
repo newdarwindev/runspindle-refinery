@@ -11,7 +11,7 @@ import math
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, Iterator, Protocol, cast
+from typing import Any, Callable, Iterator, Protocol, TypedDict, cast
 
 from .evaluation import Report, _integer
 from .lineage import MAX_BYTES, MAX_RECORDS, _bytes, _hash, _token, digest
@@ -79,6 +79,12 @@ class Approval:
 TYPES.update({"Policy": Policy, "SamplePolicy": SamplePolicy, "Approval": Approval})
 
 
+class ServingIdentity(TypedDict):
+    activation_id: str
+    generation: int
+    candidate_sha256: str
+
+
 class ServingAdapter(Protocol):
     def load(
         self,
@@ -87,7 +93,8 @@ class ServingAdapter(Protocol):
         generation: int,
         candidate_sha256: str,
         content: bytes,
-        predecessor_sha256: str | None,
+        predecessor: ServingIdentity | None,
+        /,
     ) -> bool: ...
     def readback(self, environment: str) -> Any: ...
 
@@ -216,7 +223,7 @@ class LocalServing:
         generation: int,
         candidate_sha256: str,
         content: bytes,
-        predecessor_sha256: str | None,
+        predecessor_sha256: ServingIdentity | str | None,
     ) -> bool:
         _token(activation_id)
         _token(environment)
@@ -225,6 +232,22 @@ class LocalServing:
         if digest(content) != candidate_sha256:
             raise ValueError("candidate bytes changed")
         program(content)  # parse/validate before replacing the prior bytes
+        predecessor = predecessor_sha256
+        if type(predecessor) is dict:
+            if not _readback_matches(predecessor, predecessor):
+                raise ValueError("invalid serving predecessor")
+            _token(predecessor["activation_id"])
+            _integer(predecessor["generation"], positive=True)
+            _hash(predecessor["candidate_sha256"])
+            predecessor = ServingIdentity(
+                activation_id=predecessor["activation_id"],
+                generation=predecessor["generation"],
+                candidate_sha256=predecessor["candidate_sha256"],
+            )
+        elif type(predecessor) is str:
+            _hash(predecessor)
+        elif predecessor is not None:
+            raise ValueError("invalid serving predecessor")
         with self._transaction():
             self.db.execute(
                 "INSERT INTO calls(action,activation,digest) VALUES('load',?,?)",
@@ -235,7 +258,7 @@ class LocalServing:
                 if old[3] != content:
                     raise ValueError("changed idempotent activation bytes")
             else:
-                if (old[2] if old else None) != predecessor_sha256 or (
+                if not _predecessor_matches(old, predecessor) or (
                     old and generation <= old[1]
                 ):
                     raise ValueError("serving predecessor or generation conflict")
@@ -278,6 +301,22 @@ def _readback_matches(observed: Any, expected: Any) -> bool:
         and type(observed["generation"]) is int
         and type(observed["candidate_sha256"]) is str
         and observed == expected
+    )
+
+
+def _predecessor_matches(row: Any, expected: ServingIdentity | str | None) -> bool:
+    if row is None:
+        return expected is None
+    if type(expected) is str:
+        # Keep the direct synthetic loader's historical digest-only API.
+        return bool(row[2] == expected)
+    return expected is not None and _readback_matches(
+        {
+            "activation_id": row[0],
+            "generation": row[1],
+            "candidate_sha256": row[2],
+        },
+        expected,
     )
 
 
@@ -595,6 +634,35 @@ class Registry:
             raise ValueError("unknown activation")
         return row
 
+    def _dispatch_predecessor(
+        self, environment: str, generation: int, key: str | None
+    ) -> ServingIdentity | None:
+        if key is None:
+            return None
+        _hash(key)
+        candidate = self.store.get("candidate", key)
+        if (
+            digest(pack(candidate)) != key
+            or candidate["environment"] != environment
+            or digest(candidate["content"]) != candidate["candidate_sha256"]
+        ):
+            raise ValueError("dispatch predecessor binding changed")
+        row = self.store.db.execute(
+            "SELECT identity,generation FROM activations WHERE environment=? "
+            "AND candidate=? AND state='active' AND generation<? "
+            "ORDER BY generation DESC LIMIT 1",
+            (environment, key, generation),
+        ).fetchone()
+        if row is None:
+            raise ValueError("dispatch predecessor activation unavailable")
+        _token(row[0])
+        _integer(row[1], positive=True)
+        return {
+            "activation_id": row[0],
+            "generation": row[1],
+            "candidate_sha256": candidate["candidate_sha256"],
+        }
+
     def _authorize_load(self, activation_id: str, expected: Any) -> Any:
         """Fresh approval at dispatch, not perpetual authority from stored intent.
 
@@ -644,11 +712,7 @@ class Registry:
             or approval.environment != environment
         ):
             raise ValueError("activation approval binding changed")
-        old_digest = (
-            self.store.get("candidate", predecessor)["candidate_sha256"]
-            if predecessor
-            else None
-        )
+        prior = self._dispatch_predecessor(environment, generation, predecessor)
         expected_actor = approval.actor
         try:
             actor = self.verify_approval(approval) if self.verify_approval else None
@@ -669,9 +733,10 @@ class Registry:
             != (approval_key,)
             or pack(self.store.get("approval", approval_key)) != approval_bytes
             or pack(self.store.get("candidate", key)) != candidate_bytes
+            or self._dispatch_predecessor(environment, generation, predecessor) != prior
         ):
             raise ValueError("activation binding changed during approval")
-        return candidate, old_digest
+        return candidate, prior
 
     def load(
         self,
@@ -697,7 +762,7 @@ class Registry:
         if not changed:
             return self.reconcile(api_version, activation_id, adapter)
         checkpoint("before_candidate_load")
-        candidate, old_digest = self._authorize_load(
+        candidate, prior = self._authorize_load(
             activation_id, (environment, generation, key, predecessor, "unknown")
         )
         try:
@@ -707,7 +772,7 @@ class Registry:
                 generation,
                 candidate["candidate_sha256"],
                 candidate["content"],
-                old_digest,
+                prior,
             )
         except Exception:
             # A thrown exception may follow an actual load: keep unknown until readback.

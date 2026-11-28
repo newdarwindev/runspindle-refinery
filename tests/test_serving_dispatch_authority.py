@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from refinery import serving
 from refinery.lineage import digest
-from refinery.serving import Approval, Registry
+from refinery.serving import Approval, LocalServing, Registry
 from refinery.storage import VERSION, pack
 
 fixtures = importlib.import_module("test_durable")
@@ -182,6 +182,68 @@ finally:
             adapter.db.execute("SELECT count(*) FROM calls").fetchone()[0], 0
         )
         self.assertIsNone(adapter.readback("local"))
+
+    def test_replacement_cannot_overwrite_same_bytes_from_another_activation(
+        self,
+    ) -> None:
+        registry, first, first_approval = self.candidate()
+        original = self.adapter()
+        registry.begin(VERSION, "first", first, first_approval, expected_generation=0)
+        self.assertEqual(registry.load(VERSION, "first", original), "active")
+        _, second, second_approval = self.candidate("two")
+        registry.begin(
+            VERSION, "second", second, second_approval, expected_generation=1
+        )
+
+        # The independent loader has the same program bytes and generation, but
+        # never ran the predecessor activation recorded by this registry.
+        target = LocalServing(self.directory / "detached-serving.sqlite")
+        self.addCleanup(target.close)
+        target.load(
+            "other",
+            "local",
+            1,
+            first_approval.candidate_sha256,
+            self.store.get("candidate", first)["content"],
+            None,
+        )
+        before = tuple(target.db.iterdump())
+        self.assertEqual(registry.load(VERSION, "second", target), "unknown")
+        self.assertEqual(registry.reconcile(VERSION, "second", target), "unknown")
+        self.assertEqual(tuple(target.db.iterdump()), before)
+        self.assertEqual(target.readback("local")["activation_id"], "other")
+        self.assertEqual(
+            registry.state("local"),
+            {
+                "generation": 2,
+                "active": first,
+                "pending": "second",
+            },
+        )
+
+    def test_predecessor_change_during_verification_blocks_dispatch(self) -> None:
+        registry, first, first_approval = self.candidate()
+        adapter = self.adapter()
+        registry.begin(VERSION, "first", first, first_approval, expected_generation=0)
+        self.assertEqual(registry.load(VERSION, "first", adapter), "active")
+        _, second, second_approval = self.candidate("two")
+        registry.begin(
+            VERSION, "second", second, second_approval, expected_generation=1
+        )
+        before = tuple(adapter.db.iterdump())
+
+        def replace_predecessor(approval: Approval) -> str:
+            with self.store.transaction() as db:
+                db.execute(
+                    "UPDATE activations SET identity='other' WHERE identity='first'"
+                )
+            return approval.actor
+
+        registry.verify_approval = replace_predecessor
+        with self.assertRaisesRegex(ValueError, "binding changed during approval"):
+            registry.load(VERSION, "second", adapter)
+        self.assertEqual(tuple(adapter.db.iterdump()), before)
+        self.assertEqual(registry._intent("second")[-1], "intent")
 
     def test_checkpoint_revocation_keeps_unknown_without_retry(self) -> None:
         registry, _, _, adapter = self.pending()

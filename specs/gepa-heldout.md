@@ -51,6 +51,12 @@ the exact candidate and fixed baseline, the sealed cohort, and its original
 ordered attempt receipts. It uses the same verification path as completed
 evaluation recovery. A compiled or blocked run cannot supply measurements.
 
+Use `include_cohort=True` with either measurement method for
+`runspindle.gepa-heldout-measurement.v2`. The underlying measurement adds a
+`cohort` with sorted opaque `training_cases` and `heldout_cases` from the
+owner's validated split. Consumers can compare both lists with a separate lock.
+The default v1 measurement remains available to existing readers.
+
 The `runspindle.gepa-heldout-measurement.v1` document binds the report to its owner,
 configuration, split, baseline and candidate by digest. The `rows` object contains
 paired `baseline` and `candidate` arrays sorted by opaque case identity. Each case
@@ -72,6 +78,22 @@ derives that mapping during the fresh evaluation grant and batch fence; no calle
 supplies the association. The wrapper requires an authorized materialized
 evaluation batch, and withdrawal blocks the whole read. It exposes opaque
 identities and adds no training read after the held-out seal.
+
+
+For a paired read, call `Session.measured_materialized_cohorts()`. The
+`runspindle.gepa-materialized-cohort-measurement.v1` wrapper includes the v2
+measurement, the existing heldout manifest and mapping, and the retained
+`training_manifest_sha256` and `training_cases` case-to-item mapping. Current
+GEPA optimizes on one selected example. The paired read requires that the
+owner's exact materialized optimization item covers the full locked training
+roster. An unmatched roster fails closed.
+
+The training mapping is historical. It comes from the verified compile and
+immutable ownership binding, with no training item reads or optimization
+authority callbacks after the seal. The read still requires fresh evaluation
+access and the exact heldout materialization. Consumers must separately verify
+current training use if they need it. The heldout-only API keeps its existing
+report versions and behavior.
 
 
 ## Adversarial component coverage

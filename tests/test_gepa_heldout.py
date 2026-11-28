@@ -136,6 +136,7 @@ class HeldoutTests(unittest.TestCase):
             patch.object(opt, "framework", side_effect=AssertionError("framework")),
         ):
             measured = resumed.measured_heldout()
+            with_cohort = resumed.measured_heldout(include_cohort=True)
         self.assertEqual(resumed.provider.calls, [])
         self.assertEqual(measured["version"], "runspindle.gepa-heldout-measurement.v1")
         self.assertEqual(measured["evidence_class"], "offline_scripted_provider")
@@ -152,6 +153,19 @@ class HeldoutTests(unittest.TestCase):
         self.assertEqual(measured["report_sha256"], stored_sha)
         cases = sorted(
             digest(pack((e.output.output_id, e.output.revision))) for e in self.heldout
+        )
+        training = sorted(
+            digest(pack((e.output.output_id, e.output.revision)))
+            for e in resumed.dataset.examples
+            if resumed.split.partition(e.source.family_id) == "train"
+        )
+        self.assertEqual(
+            with_cohort,
+            dict(
+                measured,
+                version="runspindle.gepa-heldout-measurement.v2",
+                cohort={"training_cases": training, "heldout_cases": cases},
+            ),
         )
         self.assertEqual(
             measured["rows"],

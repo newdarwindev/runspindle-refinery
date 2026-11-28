@@ -56,3 +56,16 @@ Results and missing-tool limits are in `docs/local-serving-schema-evidence.json`
 No production activation, migration, provider call, deployment, persistent job,
 backup, package installation or access change is part of this work. #17/#6 remain
 open; component evidence does not satisfy their production/live gates.
+
+## Unambiguous serving programs
+
+The synthetic lookup program rejects duplicate JSON object fields, including
+equivalent spellings produced by JSON escapes. Qualification, approval
+admission, dispatch and pending reconciliation all validate the exact program.
+A previously approved duplicate-field program stays in history and cannot
+authorize a new load or a successful reconciliation.
+
+Local load, prediction and readback share the same check. Scratch SQLite tests
+observe that a rejected replacement leaves the prior output and load count
+intact. A fresh process rejects a retained ambiguous program even when its
+digest matches the stored bytes. These are synthetic adapter checks.

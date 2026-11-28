@@ -9,13 +9,15 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Any, Callable, cast
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from refinery import serving
 from refinery.lineage import digest
+from refinery.storage import VERSION, Store, pack
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = b'{"format":"synthetic.map.v1","responses":{"hello":"first"}}'
+DUPLICATE_RESPONSE = rb'{"format":"synthetic.map.v1","responses":{"hello":"first","\u0068ello":"second"}}'
 
 
 class LocalServingSchemaTests(unittest.TestCase):
@@ -143,6 +145,118 @@ class LocalServingSchemaTests(unittest.TestCase):
                 call()
             self.assertEqual(tuple(db.iterdump()), before)
         self.assertEqual(db.execute("SELECT count(*) FROM calls").fetchone()[0], 1)
+
+    def test_duplicate_program_fields_never_replace_a_verified_program(self) -> None:
+        adapter = serving.LocalServing(self.path)
+        self.addCleanup(adapter.close)
+        adapter.load("first", "local", 1, digest(CONTENT), CONTENT, None)
+        db = self.connect()
+        before = tuple(db.iterdump())
+        for content in (
+            DUPLICATE_RESPONSE,
+            b'{"format":"synthetic.map.v1","responses":{"hello":"first"},"responses":{"hello":"second"}}',
+        ):
+            with (
+                self.subTest(content=content),
+                self.assertRaisesRegex(ValueError, "incompatible candidate program"),
+            ):
+                adapter.load(
+                    "replacement", "local", 2, digest(content), content, digest(CONTENT)
+                )
+            self.assertEqual(tuple(db.iterdump()), before)
+        self.assertEqual(adapter.predict("local", "hello")["output"], "first")
+
+    def test_reopened_duplicate_program_cannot_be_read_or_replaced(self) -> None:
+        serving.LocalServing(self.path).close()
+        db = self.connect()
+        db.execute(
+            "INSERT INTO active VALUES(?,?,?,?,?)",
+            ("local", "first", 1, digest(DUPLICATE_RESPONSE), DUPLICATE_RESPONSE),
+        )
+        before = tuple(db.iterdump())
+        probe = """
+from contextlib import closing
+import sys
+from refinery.lineage import digest
+from refinery.serving import LocalServing
+
+content = b'{"format":"synthetic.map.v1","responses":{"hello":"replacement"}}'
+with closing(LocalServing(sys.argv[1])) as adapter:
+    for operation in (
+        lambda: adapter.readback("local"),
+        lambda: adapter.predict("local", "hello"),
+        lambda: adapter.load("replacement", "local", 2, digest(content), content, sys.argv[2]),
+    ):
+        try:
+            operation()
+        except ValueError as error:
+            if str(error) != "incompatible candidate program":
+                raise
+        else:
+            raise RuntimeError("ambiguous retained program authorized an operation")
+"""
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-B",
+                "-c",
+                probe,
+                str(self.path),
+                digest(DUPLICATE_RESPONSE),
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(tuple(db.iterdump()), before)
+
+    def test_legacy_ambiguous_candidate_cannot_dispatch_or_reconcile(self) -> None:
+        candidate_sha, evaluation_sha, policy_sha = (
+            digest(DUPLICATE_RESPONSE),
+            "a" * 64,
+            "b" * 64,
+        )
+        candidate = {
+            "content": DUPLICATE_RESPONSE,
+            "environment": "local",
+            "candidate_sha256": candidate_sha,
+            "evaluation_sha256": evaluation_sha,
+            "policy_sha256": policy_sha,
+        }
+        key = digest(pack(candidate))
+        approval = serving.Approval(
+            candidate_sha,
+            evaluation_sha,
+            policy_sha,
+            "local",
+            "reviewer",
+            "independent-proof",
+        )
+        adapter = Mock()
+        with Store(self.path) as store:
+            with store.transaction() as tx:
+                store.put(tx, "candidate", key, candidate)
+            registry = serving.Registry(store, verify_approval=lambda _: "reviewer")
+            with self.assertRaisesRegex(ValueError, "incompatible candidate program"):
+                registry.begin(VERSION, "new", key, approval, expected_generation=0)
+            # Retain an intent the older JSON reader could approve.
+            with patch.object(serving, "program", json.loads):
+                registry.begin(VERSION, "legacy", key, approval, expected_generation=0)
+            before = tuple(store.db.iterdump())
+            with self.assertRaisesRegex(ValueError, "incompatible candidate program"):
+                registry.load(VERSION, "legacy", adapter)
+            self.assertEqual(tuple(store.db.iterdump()), before)
+
+            store.db.execute(
+                "UPDATE activations SET state='unknown' WHERE identity='legacy'"
+            )
+            before = tuple(store.db.iterdump())
+            with self.assertRaisesRegex(ValueError, "incompatible candidate program"):
+                registry.reconcile(VERSION, "legacy", adapter)
+            self.assertEqual(tuple(store.db.iterdump()), before)
+            self.assertEqual(adapter.mock_calls, [])
 
     def test_temporary_shadow_cannot_redirect_loader_operations(self) -> None:
         adapter = serving.LocalServing(self.path)

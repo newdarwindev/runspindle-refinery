@@ -35,6 +35,111 @@ _MATERIALIZED: WeakKeyDictionary[Any, tuple[Any, ...]] = WeakKeyDictionary()
 
 
 class Session:
+    @staticmethod
+    def materialized_learning(
+        store: Store,
+        api_version: str,
+        identity: str,
+        snapshot_sha256: str,
+        *,
+        intent: str,
+        provider: ev.ScriptedProvider,
+        limits: ev.Limits,
+        per_call: ev.Reservation,
+        budget_id: str,
+        training_output_id: str,
+        retained_use: RetainedFeedbackUse,
+        materialized_batches: tuple[AuthorizedBatch, ...],
+        checkpoint: Callable[[str], None] = lambda _: None,
+    ) -> Session:
+        """Observe current materialized GEPA readiness, never cache a grant.
+
+        No claim, budget initialization, framework import or dispatch occurs here.
+        Existing per-use authority remains mandatory after this admission returns.
+        """
+        if type(intent) is not str or intent not in {"start", "resume_evaluation"}:
+            raise ValueError("explicit learning admission intent required")
+        if type(store) is not Store or type(retained_use) is not RetainedFeedbackUse:
+            raise ValueError("exact retained learning context required")
+        if type(materialized_batches) is not tuple or len(materialized_batches) != 2:
+            raise ValueError("both materialized phase batches required")
+        session = Session(
+            store,
+            api_version,
+            identity,
+            snapshot_sha256,
+            provider=provider,
+            limits=limits,
+            per_call=per_call,
+            budget_id=budget_id,
+            strategy="gepa",
+            training_output_id=training_output_id,
+            retained_use=retained_use,
+            materialized_batches=materialized_batches,
+            checkpoint=checkpoint,
+        )
+        batches = Session.batches(session)
+        if {b.purpose for b in batches} != {"optimization", "evaluation"}:
+            raise ValueError("both exact materialized phases required")
+        row = Session.row(session, store.db)
+        cursor = Session.cursor(session)
+        if cursor:
+            raise ValueError("admission requires pristine local provider cursor")
+        if intent == "start":
+            if row is not None:
+                raise ev.Halt("learning_start_already_owned")
+            purposes: tuple[str, ...] = ("optimization", "evaluation")
+        else:
+            if row is None or row[1] not in {"compiled", "complete"}:
+                raise ev.Halt("learning_evaluation_not_resumable")
+            purposes = ("evaluation",)
+        seal = Session.strategy_binding(session)
+        routes = Session.verify_authority_routes(session)
+        binding = session.binding
+
+        def unchanged() -> None:
+            if (
+                session.store is not store
+                or session.provider is not provider
+                or session.binding != binding
+                or Session.strategy_binding(session) != seal
+                or session._strategy_seal != seal
+                or Session.verify_authority_routes(session) is not routes
+                or Session.row(session, store.db) != row
+                or Session.cursor(session) != cursor
+            ):
+                raise ev.Halt("learning_admission_context_changed")
+
+        for purpose in purposes:
+            Session.guard(session, purpose)
+            unchanged()
+        if intent == "resume_evaluation":
+            compiled, _ = Session.compiled(session)
+            if compiled.status != "compiled":
+                raise ev.Halt("learning_compilation_not_successful")
+            unchanged()
+        # Later phase callbacks can invalidate an earlier observed source/item.
+        # Fence every admitted phase after the final authority callback, without
+        # calling an earlier grant again or treating saved references as grants.
+        for batch in batches:
+            if batch.purpose in purposes:
+                with batch.scope() as (registry, _, selections):
+                    batch.fence(registry, selections)
+                unchanged()
+        # A later authority callback may seal this same owner's cohort without
+        # touching its experiment row. Recheck all admitted policy purposes too.
+        for purpose in purposes:
+            policy.check(
+                store,
+                session.dataset,
+                session.split,
+                purpose=purpose,
+                configuration_sha256=session.config,
+                owner=session.key,
+            )
+            unchanged()
+        return session
+
     def __init__(
         self,
         store: Store,

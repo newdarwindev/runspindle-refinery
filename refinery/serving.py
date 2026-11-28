@@ -357,6 +357,10 @@ def _score_counts(report: Report) -> tuple[int, int, int]:
     return counts[0], counts[1], denominator
 
 
+_ActivationRow = tuple[str, int, str, str | None, str]
+_RollbackHistory = tuple[_ActivationRow, _ActivationRow]
+
+
 class Registry:
     def __init__(self, store: Store, *, verify_approval=None):
         self.store, self.verify_approval = store, verify_approval
@@ -545,14 +549,32 @@ class Registry:
 
     def begin(
         self,
-        api_version,
-        activation_id,
-        candidate_key,
+        api_version: str,
+        activation_id: str,
+        candidate_key: str,
         approval: Approval,
         *,
-        expected_generation,
-    ):
-        version(api_version)
+        expected_generation: int,
+    ) -> str:
+        return self._begin(
+            api_version,
+            activation_id,
+            candidate_key,
+            approval,
+            expected_generation=expected_generation,
+        )
+
+    def _begin(
+        self,
+        api_version: str,
+        activation_id: str,
+        candidate_key: str,
+        approval: Approval,
+        *,
+        expected_generation: int,
+        rollback_history: _RollbackHistory | None = None,
+    ) -> str:
+        cast(Callable[[str], None], version)(api_version)
         _token(activation_id)
         _hash(candidate_key)
         _integer(expected_generation)
@@ -604,6 +626,17 @@ class Registry:
                 raise ValueError("promotion compare-and-swap conflict")
             if state["active"] == candidate_key:
                 raise ValueError("candidate already active")
+            if rollback_history is not None:
+                if (
+                    self._rollback_history(environment, expected_generation)
+                    != rollback_history
+                ):
+                    raise ValueError("rollback history changed during approval")
+                if (
+                    pack(store.get("approval", rollback_history[1][4]))
+                    != approval_bytes
+                ):
+                    raise ValueError("rollback approval changed during verification")
             self.store.room(tx, "activations")
             evidence = digest(pack(approval))
             self.store.put(tx, "approval", evidence, approval)
@@ -895,8 +928,9 @@ class Registry:
                 )
         return outcome
 
-    def rollback(self, api_version, activation_id, environment, *, expected_generation):
-        version(api_version)
+    def _rollback_history(
+        self, environment: str, expected_generation: int
+    ) -> _RollbackHistory:
         state = self.state(environment)
         if (
             state["generation"] != expected_generation
@@ -904,29 +938,45 @@ class Registry:
             or state["active"] is None
         ):
             raise ValueError("rollback ownership or history unavailable")
-        row = self.store.db.execute(
-            "SELECT predecessor FROM activations WHERE environment=? AND candidate=? AND state='active' ORDER BY generation DESC LIMIT 1",
-            (environment, state["active"]),
-        ).fetchone()
-        if not row or not row[0]:
-            raise ValueError("no approved predecessor")
-        predecessor = row[0]
-        candidate = self.store.get("candidate", predecessor)
-        if digest(candidate["content"]) != candidate["candidate_sha256"]:
-            raise ValueError("rollback bytes changed")
-        program(candidate["content"])
-        # Use previously independently authenticated evidence, still bound to the environment.
-        approved = self.store.db.execute(
-            "SELECT approval FROM activations WHERE environment=? AND candidate=? AND state='active' ORDER BY generation DESC LIMIT 1",
-            (environment, predecessor),
-        ).fetchone()
-        if not approved:
-            raise ValueError("predecessor approval unavailable")
-        approval = self.store.get("approval", approved[0])
-        return self.begin(
+        rows = self.store.db.execute(
+            "SELECT identity,generation,candidate,predecessor,approval FROM activations "
+            "WHERE environment=? AND state='active' ORDER BY generation DESC LIMIT 2",
+            (environment,),
+        ).fetchall()
+        if len(rows) != 2:
+            raise ValueError("rollback has no approved predecessor")
+        head, previous = rows
+        for activation, generation, candidate, _, approval in rows:
+            _token(activation)
+            _integer(generation, positive=True)
+            _hash(candidate)
+            _hash(approval)
+        if (
+            not previous[1] < head[1] <= expected_generation
+            or head[2] != state["active"]
+            or head[3] != previous[2]
+        ):
+            raise ValueError("rollback predecessor differs from serving history")
+        return head, previous
+
+    def rollback(self, api_version, activation_id, environment, *, expected_generation):
+        version(api_version)
+        _integer(expected_generation)
+        with self.store.transaction():
+            history = self._rollback_history(environment, expected_generation)
+            _, (_, _, predecessor, _, approval_key) = history
+            candidate = self.store.get("candidate", predecessor)
+            if digest(candidate["content"]) != candidate["candidate_sha256"]:
+                raise ValueError("rollback bytes changed")
+            program(candidate["content"])
+            approval = self.store.get("approval", approval_key)
+            if digest(pack(approval)) != approval_key:
+                raise ValueError("rollback approval identity changed")
+        return self._begin(
             api_version,
             activation_id,
             predecessor,
             approval,
             expected_generation=expected_generation,
+            rollback_history=history,
         )

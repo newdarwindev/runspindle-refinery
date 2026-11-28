@@ -78,7 +78,7 @@ finally:
         self.assertEqual(json.loads(result.stdout), [0, 0])
 
     def test_removed_admission_snapshot_guard_detects_invalid_persistence(self) -> None:
-        source = textwrap.dedent(inspect.getsource(Registry.begin))
+        source = textwrap.dedent(inspect.getsource(Registry._begin))
         needle = "or pack(approval) != approval_bytes"
         self.assertEqual(source.count(needle), 1)
         namespace = dict(vars(serving))
@@ -86,7 +86,7 @@ finally:
             compile(source.replace(needle, "or False"), "<admission-mutant>", "exec"),
             namespace,
         )
-        with patch.object(Registry, "begin", namespace["begin"]):
+        with patch.object(Registry, "_begin", namespace["_begin"]):
             result = unittest.TestResult()
             DispatchAuthorityTests(
                 "test_admission_callback_cannot_change_any_approval_binding"

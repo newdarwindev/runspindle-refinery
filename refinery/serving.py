@@ -13,9 +13,19 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Callable, Iterator, Protocol, TypedDict, cast
 
-from .evaluation import Report, _integer
-from .lineage import MAX_BYTES, MAX_RECORDS, _bytes, _hash, _token, digest
-from .storage import TYPES, Store, pack, version
+from .durable_evaluation import verify_evaluation_pass
+from .evaluation import Experiment, Report, _integer
+from .lineage import (
+    MAX_BYTES,
+    MAX_RECORDS,
+    Dataset,
+    LockedSplit,
+    _bytes,
+    _hash,
+    _token,
+    digest,
+)
+from .storage import TYPES, VERSION, Store, pack, unpack, version
 
 
 @dataclass(frozen=True)
@@ -368,13 +378,18 @@ class Registry:
         type(policy).__post_init__(policy)
         experiment = self.store.get("experiment", experiment_id)
         row = self.store.db.execute(
-            "SELECT state,report FROM experiments WHERE identity=?", (experiment_id,)
+            "SELECT state,report,binding FROM experiments WHERE identity=?",
+            (experiment_id,),
         ).fetchone()
         if not row or row[0] != "complete":
             raise ValueError("evaluation is not durably complete")
         report_sha = row[1]
         report = self.store.get("report", report_sha)
-        if type(report) is not Report or digest(pack(report)) != report_sha:
+        if (
+            type(experiment) is not Experiment
+            or type(report) is not Report
+            or digest(pack(report)) != report_sha
+        ):
             raise ValueError("evaluation evidence changed")
         usage = dict(report.usage)
         if (
@@ -419,7 +434,7 @@ class Registry:
             experiment.config_sha256,
         ):
             raise ValueError("evaluation artifact bindings changed")
-        experiment.__post_init__()
+        cast(Callable[[], None], experiment.__post_init__)()
         program(experiment.candidate)
         policy_sha = digest(pack(policy))
         candidate = {
@@ -431,6 +446,34 @@ class Registry:
         }
         key = digest(pack(candidate))
         with self.store.transaction() as tx:
+            current = tx.execute(
+                "SELECT state,report,binding FROM experiments WHERE identity=?",
+                (experiment_id,),
+            ).fetchone()
+            if (
+                current != row
+                or digest(pack(self.store.get("report", report_sha))) != report_sha
+            ):
+                raise ValueError("evaluation ownership changed")
+            binding = unpack(row[2])
+            if (
+                type(binding) is not tuple
+                or len(binding) != 4
+                or row[2] != pack((VERSION, binding[1], experiment, binding[3]))
+            ):
+                raise ValueError("invalid evaluation binding")
+            lineage = cast(
+                Callable[[str], tuple[Dataset, LockedSplit]], self.store.lineage
+            )
+            dataset, split = lineage(binding[1])
+            if (split.dataset_sha256, split.sha256) != (
+                experiment.dataset_sha256,
+                experiment.split_sha256,
+            ):
+                raise ValueError("evaluation lineage changed")
+            verify_evaluation_pass(
+                tx, experiment_id, report, experiment, dataset, split
+            )
             self.store.put(tx, "policy", policy_sha, policy)
             self.store.put(tx, "candidate", key, candidate)
         return key
